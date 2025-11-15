@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos
-import com.example.project_3_tcs_grupo4_dam.data.remote.ApiService
+import com.example.project_3_tcs_grupo4_dam.data.remote.AuthApiService
 
 /**
  * Clase sellada para manejar resultados de operaciones
@@ -18,7 +18,7 @@ sealed class Result<out T> {
  * Implementación del repositorio de autenticación
  */
 class AuthRepositoryImpl(
-    private val api: ApiService,
+    private val api: AuthApiService,
     context: Context
 ) : AuthRepository {
 

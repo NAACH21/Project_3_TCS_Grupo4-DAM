@@ -9,7 +9,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
-interface ApiService {
+interface ColaboradorApiService {
 
     @GET("api/colaboradores")
     suspend fun getAllColaboradores(): List<ColaboradorReadDto>
@@ -26,3 +26,4 @@ interface ApiService {
     @DELETE("api/colaboradores/{id}")
     suspend fun deleteColaborador(@Path("id") id: String)
 }
+

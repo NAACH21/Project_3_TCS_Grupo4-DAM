@@ -37,7 +37,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         }
 
         composable(Routes.LOGIN) {
-            LoginScreen(navController, viewModel) {
+            LoginScreen(viewModel) {
                 navController.navigate(Routes.HOME) {
                     popUpTo(Routes.LOGIN) { inclusive = true }
                 }

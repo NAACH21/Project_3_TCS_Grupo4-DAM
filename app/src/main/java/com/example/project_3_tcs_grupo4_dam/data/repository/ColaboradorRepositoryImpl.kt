@@ -10,7 +10,7 @@ import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 class ColaboradorRepositoryImpl : ColaboradorRepository {
 
     // Obtiene el servicio de API desde nuestro RetrofitClient
-    private val apiService = RetrofitClient.api
+    private val apiService = RetrofitClient.colaboradorApi
     private val skillApiService = RetrofitClient.skillApi
     private val nivelSkillApiService = RetrofitClient.nivelSkillApi
 
