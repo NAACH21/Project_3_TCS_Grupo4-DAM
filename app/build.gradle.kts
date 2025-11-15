@@ -59,6 +59,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
 
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.3")
     // Permite usar el `viewModel()` composable function
