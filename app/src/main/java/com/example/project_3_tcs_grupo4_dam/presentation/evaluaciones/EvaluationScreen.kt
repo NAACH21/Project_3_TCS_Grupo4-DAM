@@ -1,4 +1,4 @@
-package com.example.project_3_tcs_grupo4_dam.presentation.auth
+package com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -28,6 +28,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,14 +47,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import java.util.UUID
+import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluationScreen(
-    onBackClick: () -> Unit,
-    onHistoryClick: () -> Unit, // Added for navigation
-    onBulkLoadClick: () -> Unit, // Added for navigation
+    navController: NavController,
     viewModel: EvaluationViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,16 +61,13 @@ fun EvaluationScreen(
     Scaffold(
         topBar = {
             EvaluationTopAppBar(
-                onBackClick = onBackClick,
-                onHistoryClick = onHistoryClick,
-                onBulkLoadClick = onBulkLoadClick
+                onBackClick = { navController.popBackStack() },
+                onHistoryClick = { navController.navigate("evaluations_history") },
+                onBulkLoadClick = { navController.navigate("bulk_upload") }
             )
         },
         bottomBar = {
-            BottomActionButtons(
-                onCancel = viewModel::cancelEvaluation,
-                onSave = viewModel::saveEvaluation
-            )
+            BottomNavBar(navController = navController)
         }
     ) { paddingValues ->
         LazyColumn(
@@ -85,7 +82,7 @@ fun EvaluationScreen(
             }
 
             item {
-                EvaluatedSkillsSection(uiState = uiState, viewModel = viewModel)
+                EvaluatedSkillsSection(viewModel = viewModel)
             }
 
             items(uiState.skills, key = { it.id }) { skill ->
@@ -95,6 +92,16 @@ fun EvaluationScreen(
                     viewModel = viewModel,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
+            }
+
+            // Espacio para los botones de acción
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                BottomActionButtons(
+                    onCancel = viewModel::cancelEvaluation,
+                    onSave = viewModel::saveEvaluation
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -111,7 +118,7 @@ fun EvaluationTopAppBar(
         title = { Text("Evaluaciones", fontWeight = FontWeight.Bold) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Retroceder")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retroceder")
             }
         },
         actions = {
@@ -191,7 +198,7 @@ fun EvaluationDataCard(uiState: EvaluationUiState, viewModel: EvaluationViewMode
 }
 
 @Composable
-fun EvaluatedSkillsSection(uiState: EvaluationUiState, viewModel: EvaluationViewModel) {
+fun EvaluatedSkillsSection(viewModel: EvaluationViewModel) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -293,7 +300,7 @@ fun SkillItemCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomDropdown(
+private fun CustomDropdown(
     label: String,
     options: List<String>,
     selectedValue: String,
@@ -313,7 +320,7 @@ fun CustomDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
         )
         ExposedDropdownMenu(
             expanded = isExpanded,

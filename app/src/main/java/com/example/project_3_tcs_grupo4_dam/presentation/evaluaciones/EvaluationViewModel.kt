@@ -1,4 +1,4 @@
-package com.example.project_3_tcs_grupo4_dam.presentation.auth
+package com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -92,3 +92,4 @@ class EvaluationViewModel : ViewModel() {
         // Handle the logic to cancel the operation, e.g., navigate back
     }
 }
+

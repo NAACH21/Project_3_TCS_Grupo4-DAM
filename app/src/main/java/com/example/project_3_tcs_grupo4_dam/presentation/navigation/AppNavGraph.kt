@@ -20,6 +20,12 @@ import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.skills.SkillsScreen
 
 @Composable
 fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
@@ -76,14 +82,27 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             ColaboradorFormScreen(navController)
         }
 
-        // Rutas adicionales (placeholders)
+        // Rutas adicionales
         composable(Routes.SKILLS) {
-            SimplePlaceholderScreen(title = "Skills")
+            SkillsScreen(navController = navController)
+        }
+
+        composable(Routes.NIVEL_SKILLS) {
+            SkillsScreen(navController = navController)
+        }
+
+        composable(Routes.NOTIFICACIONES) {
+            NotificacionesScreen(navController = navController)
+        }
+
+        // RUTAS DE EVALUACIONES
+        composable(Routes.EVALUATION_SCREEN) {
+            EvaluationScreen(navController = navController)
         }
 
         composable(Routes.EVALUACIONES) {
             EvaluationsHistoryScreen(
-                onBackClick = { navController.popBackStack() },
+                navController = navController,
                 onNavigateToDetail = { id ->
                     navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
                 }
@@ -92,7 +111,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
 
         composable(Routes.EVALUATIONS_HISTORY) {
             EvaluationsHistoryScreen(
-                onBackClick = { navController.popBackStack() },
+                navController = navController,
                 onNavigateToDetail = { id ->
                     navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
                 }
@@ -119,8 +138,20 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             )
         }
 
+        // RUTA DE VACANTES
         composable(Routes.VACANTES) {
-            SimplePlaceholderScreen(title = "Vacantes")
+            VacantScreen(navController = navController)
+        }
+
+        composable(Routes.VACANTES_COLABORADOR) {
+            VacantesScreen(navController = navController)
+        }
+
+        composable("newVacancy") {
+            NewVacantScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.DASHBOARD) {
