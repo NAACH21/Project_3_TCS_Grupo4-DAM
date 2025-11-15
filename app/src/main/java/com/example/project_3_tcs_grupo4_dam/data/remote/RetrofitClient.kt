@@ -4,8 +4,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // RECUERDA: 10.0.2.2 para emulador, o tu IP (ej. 192.168.1.10) para teléfono
-    private const val BASE_URL = "http://10.0.2.2:5071/"
+
+    // --- CORRECCIÓN APLICADA ---
+    // Se usa la IP de tu Wi-Fi (10.72.90.84) obtenida del comando 'ipconfig'
+    // Tu teléfono y tu PC deben estar en la MISMA red Wi-Fi.
+    private const val BASE_URL = "http://10.72.90.84:5260"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()

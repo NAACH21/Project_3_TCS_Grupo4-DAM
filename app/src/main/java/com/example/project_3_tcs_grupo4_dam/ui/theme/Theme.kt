@@ -1,6 +1,5 @@
 package com.example.project_3_tcs_grupo4_dam.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,9 +11,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = TcsBlue,
+    secondary = TcsBlue,
+    tertiary = TcsBlue,
+    background = TcsDarkBackground,
+    surface = TcsDarkBackground,
+    onPrimary = TcsWhite,
+    onSecondary = TcsWhite,
+    onTertiary = TcsWhite,
+    onBackground = TcsWhite,
+    onSurface = TcsWhite,
+    error = TcsRedError
 )
 
 private val LightColorScheme = lightColorScheme(

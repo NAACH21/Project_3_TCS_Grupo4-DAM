@@ -21,10 +21,15 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         startDestination = startDestination
     ) {
         composable(Routes.HOME) { HomeScreen() }
-        composable(Routes.LOGIN) { LoginScreen(navController, viewModel) {
-            navController.navigate(Routes.HOME) {
-                popUpTo(Routes.LOGIN) { inclusive = true }
-            }
-        } }
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                viewModel = viewModel,
+                onLoggedIn = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
     }
 }
