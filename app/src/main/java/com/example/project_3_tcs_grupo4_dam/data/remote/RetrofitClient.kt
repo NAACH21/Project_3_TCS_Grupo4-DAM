@@ -17,4 +17,12 @@ object RetrofitClient {
     val api: ApiService by lazy {
         retrofit.create(ApiService::class.java)
     }
+
+    val skillApi: SkillApiService by lazy {
+        retrofit.create(SkillApiService::class.java)
+    }
+
+    val nivelSkillApi: NivelSkillApiService by lazy {
+        retrofit.create(NivelSkillApiService::class.java)
+    }
 }

@@ -8,6 +8,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,8 +23,12 @@ import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
 fun ColaboradorCard(
     colaborador: ColaboradorReadDto,
     modifier: Modifier = Modifier,
-    onVerDetalle: () -> Unit = {}
+    onVerDetalle: () -> Unit = {},
+    onEditar: (ColaboradorReadDto) -> Unit = {},
+    onEliminar: (ColaboradorReadDto) -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -75,8 +83,31 @@ fun ColaboradorCard(
                     )
                 }
 
-                IconButton(onClick = { /* TODO menú opciones */ }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                // Menú de opciones
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Editar") },
+                            onClick = {
+                                showMenu = false
+                                onEditar(colaborador)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Eliminar") },
+                            onClick = {
+                                showMenu = false
+                                onEliminar(colaborador)
+                            }
+                        )
+                    }
                 }
             }
 

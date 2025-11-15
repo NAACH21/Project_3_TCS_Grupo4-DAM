@@ -31,6 +31,10 @@ class ColaboradoresViewModel : ViewModel() {
         fetchColaboradores()
     }
 
+    fun refresh() {
+        fetchColaboradores()
+    }
+
     private fun fetchColaboradores() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -45,6 +49,20 @@ class ColaboradoresViewModel : ViewModel() {
                 _colaboradores.value = emptyList()
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun eliminarColaborador(id: String) {
+        viewModelScope.launch {
+            try {
+                repository.deleteColaborador(id)
+                // Actualizar la lista local eliminando el colaborador
+                _colaboradores.value = _colaboradores.value.filter { it.id != id }
+                Log.d("ColaboradoresVM", "Colaborador eliminado: $id")
+            } catch (e: Exception) {
+                Log.e("ColaboradoresVM", "Error al eliminar colaborador", e)
+                _error.value = e.message ?: "Error al eliminar"
             }
         }
     }

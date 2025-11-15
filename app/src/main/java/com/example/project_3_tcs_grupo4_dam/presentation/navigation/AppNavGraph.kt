@@ -9,7 +9,9 @@ import androidx.navigation.navArgument
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.NuevoColaboradorScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 
 object Routes {
@@ -17,6 +19,8 @@ object Routes {
     const val LOGIN = "login"
     const val COLABORADORES = "colaboradores"
     const val COLABORADOR_DETALLE = "colaborador_detalle"
+    const val NUEVO_COLABORADOR = "nuevo_colaborador"
+    const val COLABORADOR_FORM = "colaborador_form"
 }
 
 @Composable
@@ -44,7 +48,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             ColaboradoresScreen(navController)
         }
 
-        // Nueva ruta para el detalle del colaborador
+        // Ruta para el detalle del colaborador
         composable(
             route = "${Routes.COLABORADOR_DETALLE}/{colaboradorId}",
             arguments = listOf(
@@ -58,6 +62,29 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
                 colaboradorId = colaboradorId,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // Ruta antigua para crear colaborador (mantener por compatibilidad)
+        composable(Routes.NUEVO_COLABORADOR) {
+            NuevoColaboradorScreen(navController)
+        }
+
+        // Nueva ruta para formulario reutilizable (crear)
+        composable(Routes.COLABORADOR_FORM) {
+            ColaboradorFormScreen(navController)
+        }
+
+        // Nueva ruta para formulario reutilizable (editar)
+        composable(
+            route = "${Routes.COLABORADOR_FORM}/{colaboradorId}",
+            arguments = listOf(
+                navArgument("colaboradorId") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) {
+            ColaboradorFormScreen(navController)
         }
     }
 }
