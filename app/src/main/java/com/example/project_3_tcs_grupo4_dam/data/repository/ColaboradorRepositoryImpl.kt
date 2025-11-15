@@ -13,4 +13,8 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
         // Llama a la API y devuelve el resultado
         return apiService.getAllColaboradores()
     }
+
+    override suspend fun getColaboradorById(id: String): ColaboradorReadDto {
+        return apiService.getColaboradorById(id)
+    }
 }
