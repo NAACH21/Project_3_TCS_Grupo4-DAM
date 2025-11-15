@@ -11,12 +11,14 @@ import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 
 object Routes {
     const val HOME = "home"
     const val LOGIN = "login"
     const val COLABORADORES = "colaboradores"
     const val COLABORADOR_DETALLE = "colaborador_detalle"
+    const val MATCHING = "matching"
 }
 
 @Composable
@@ -28,7 +30,6 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         startDestination = startDestination
     ) {
         composable(Routes.HOME) {
-            // ⬅️ pasar navController a HomeScreen
             HomeScreen(navController)
         }
 
@@ -44,7 +45,6 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             ColaboradoresScreen(navController)
         }
 
-        // Nueva ruta para el detalle del colaborador
         composable(
             route = "${Routes.COLABORADOR_DETALLE}/{colaboradorId}",
             arguments = listOf(
@@ -58,6 +58,10 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
                 colaboradorId = colaboradorId,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(Routes.MATCHING) {
+            MatchingScreen(navController)
         }
     }
 }
