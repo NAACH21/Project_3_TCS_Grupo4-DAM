@@ -1,5 +1,5 @@
 // NuevaVacanteScreen.kt
-package com.tuapp.vacantes
+package com.example.project_3_tcs_grupo4_dam.presentation.vacantes
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,7 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.presentation.auth.BottomBarVacantes
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +67,7 @@ fun NewVacantScreen(
             )
         },
         bottomBar = {
-            BottomBarVacantes()
+            BottomNavBar(navController = navController)
         }
     ) { innerPadding ->
         Column(
@@ -87,7 +87,7 @@ fun NewVacantScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.KeyboardArrowLeft,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Volver",
                     tint = Color(0xFF4B5563)
                 )
@@ -342,7 +342,7 @@ private fun ExposedDropdown(
             onValueChange = { },
             readOnly = true,
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
                 .fillMaxWidth(),
             label = if (label.isNotEmpty()) { { Text(label) } } else null,
             placeholder = { Text(placeholder) },
@@ -368,4 +368,3 @@ private fun ExposedDropdown(
         }
     }
 }
-

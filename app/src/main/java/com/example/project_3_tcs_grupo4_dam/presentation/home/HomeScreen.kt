@@ -6,6 +6,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -73,21 +75,29 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
 
-                // Avatar circular en la esquina superior derecha
-                Box(
+                // Campanita de notificaciones en la esquina superior derecha
+                IconButton(
+                    onClick = { navController.navigate(Routes.NOTIFICACIONES) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(20.dp)
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.35f)),
-                    contentAlignment = Alignment.Center
+                        .padding(top = 12.dp, end = 12.dp)
                 ) {
-                    Text(
-                        "L",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notificaciones",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        // Badge de notificaciones (opcional - muestra cantidad)
+                        Badge(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp)
+                        ) {
+                            Text("4", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
                 }
             }
 
@@ -201,10 +211,50 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickButton(
+                        text = "Nueva Evaluación",
+                        color = Color(0xFFFF9800),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EVALUATION_SCREEN) }
+                    )
+                    QuickButton(
+                        text = "Nivel Skills",
+                        color = Color(0xFF9C27B0),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.NIVEL_SKILLS) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
                         text = "Brechas de Skills",
                         color = Color(0xFFFF5722),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.SKILLS) }
+                    )
+                    QuickButton(
+                        text = "Ver Vacantes",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Gestión Vacantes",
+                        color = Color(0xFF1976D2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES) }
                     )
                     QuickButton(
                         text = "Alertas Automáticas",
@@ -260,7 +310,7 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun MetricCardSmall(
-    title: String,
+    @Suppress("UNUSED_PARAMETER") title: String,
     value: String,
     subtitle: String,
     iconColor: Color,

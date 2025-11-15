@@ -12,12 +12,20 @@ object Routes {
     const val SKILLS = "skills"
     const val EVALUACIONES = "evaluaciones"
     const val VACANTES = "vacantes"
+    const val VACANTES_COLABORADOR = "vacantes_colaborador"
     const val DASHBOARD = "dashboard"
 
     // Rutas de evaluaciones
+    const val EVALUATION_SCREEN = "evaluation_screen"
     const val EVALUATIONS_HISTORY = "evaluations_history"
     const val BULK_UPLOAD = "bulk_upload"
     const val EVALUATION_DETAIL = "evaluation_detail"
+
+    // Ruta de notificaciones
+    const val NOTIFICACIONES = "notificaciones"
+
+    // Ruta de administración de skills
+    const val NIVEL_SKILLS = "nivel_skills"
 
     fun evaluationDetail(id: String) = "evaluation_detail/$id"
 }

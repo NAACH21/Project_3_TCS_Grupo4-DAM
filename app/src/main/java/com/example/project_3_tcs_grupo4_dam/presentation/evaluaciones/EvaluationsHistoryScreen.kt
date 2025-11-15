@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -28,6 +28,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -45,11 +46,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluationsHistoryScreen(
-    onBackClick: () -> Unit,
+    navController: NavController,
     onNavigateToDetail: (String) -> Unit,
     viewModel: EvaluationsHistoryViewModel = viewModel()
 ) {
@@ -76,8 +79,8 @@ fun EvaluationsHistoryScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    TextButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Volver")
                     }
@@ -86,6 +89,9 @@ fun EvaluationsHistoryScreen(
                     }
                 }
             }
+        },
+        bottomBar = {
+            BottomNavBar(navController = navController)
         }
     ) { padding ->
         LazyColumn(
@@ -171,7 +177,7 @@ fun EvaluationHistoryItemCard(item: EvaluationHistoryItem, onNavigateToDetail: (
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomDropdown(
+private fun CustomDropdown(
     label: String,
     options: List<String>,
     selectedValue: String,
@@ -191,7 +197,7 @@ fun CustomDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
         )
         ExposedDropdownMenu(
             expanded = isExpanded,
