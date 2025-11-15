@@ -181,6 +181,26 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickButton(
+                        text = "Historial Evaluaciones",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EVALUACIONES) }
+                    )
+                    QuickButton(
+                        text = "Carga Masiva",
+                        color = Color(0xFF2196F3),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.BULK_UPLOAD) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
                         text = "Brechas de Skills",
                         color = Color(0xFFFF5722),
                         modifier = Modifier.weight(1f),

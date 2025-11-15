@@ -7,7 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.material3.Text
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,21 +18,8 @@ import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.Colaborador
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
-
-object Routes {
-    const val HOME = "home"
-    const val LOGIN = "login"
-    const val COLABORADORES = "colaboradores"
-    const val COLABORADOR_DETALLE = "colaborador_detalle"
-    const val COLABORADOR_FORM = "colaborador_form"
-    const val MATCHING = "matching"
-
-    // Nuevas rutas para la barra inferior
-    const val SKILLS = "skills"
-    const val EVALUACIONES = "evaluaciones"
-    const val VACANTES = "vacantes"
-    const val DASHBOARD = "dashboard"
-}
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 
 @Composable
 fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
@@ -92,19 +78,53 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
 
         // Rutas adicionales (placeholders)
         composable(Routes.SKILLS) {
-            SimplePlaceholderScreen(title = "Skills", navController = navController)
+            SimplePlaceholderScreen(title = "Skills")
         }
 
         composable(Routes.EVALUACIONES) {
-            SimplePlaceholderScreen(title = "Evaluaciones", navController = navController)
+            EvaluationsHistoryScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToDetail = { id ->
+                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
+                }
+            )
+        }
+
+        composable(Routes.EVALUATIONS_HISTORY) {
+            EvaluationsHistoryScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToDetail = { id ->
+                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
+                }
+            )
+        }
+
+        composable(Routes.BULK_UPLOAD) {
+            BulkUploadScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "${Routes.EVALUATION_DETAIL}/{evaluationId}",
+            arguments = listOf(
+                navArgument("evaluationId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val evaluationId = backStackEntry.arguments?.getString("evaluationId")
+            SimplePlaceholderScreen(
+                title = "Detalle de Evaluación #$evaluationId"
+            )
         }
 
         composable(Routes.VACANTES) {
-            SimplePlaceholderScreen(title = "Vacantes", navController = navController)
+            SimplePlaceholderScreen(title = "Vacantes")
         }
 
         composable(Routes.DASHBOARD) {
-            SimplePlaceholderScreen(title = "Dashboard", navController = navController)
+            SimplePlaceholderScreen(title = "Dashboard")
         }
 
         composable(Routes.MATCHING) {
@@ -114,7 +134,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
 }
 
 @Composable
-private fun SimplePlaceholderScreen(title: String, navController: androidx.navigation.NavController) {
+private fun SimplePlaceholderScreen(title: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(text = "Pantalla: $title")
     }
