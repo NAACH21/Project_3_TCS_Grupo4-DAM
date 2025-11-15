@@ -16,11 +16,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             Project_3_TCS_Grupo4DAMTheme {
+                // Restore the navigation graph and set the start destination to the evaluation screen
                 val authViewModel: AuthViewModel = viewModel(
                     factory = AuthViewModelFactory(AuthRepositoryImpl())
                 )
-                val startDestination = if (authViewModel.token() != null) Routes.HOME else Routes.LOGIN
-                AppNavGraph(viewModel = authViewModel, startDestination = startDestination)
+                // Set EVALUATION_SCREEN as the starting point to test the new screens
+                AppNavGraph(viewModel = authViewModel, startDestination = Routes.EVALUATION_SCREEN)
             }
         }
     }
