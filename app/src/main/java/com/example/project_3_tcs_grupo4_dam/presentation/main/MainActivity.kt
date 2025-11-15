@@ -20,8 +20,9 @@ class MainActivity : ComponentActivity() {
                     factory = AuthViewModelFactory(AuthRepositoryImpl())
                 )
                 val startDestination = if (authViewModel.token() != null) Routes.HOME else Routes.LOGIN
-                AppNavGraph(viewModel = authViewModel, startDestination = startDestination)
+                AppNavGraph(viewModel = authViewModel, startDestination = "vacant")
             }
+
         }
     }
 }

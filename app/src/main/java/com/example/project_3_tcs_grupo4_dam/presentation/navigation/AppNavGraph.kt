@@ -7,10 +7,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.auth.VacantScreen
+import com.tuapp.vacantes.NewVacantScreen
+
 
 object Routes {
     const val HOME = "home"
     const val LOGIN = "login"
+    const val VACANT = "vacant"
+
+    const val NEW_VACANCY = "newVacancy"
 }
 
 @Composable
@@ -26,5 +32,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
                 popUpTo(Routes.LOGIN) { inclusive = true }
             }
         } }
+        composable (Routes.VACANT){VacantScreen(navController) }
+        composable (Routes.NEW_VACANCY){ NewVacantScreen(navController) }
     }
 }
