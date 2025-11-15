@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 // ✔ Para evitar warnings por ExposedDropdownMenu
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +43,12 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                currentRoute = Routes.MATCHING
             )
         },
         containerColor = bg

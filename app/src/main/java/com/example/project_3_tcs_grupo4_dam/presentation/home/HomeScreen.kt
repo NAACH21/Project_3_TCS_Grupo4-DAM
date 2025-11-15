@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +30,14 @@ fun HomeScreen(navController: NavController) {
     val primaryBlue = Color(0xFF0A63C2)
     val backgroundBlue = Color(0xFF0E4F9C)
 
-    Scaffold { padding ->
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                currentRoute = Routes.HOME
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

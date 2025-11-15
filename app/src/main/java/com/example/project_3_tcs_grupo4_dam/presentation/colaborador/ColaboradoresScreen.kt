@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradorCard
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradoresHeader
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
@@ -63,6 +64,12 @@ fun ColaboradoresScreen(navController: NavController) {
         topBar = {
             TopAppBar(
                 title = { Text("Colaboradores") }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                currentRoute = Routes.COLABORADORES
             )
         }
     ) { padding ->

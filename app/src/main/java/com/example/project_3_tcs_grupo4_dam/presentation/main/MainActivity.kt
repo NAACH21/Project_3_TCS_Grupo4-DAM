@@ -29,8 +29,9 @@ class MainActivity : ComponentActivity() {
             Project_3_TCS_Grupo4DAMTheme {
                 // 4. Usar la factory para obtener el ViewModel
                 val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-                val startDestination = if (authViewModel.token() != null) Routes.HOME else Routes.LOGIN
-                AppNavGraph(viewModel = authViewModel, startDestination = startDestination)
+
+                // Siempre iniciar en LOGIN
+                AppNavGraph(viewModel = authViewModel, startDestination = Routes.LOGIN)
             }
         }
     }
