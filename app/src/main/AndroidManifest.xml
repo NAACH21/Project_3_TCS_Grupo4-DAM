@@ -14,16 +14,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Project_3_TCS_Grupo4DAM"
         android:usesCleartextTraffic="true">
-        <activity
-            android:name=".ui.colaborador.ColaboradorActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <!-- El nombre anterior era .MainActivity (no existe). Ajustado al paquete real -->
+        <!-- MainActivity como LAUNCHER (punto de entrada principal) -->
         <activity
             android:name=".presentation.main.MainActivity"
             android:exported="true"
@@ -31,10 +23,17 @@
             android:theme="@style/Theme.Project_3_TCS_Grupo4DAM">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Otras Activities (si necesitas exponer ColaboradorActivity como activity, descomenta y actualiza) -->
+        <!--
+        <activity
+            android:name=".presentation.colaborador.ColaboradorActivity"
+            android:exported="false" />
+        -->
+
     </application>
 
 </manifest>

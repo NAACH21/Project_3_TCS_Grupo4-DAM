@@ -2,16 +2,13 @@ package com.example.project_3_tcs_grupo4_dam.presentation.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,33 +16,31 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val primaryBlue = Color(0xFF0A63C2)
     val backgroundBlue = Color(0xFF0E4F9C)
+    val bgLight = Color(0xFFF6F7FB)
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
-            BottomNavBar(
-                navController = navController,
-                currentRoute = Routes.HOME
-            )
+            BottomNavBar(navController = navController)
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFFF6F7FB))
+                .background(bgLight)
         ) {
-
-            // 🔵 HEADER
+            // 🔵 HEADER CON GRADIENTE
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -78,7 +73,7 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
 
-                // Avatar
+                // Avatar circular en la esquina superior derecha
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -96,13 +91,17 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // 🔹 TARJETAS COMPACTAS
+            // Contenido con scroll
             Column(
-                modifier = Modifier.padding(horizontal = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp)
             ) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 🔹 TARJETAS COMPACTAS (2x2 grid)
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -110,14 +109,20 @@ fun HomeScreen(navController: NavController) {
                     MetricCardSmall(
                         title = "Colaboradores",
                         value = "142",
-                        iconColor = Color(0xFF245DFF)
+                        subtitle = "Colaboradores activos",
+                        iconColor = Color(0xFF245DFF),
+                        modifier = Modifier.weight(1f)
                     )
                     MetricCardSmall(
                         title = "Evaluaciones",
                         value = "8",
-                        iconColor = Color(0xFFFF9800)
+                        subtitle = "Evaluaciones pendientes",
+                        iconColor = Color(0xFFFF9800),
+                        modifier = Modifier.weight(1f)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     Modifier.fillMaxWidth(),
@@ -126,48 +131,132 @@ fun HomeScreen(navController: NavController) {
                     MetricCardSmall(
                         title = "Vacantes",
                         value = "5",
-                        iconColor = Color(0xFF4CAF50)
+                        subtitle = "Vacantes abiertas",
+                        iconColor = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f)
                     )
                     MetricCardSmall(
                         title = "Cobertura",
                         value = "78%",
-                        iconColor = Color(0xFF9C27B0)
+                        subtitle = "% Cobertura de skills",
+                        iconColor = Color(0xFF9C27B0),
+                        modifier = Modifier.weight(1f)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // 🔸 SECCIÓN "ACCIONES RÁPIDAS"
+                Text(
+                    text = "Acciones rápidas",
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Botones de acciones rápidas en grid 2x2
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Matching Inteligente",
+                        color = Color(0xFF0A63C2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.MATCHING) }
+                    )
+                    QuickButton(
+                        text = "Dashboard General",
+                        color = Color(0xFF0A63C2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.DASHBOARD) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Brechas de Skills",
+                        color = Color(0xFFFF5722),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.SKILLS) }
+                    )
+                    QuickButton(
+                        text = "Alertas Automáticas",
+                        color = Color(0xFFD32F2F),
+                        modifier = Modifier.weight(1f),
+                        onClick = { /* TODO */ }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // 🔹 SECCIÓN "ACTIVIDAD RECIENTE"
+                Text(
+                    text = "Actividad reciente",
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Lista de actividades recientes
+                ActivityCard(
+                    title = "Nueva evaluación registrada",
+                    subtitle = "Carlos Mendoza - Desarrollador Senior",
+                    timeAgo = "2h"
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ActivityCard(
+                    title = "Vacante actualizada",
+                    subtitle = "Analista de Datos - Área BI",
+                    timeAgo = "5h"
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ActivityCard(
+                    title = "Alerta de brecha crítica",
+                    subtitle = "",
+                    timeAgo = "1d"
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Text(
-                text = "Acciones rápidas",
-                modifier = Modifier.padding(horizontal = 20.dp),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // 🔸 ACCIONES RÁPIDAS EN 2 COLUMNAS
-            QuickActionsGrid(navController)
         }
     }
 }
 
+// ======================================================
+// COMPONENTES REUTILIZABLES
+// ======================================================
+
 @Composable
-fun MetricCardSmall(title: String, value: String, iconColor: Color) {
+fun MetricCardSmall(
+    title: String,
+    value: String,
+    subtitle: String,
+    iconColor: Color,
+    modifier: Modifier = Modifier
+) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 4.dp,
-        modifier = Modifier
-            .width(150.dp)
-            .height(95.dp)
+        modifier = modifier.height(95.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-
             // ICONO MINI
             Box(
                 modifier = Modifier
@@ -192,67 +281,22 @@ fun MetricCardSmall(title: String, value: String, iconColor: Color) {
             )
 
             Text(
-                text = title,
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 1
             )
         }
     }
 }
 
 @Composable
-fun QuickActionsGrid(navController: NavController) {
-    val buttons = listOf(
-        "Matching Inteligente" to Color(0xFF0A63C2),
-        "Dashboard General" to Color(0xFF0A63C2),
-        "Brechas de Skills" to Color(0xFFFF5722),
-        "Alertas Automáticas" to Color(0xFFD32F2F)
-    )
-
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 18.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
-        for (i in buttons.indices step 2) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                val (text1, color1) = buttons[i]
-                QuickButton(
-                    text = text1,
-                    color = color1,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        if (text1 == "Matching Inteligente") {
-                            navController.navigate(Routes.MATCHING)
-                        }
-                    }
-                )
-
-                if (i + 1 < buttons.size) {
-                    val (text2, color2) = buttons[i + 1]
-                    QuickButton(
-                        text = text2,
-                        color = color2,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            if (text2 == "Matching Inteligente") {
-                                navController.navigate(Routes.MATCHING)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun QuickButton(text: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
+fun QuickButton(
+    text: String,
+    color: Color,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
     Button(
         onClick = onClick,
         modifier = modifier.height(52.dp),
@@ -264,7 +308,52 @@ fun QuickButton(text: String, color: Color, modifier: Modifier, onClick: () -> U
     ) {
         Text(
             text,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp
         )
+    }
+}
+
+@Composable
+fun ActivityCard(
+    title: String,
+    subtitle: String,
+    timeAgo: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (subtitle.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            Text(
+                text = timeAgo,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
     }
 }

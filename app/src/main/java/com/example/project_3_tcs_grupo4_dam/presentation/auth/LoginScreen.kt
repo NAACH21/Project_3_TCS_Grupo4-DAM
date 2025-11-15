@@ -19,10 +19,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.ui.theme.TcsBlue
-import com.example.project_3_tcs_grupo4_dam.ui.theme.TcsDarkBackground
-import com.example.project_3_tcs_grupo4_dam.ui.theme.TcsGray
-import com.example.project_3_tcs_grupo4_dam.ui.theme.TcsWhite
+import com.example.project_3_tcs_grupo4_dam.presentation.ui.theme.TcsBlue
+import com.example.project_3_tcs_grupo4_dam.presentation.ui.theme.TcsDarkBackground
+import com.example.project_3_tcs_grupo4_dam.presentation.ui.theme.TcsGray
+import com.example.project_3_tcs_grupo4_dam.presentation.ui.theme.TcsWhite
 
 @Composable
 fun LoginScreen(

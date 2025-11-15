@@ -1,22 +1,25 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.text.font.FontWeight
 import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionCreateDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -343,7 +346,7 @@ private fun NivelSection(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 )
 
                 ExposedDropdownMenu(
@@ -494,7 +497,7 @@ private fun DisponibilidadSection(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 )
 
                 ExposedDropdownMenu(

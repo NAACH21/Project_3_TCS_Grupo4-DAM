@@ -47,8 +47,7 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
         },
         bottomBar = {
             BottomNavBar(
-                navController = navController,
-                currentRoute = Routes.MATCHING
+                navController = navController
             )
         },
         containerColor = bg

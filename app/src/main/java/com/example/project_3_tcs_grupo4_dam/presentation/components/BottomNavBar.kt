@@ -1,14 +1,14 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 sealed class BottomNavItem(
@@ -18,19 +18,25 @@ sealed class BottomNavItem(
 ) {
     object Home : BottomNavItem(Routes.HOME, "Inicio", Icons.Default.Home)
     object Colaboradores : BottomNavItem(Routes.COLABORADORES, "Colaboradores", Icons.Default.Person)
-    object Matching : BottomNavItem(Routes.MATCHING, "Matching", Icons.Default.Search)
+    object Evaluaciones : BottomNavItem(Routes.EVALUACIONES, "Evaluaciones", Icons.Default.Assessment)
+    object Vacantes : BottomNavItem(Routes.VACANTES, "Vacantes", Icons.Default.Work)
+    object Dashboard : BottomNavItem(Routes.DASHBOARD, "Dashboard", Icons.Default.Dashboard)
 }
 
 @Composable
 fun BottomNavBar(
-    navController: NavController,
-    currentRoute: String?
+    navController: NavController
 ) {
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Colaboradores,
-        BottomNavItem.Matching
+        BottomNavItem.Evaluaciones,
+        BottomNavItem.Vacantes,
+        BottomNavItem.Dashboard
     )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(
         containerColor = Color.White,
@@ -64,4 +70,3 @@ fun BottomNavBar(
         }
     }
 }
-

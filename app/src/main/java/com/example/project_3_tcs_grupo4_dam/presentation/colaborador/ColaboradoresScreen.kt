@@ -68,8 +68,7 @@ fun ColaboradoresScreen(navController: NavController) {
         },
         bottomBar = {
             BottomNavBar(
-                navController = navController,
-                currentRoute = Routes.COLABORADORES
+                navController = navController
             )
         }
     ) { padding ->

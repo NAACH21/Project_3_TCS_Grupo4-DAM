@@ -6,6 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
@@ -21,6 +27,12 @@ object Routes {
     const val COLABORADOR_DETALLE = "colaborador_detalle"
     const val COLABORADOR_FORM = "colaborador_form"
     const val MATCHING = "matching"
+
+    // Nuevas rutas para la barra inferior
+    const val SKILLS = "skills"
+    const val EVALUACIONES = "evaluaciones"
+    const val VACANTES = "vacantes"
+    const val DASHBOARD = "dashboard"
 }
 
 @Composable
@@ -78,8 +90,32 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             ColaboradorFormScreen(navController)
         }
 
+        // Rutas adicionales (placeholders)
+        composable(Routes.SKILLS) {
+            SimplePlaceholderScreen(title = "Skills", navController = navController)
+        }
+
+        composable(Routes.EVALUACIONES) {
+            SimplePlaceholderScreen(title = "Evaluaciones", navController = navController)
+        }
+
+        composable(Routes.VACANTES) {
+            SimplePlaceholderScreen(title = "Vacantes", navController = navController)
+        }
+
+        composable(Routes.DASHBOARD) {
+            SimplePlaceholderScreen(title = "Dashboard", navController = navController)
+        }
+
         composable(Routes.MATCHING) {
             MatchingScreen(navController)
         }
+    }
+}
+
+@Composable
+private fun SimplePlaceholderScreen(title: String, navController: androidx.navigation.NavController) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = "Pantalla: $title")
     }
 }

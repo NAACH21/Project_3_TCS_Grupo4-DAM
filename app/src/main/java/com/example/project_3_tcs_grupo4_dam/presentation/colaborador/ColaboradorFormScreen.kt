@@ -346,7 +346,7 @@ private fun NivelSection(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 )
 
                 ExposedDropdownMenu(
@@ -497,7 +497,7 @@ private fun DisponibilidadSection(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 )
 
                 ExposedDropdownMenu(
@@ -526,4 +526,3 @@ private fun DisponibilidadSection(
         }
     }
 }
-
