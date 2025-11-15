@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-extended")
 
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.3")
     // Permite usar el `viewModel()` composable function
@@ -84,7 +85,6 @@ dependencies {
     // Coroutines + ViewModel (unificado: antes 1.7.3 y 1.8.1 / 2.7.0 y 2.8.6)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
-    implementation("androidx.compose.material:material-icons-extended")
 
     // Activity KTX extra (no es duplicado)
     implementation("androidx.activity:activity-ktx:1.9.0")
