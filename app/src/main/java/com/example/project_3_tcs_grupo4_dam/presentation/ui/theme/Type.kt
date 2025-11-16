@@ -1,4 +1,4 @@
-package com.example.project_3_tcs_grupo4_dam.ui.theme
+package com.example.project_3_tcs_grupo4_dam.presentation.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
