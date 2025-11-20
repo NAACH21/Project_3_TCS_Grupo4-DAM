@@ -145,33 +145,39 @@ private fun ColaboradorHeader(colaborador: com.example.project_3_tcs_grupo4_dam.
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Área
+            // Área (CORREGIDO: Manejo de nulo)
             Text(
-                text = colaborador.area,
+                text = colaborador.area ?: "Sin área",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Chips de disponibilidad
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(colaborador.disponibilidad.estado) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (colaborador.disponibilidad.estado == "Disponible")
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.errorContainer
+            // Chips de disponibilidad (CORREGIDO: Manejo de nulo)
+            val disponibilidad = colaborador.disponibilidad
+            if (disponibilidad != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val estado = disponibilidad.estado ?: "No especificado"
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(estado) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = if (estado == "Disponible")
+                                MaterialTheme.colorScheme.primaryContainer
+                            else
+                                MaterialTheme.colorScheme.errorContainer
+                        )
                     )
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text("${colaborador.disponibilidad.dias} días") }
-                )
+                    
+                    val dias = disponibilidad.dias ?: 0
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("$dias días") }
+                    )
+                }
             }
         }
     }
@@ -282,18 +288,21 @@ private fun CertificacionItem(certificacion: CertificacionDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // CORREGIDO: Nombre puede ser nulo
                 Text(
-                    text = certificacion.nombre,
+                    text = certificacion.nombre ?: "Sin nombre",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
 
+                // CORREGIDO: Estado puede ser nulo
+                val estado = certificacion.estado ?: "Desconocido"
                 AssistChip(
                     onClick = {},
-                    label = { Text(certificacion.estado) },
+                    label = { Text(estado) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (certificacion.estado.lowercase() == "vigente")
+                        containerColor = if (estado.lowercase() == "vigente")
                             MaterialTheme.colorScheme.primaryContainer
                         else
                             MaterialTheme.colorScheme.errorContainer

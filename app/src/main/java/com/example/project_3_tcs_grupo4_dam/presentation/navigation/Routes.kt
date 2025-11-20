@@ -3,6 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
+    const val HOME_COLABORADOR = "home_colaborador"
     const val COLABORADORES = "colaboradores"
     const val COLABORADOR_DETALLE = "colaborador_detalle"
     const val COLABORADOR_FORM = "colaborador_form"
@@ -10,6 +11,7 @@ object Routes {
 
     // Nuevas rutas para la barra inferior
     const val SKILLS = "skills"
+    const val COLABORADOR_SKILLS = "colaborador_skills" // Nueva ruta específica
     const val EVALUACIONES = "evaluaciones"
     const val VACANTES = "vacantes"
     const val VACANTES_COLABORADOR = "vacantes_colaborador"

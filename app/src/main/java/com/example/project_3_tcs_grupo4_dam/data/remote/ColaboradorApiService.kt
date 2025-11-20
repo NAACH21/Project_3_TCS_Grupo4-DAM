@@ -1,6 +1,7 @@
 package com.example.project_3_tcs_grupo4_dam.data.remote
 
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto // Importar el DTO de lista
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -11,8 +12,9 @@ import retrofit2.http.Path
 
 interface ColaboradorApiService {
 
+    // CORRECCIÓN: Usar ColaboradorListDto para la lista para evitar errores de parseo de skills
     @GET("api/colaboradores")
-    suspend fun getAllColaboradores(): List<ColaboradorReadDto>
+    suspend fun getAllColaboradores(): List<ColaboradorListDto>
 
     @GET("api/colaboradores/{id}")
     suspend fun getColaboradorById(@Path("id") id: String): ColaboradorReadDto
@@ -26,4 +28,3 @@ interface ColaboradorApiService {
     @DELETE("api/colaboradores/{id}")
     suspend fun deleteColaborador(@Path("id") id: String)
 }
-

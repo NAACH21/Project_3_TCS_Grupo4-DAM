@@ -3,7 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto // USAMOS EL DTO DE LISTA
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +15,8 @@ class ColaboradoresViewModel : ViewModel() {
     // Repositorio que llama a la API
     private val repository: ColaboradorRepository = ColaboradorRepositoryImpl()
 
-    // Estado: lista de colaboradores
-    private val _colaboradores = MutableStateFlow<List<ColaboradorReadDto>>(emptyList())
+    // Estado: lista de colaboradores (Usando el DTO simplificado)
+    private val _colaboradores = MutableStateFlow<List<ColaboradorListDto>>(emptyList())
     val colaboradores = _colaboradores.asStateFlow()
 
     // Estado: cargando
@@ -40,12 +40,13 @@ class ColaboradoresViewModel : ViewModel() {
             _isLoading.value = true
             _error.value = null
             try {
+                // repository.getAllColaboradores() ahora devuelve List<ColaboradorListDto>
                 val lista = repository.getAllColaboradores()
                 _colaboradores.value = lista
                 Log.d("ColaboradoresVM", "Datos cargados: ${lista.size}")
             } catch (e: Exception) {
                 Log.e("ColaboradoresVM", "Error al cargar colaboradores", e)
-                _error.value = e.message ?: "Error desconocido"
+                _error.value = "Error de conexión: ${e.localizedMessage}"
                 _colaboradores.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -53,6 +54,7 @@ class ColaboradoresViewModel : ViewModel() {
         }
     }
 
+    // CORRECCIÓN: El ID debe ser String para coincidir con el DTO y la BD
     fun eliminarColaborador(id: String) {
         viewModelScope.launch {
             try {

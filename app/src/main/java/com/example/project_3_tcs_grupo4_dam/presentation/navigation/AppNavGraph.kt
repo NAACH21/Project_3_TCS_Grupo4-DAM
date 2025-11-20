@@ -17,6 +17,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.Colaborador
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
@@ -26,6 +27,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.SkillsScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.skills.ColaboradorSkillsScreen
 
 @Composable
 fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
@@ -39,10 +41,31 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             HomeScreen(navController)
         }
 
+        composable(Routes.HOME_COLABORADOR) {
+            ColaboradorHomeScreen(
+                navController = navController,
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) // Limpiar toda la pila
+                    }
+                },
+                onNavigateToAlertas = {
+                    navController.navigate(Routes.NOTIFICACIONES)
+                }
+            )
+        }
+
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    navController.navigate(Routes.HOME) {
+                    val destination = if (role.equals("COLABORADOR", ignoreCase = true)) {
+                        Routes.HOME_COLABORADOR
+                    } else {
+                        Routes.HOME
+                    }
+
+                    navController.navigate(destination) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
@@ -64,7 +87,8 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
                 }
             )
         ) { backStackEntry ->
-            val colaboradorId = backStackEntry.arguments?.getString("colaboradorId")!!
+            // CORRECCIÓN: Extracción segura del argumento (?: "") evita crash por nulo
+            val colaboradorId = backStackEntry.arguments?.getString("colaboradorId") ?: ""
             ColaboradorDetalleScreen(
                 colaboradorId = colaboradorId,
                 onBack = { navController.popBackStack() }
@@ -90,6 +114,11 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         // Rutas adicionales
         composable(Routes.SKILLS) {
             SkillsScreen(navController = navController)
+        }
+
+        // NUEVA RUTA: Skills del Colaborador
+        composable(Routes.COLABORADOR_SKILLS) {
+            ColaboradorSkillsScreen(navController = navController)
         }
 
         composable(Routes.NIVEL_SKILLS) {

@@ -1,6 +1,7 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto // Importar DTO de lista
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
@@ -14,7 +15,8 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     private val skillApiService = RetrofitClient.skillApi
     private val nivelSkillApiService = RetrofitClient.nivelSkillApi
 
-    override suspend fun getAllColaboradores(): List<ColaboradorReadDto> {
+    // CORRECCIÓN: Cambiar el tipo de retorno a List<ColaboradorListDto>
+    override suspend fun getAllColaboradores(): List<ColaboradorListDto> {
         // Llama a la API y devuelve el resultado
         return apiService.getAllColaboradores()
     }

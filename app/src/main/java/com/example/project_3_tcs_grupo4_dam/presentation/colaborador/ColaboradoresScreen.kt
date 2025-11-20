@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto // CORRECCIÓN: Usar DTO de lista
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradorCard
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradoresHeader
@@ -33,7 +33,7 @@ fun ColaboradoresScreen(navController: NavController) {
 
     // Estado para el diálogo de confirmación de eliminación
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var colaboradorToDelete by remember { mutableStateOf<ColaboradorReadDto?>(null) }
+    var colaboradorToDelete by remember { mutableStateOf<ColaboradorListDto?>(null) } // CORRECCIÓN: Tipo ListDto
 
     // Diálogo de confirmación de eliminación
     if (showDeleteDialog && colaboradorToDelete != null) {

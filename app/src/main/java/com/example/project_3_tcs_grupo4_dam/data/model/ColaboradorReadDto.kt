@@ -3,15 +3,15 @@ package com.example.project_3_tcs_grupo4_dam.data.model
 import com.google.gson.annotations.SerializedName
 
 data class DisponibilidadDto(
-    @SerializedName("estado") val estado: String,
-    @SerializedName("dias") val dias: Int
+    @SerializedName("estado") val estado: String?,
+    @SerializedName("dias") val dias: Int?
 )
 
 data class CertificacionDto(
-    @SerializedName("nombre") val nombre: String,
+    @SerializedName("nombre") val nombre: String?,
     @SerializedName("imagenUrl") val imagenUrl: String?,
     @SerializedName("fechaObtencion") val fechaObtencion: String?,
-    @SerializedName("estado") val estado: String
+    @SerializedName("estado") val estado: String?
 )
 
 data class ColaboradorReadDto(
@@ -25,24 +25,23 @@ data class ColaboradorReadDto(
     val apellidos: String,
 
     @SerializedName("area")
-    val area: String,
+    val area: String?,
 
-    @SerializedName("rolActual")
+    // Soporta rolActual (DTO original) o rolLaboral (JSON real)
+    @SerializedName("rolActual", alternate = ["rolLaboral"])
     val rolActual: String,
 
-    // Ids de la colección skills
+    // Puede venir como null o lista vacía
     @SerializedName("skills")
-    val skills: List<String>,
+    val skills: List<ColaboradorSkillDto> = emptyList(),
 
-    // Código del nivel (0, 1, 2, 3…)
     @SerializedName("nivelCodigo")
     val nivelCodigo: Int?,
 
-    // Certificaciones embebidas
     @SerializedName("certificaciones")
-    val certificaciones: List<CertificacionDto>,
+    val certificaciones: List<CertificacionDto> = emptyList(),
 
-    // Disponibilidad embebida
+    // Puede ser null o venir con otro nombre si es booleano en el JSON original
     @SerializedName("disponibilidad")
-    val disponibilidad: DisponibilidadDto
+    val disponibilidad: DisponibilidadDto?
 )
