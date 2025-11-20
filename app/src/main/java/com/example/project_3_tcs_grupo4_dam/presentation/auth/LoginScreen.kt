@@ -1,37 +1,49 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.auth
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.project_3_tcs_grupo4_dam.R
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
 
 /**
- * Pantalla de Login con Jetpack Compose
- * Diseño moderno con gradiente y Material 3
+ * Colores Corporativos TATA/ESAN
+ */
+private val BluePrimary = Color(0xFF00549F)
+private val BlueDark = Color(0xFF1E4F89)
+private val TextGray = Color(0xFF666666)
+private val InputBackground = Color(0xFFF5F5F5)
+private val CircleBackground = Color(0xFFE8EFF5)
+
+/**
+ * Pantalla de Login - Diseño Corporativo TATA/ESAN
+ * Portal del Colaborador – SIGTI
  */
 @Composable
 fun LoginScreen(
@@ -59,7 +71,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Efecto para manejar el resultado del login
@@ -87,187 +98,233 @@ fun LoginScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF6366F1), // Indigo
-                            Color(0xFF8B5CF6)  // Purple
-                        )
-                    )
-                )
                 .padding(paddingValues)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
-                // Logo o título
-                Text(
-                    text = "Sistema de Gestión\nde Talento",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 32.sp
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 48.dp)
-                )
-
-                // Card con el formulario
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
+                // ========== A. CABECERA DE LOGOS ==========
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Iniciar Sesión",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1F2937)
-                            ),
-                            modifier = Modifier.padding(bottom = 24.dp)
-                        )
+                    // Logo TATA
+                    Image(
+                        painter = painterResource(id = R.drawable.auth_logo_tata),
+                        contentDescription = "Logo TATA",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.height(40.dp)
+                    )
 
-                        // Campo de usuario
-                        OutlinedTextField(
-                            value = username,
-                            onValueChange = { username = it },
-                            label = { Text("Usuario") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                            ),
-                            enabled = !uiState.isLoading,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF6366F1),
-                                focusedLabelColor = Color(0xFF6366F1)
-                            )
-                        )
+                    // Separador "x"
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = TextGray,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Campo de contraseña
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Contraseña") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            visualTransformation = if (passwordVisible) {
-                                VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    focusManager.clearFocus()
-                                    if (username.isNotBlank() && password.isNotBlank()) {
-                                        viewModel.login(username, password)
-                                    }
-                                }
-                            ),
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) {
-                                            Icons.Filled.Visibility
-                                        } else {
-                                            Icons.Filled.VisibilityOff
-                                        },
-                                        contentDescription = if (passwordVisible) {
-                                            "Ocultar contraseña"
-                                        } else {
-                                            "Mostrar contraseña"
-                                        }
-                                    )
-                                }
-                            },
-                            enabled = !uiState.isLoading,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF6366F1),
-                                focusedLabelColor = Color(0xFF6366F1)
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        // Botón de login
-                        Button(
-                            onClick = {
-                                focusManager.clearFocus()
-                                viewModel.login(username, password)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            enabled = !uiState.isLoading,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF6366F1)
-                            )
-                        ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text(
-                                    text = "INGRESAR",
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Botón para registro (opcional)
-                        TextButton(
-                            onClick = onNavigateToRegister,
-                            enabled = !uiState.isLoading
-                        ) {
-                            Text(
-                                text = "¿No tienes cuenta? Regístrate",
-                                color = Color(0xFF6366F1)
-                            )
-                        }
-                    }
+                    // Logo ESAN
+                    Image(
+                        painter = painterResource(id = R.drawable.auth_logo_esan),
+                        contentDescription = "Logo ESAN",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.height(40.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Versión
+                // ========== B. TÍTULOS ==========
                 Text(
-                    text = "v1.0.0",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    text = "Portal del Colaborador – SIGTI",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = BluePrimary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
+
+                Text(
+                    text = "TCS HR Manager",
+                    fontSize = 16.sp,
+                    color = TextGray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // ========== C. ÍCONO CENTRAL (CANDADO GEOMÉTRICO) ==========
+                Box(
+                    modifier = Modifier.size(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Fondo circular
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = CircleShape,
+                        color = CircleBackground
+                    ) {}
+
+                    // Ícono de candado
+                    Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = "Candado de seguridad",
+                        tint = BluePrimary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // ========== D. FORMULARIO ==========
+                // Campo: Correo Corporativo
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Usuario",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("usuario@tcs.com", color = TextGray) },
+                        singleLine = true,
+                        enabled = !uiState.isLoading,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = InputBackground,
+                            focusedContainerColor = InputBackground,
+                            disabledContainerColor = InputBackground,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedBorderColor = BluePrimary
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Campo: Contraseña
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Contraseña",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("••••••••", color = TextGray) },
+                        singleLine = true,
+                        enabled = !uiState.isLoading,
+                        visualTransformation = if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Ícono de contraseña",
+                                tint = TextGray
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) {
+                                        Icons.Filled.Visibility
+                                    } else {
+                                        Icons.Filled.VisibilityOff
+                                    },
+                                    contentDescription = if (passwordVisible) {
+                                        "Ocultar contraseña"
+                                    } else {
+                                        "Mostrar contraseña"
+                                    },
+                                    tint = TextGray
+                                )
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = InputBackground,
+                            focusedContainerColor = InputBackground,
+                            disabledContainerColor = InputBackground,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedBorderColor = BluePrimary
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ========== E. BOTÓN DE ACCIÓN ==========
+                Button(
+                    onClick = {
+                        if (username.isNotBlank() && password.isNotBlank()) {
+                            viewModel.login(username, password)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    enabled = !uiState.isLoading && username.isNotBlank() && password.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BlueDark,
+                        disabledContainerColor = TextGray
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Ingresar",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ========== F. FOOTER ==========
+                TextButton(
+                    onClick = { /* Implementar lógica de recuperación */ }
+                ) {
+                    Text(
+                        text = "¿Olvidaste tu contraseña?",
+                        color = BluePrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
 }
-
