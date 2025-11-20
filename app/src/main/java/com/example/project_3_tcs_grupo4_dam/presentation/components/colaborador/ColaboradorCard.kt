@@ -7,25 +7,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto
 
 @Composable
 fun ColaboradorCard(
-    colaborador: ColaboradorReadDto,
+    colaborador: ColaboradorListDto, // Actualizado a ListDto
     modifier: Modifier = Modifier,
     onVerDetalle: () -> Unit = {},
-    onEditar: (ColaboradorReadDto) -> Unit = {},
-    onEliminar: (ColaboradorReadDto) -> Unit = {}
+    onEditar: (ColaboradorListDto) -> Unit = {},
+    onEliminar: (ColaboradorListDto) -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -72,12 +68,14 @@ fun ColaboradorCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+                    // Rol (puede ser nulo en ListDto)
                     Text(
-                        text = colaborador.rolActual,
+                        text = colaborador.rol ?: "Sin rol",
                         style = MaterialTheme.typography.bodySmall
                     )
+                    // Área (puede ser nulo)
                     Text(
-                        text = colaborador.area,
+                        text = colaborador.area ?: "Sin área",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -113,27 +111,25 @@ fun ColaboradorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // chips de estado (ejemplo simple)
+            // Chips de estado
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Estado general (si existe en el DTO)
+                val estado = colaborador.estado ?: "Activo"
                 AssistChip(
                     onClick = {},
-                    label = { Text("Activo") },
+                    label = { Text(estado) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(colaborador.disponibilidad.estado) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = if (estado.equals("Disponible", ignoreCase = true)) 
+                            MaterialTheme.colorScheme.primaryContainer 
+                        else 
+                            MaterialTheme.colorScheme.tertiaryContainer
                     )
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // botón "Ver detalle"
+            // Botón "Ver detalle"
             OutlinedButton(
                 onClick = onVerDetalle,
                 modifier = Modifier.fillMaxWidth()

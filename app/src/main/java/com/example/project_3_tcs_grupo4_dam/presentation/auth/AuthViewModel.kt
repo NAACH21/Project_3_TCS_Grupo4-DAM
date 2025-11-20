@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
 /**
  * Estados de la UI para autenticación
@@ -26,6 +27,12 @@ data class AuthUiState(
 class AuthViewModel(
     private val repository: AuthRepository
 ) : ViewModel() {
+    private val _onToken = MutableStateFlow<String?>(null)
+    private val _onColaboradorId = MutableStateFlow<String?>(null)
+
+    fun getToken(): String? = _onToken.value
+    fun getColaboradorId(): String? = _onColaboradorId.value
+
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -33,6 +40,7 @@ class AuthViewModel(
     /**
      * Realiza el login del usuario
      */
+
     fun login(username: String, password: String) {
         // Validación básica
         if (username.isBlank() || password.isBlank()) {
@@ -49,19 +57,27 @@ class AuthViewModel(
 
             repository.login(request).fold(
                 onSuccess = { apiResponse ->
+
+                    Log.d("LOGIN_BACKEND", "JSON recibido: $apiResponse")
+                    Log.d("LOGIN_BACKEND", "Rol recibido: ${apiResponse.data?.rolSistema}")
+
                     if (apiResponse.success && apiResponse.data != null) {
-                        // Login exitoso
+
+                        // ⭐ Guardar token y colaboradorId ⭐
+                        _onToken.value = apiResponse.data.token
+                        _onColaboradorId.value = apiResponse.data.colaboradorId
+
                         _uiState.value = AuthUiState(
                             isSuccess = true,
                             userRole = apiResponse.data.rolSistema
                         )
                     } else {
-                        // Backend respondió pero con success=false
                         _uiState.value = AuthUiState(
                             errorMessage = apiResponse.message
                         )
                     }
-                },
+                }
+                ,
                 onFailure = { exception ->
                     // Error de red o excepción
                     _uiState.value = AuthUiState(

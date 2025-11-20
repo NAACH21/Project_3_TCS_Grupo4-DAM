@@ -116,12 +116,12 @@ class ColaboradorFormViewModel(
             // Rellenar campos básicos
             _nombres.value = colaborador.nombres
             _apellidos.value = colaborador.apellidos
-            _area.value = colaborador.area
+            _area.value = colaborador.area ?: "" // Manejo seguro de nulo
             _rolActual.value = colaborador.rolActual
 
-            // Seleccionar skills
+            // Comparar por nombre, ya que ColaboradorReadDto.skills son objetos ColaboradorSkillDto
             val skillsSeleccionados = _allSkills.value.filter { skill ->
-                colaborador.skills.contains(skill.id)
+                colaborador.skills.any { it.nombre.equals(skill.nombre, ignoreCase = true) }
             }
             _selectedSkills.value = skillsSeleccionados
 
@@ -132,15 +132,15 @@ class ColaboradorFormViewModel(
             // Cargar certificaciones
             _certificaciones.value = colaborador.certificaciones.map {
                 CertificacionCreateDto(
-                    nombre = it.nombre,
+                    nombre = it.nombre ?: "",
                     imagenUrl = it.imagenUrl,
                     fechaObtencion = it.fechaObtencion
                 )
             }
 
-            // Cargar disponibilidad
-            _disponibilidadEstado.value = colaborador.disponibilidad.estado
-            _disponibilidadDias.value = colaborador.disponibilidad.dias
+            // Cargar disponibilidad (Manejo seguro de nulos)
+            _disponibilidadEstado.value = colaborador.disponibilidad?.estado ?: "Disponible"
+            _disponibilidadDias.value = colaborador.disponibilidad?.dias
 
             Log.d("ColaboradorFormVM", "Datos del colaborador cargados para edición")
         } catch (e: Exception) {
@@ -289,7 +289,7 @@ class ColaboradorFormViewModel(
                     apellidos = _apellidos.value.trim(),
                     area = _area.value.trim(),
                     rolActual = _rolActual.value.trim(),
-                    skills = _selectedSkills.value.map { it.id },
+                    skills = _selectedSkills.value.map { it.id }, // Asumiendo que para crear/editar se envían los IDs
                     nivelCodigo = _selectedNivel.value?.codigo,
                     certificaciones = _certificaciones.value.filter { it.nombre.isNotBlank() },
                     disponibilidad = DisponibilidadCreateDto(
@@ -321,4 +321,3 @@ class ColaboradorFormViewModel(
         }
     }
 }
-

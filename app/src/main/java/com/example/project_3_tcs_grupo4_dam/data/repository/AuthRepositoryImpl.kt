@@ -26,11 +26,15 @@ class AuthRepositoryImpl(
                     if (apiResponse != null) {
                         // Si el login fue exitoso, guardar la sesión
                         if (apiResponse.success && apiResponse.data != null) {
+                            // CORRECCIÓN: Manejo seguro si id es nulo (usamos cadena vacía como fallback)
+                            val userId = apiResponse.data.id ?: ""
+                            
                             sessionManager.saveSession(
                                 token = apiResponse.data.token,
                                 rolSistema = apiResponse.data.rolSistema,
                                 colaboradorId = apiResponse.data.colaboradorId,
-                                username = apiResponse.data.username
+                                username = apiResponse.data.username,
+                                usuarioId = userId
                             )
                         }
                         Result.success(apiResponse)
@@ -77,4 +81,3 @@ class AuthRepositoryImpl(
 
     override fun logout() = sessionManager.clearSession()
 }
-

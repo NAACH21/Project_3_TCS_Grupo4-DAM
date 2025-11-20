@@ -7,6 +7,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 object AppRoutes {
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val COLABORADOR_ALERTAS = "colaborador_alertas"
 
     // Rutas por rol
     const val ADMIN_HOME = "admin_home"
@@ -21,7 +22,7 @@ object AppRoutes {
             "ADMIN" -> ADMIN_HOME
             "BUSINESS_MANAGER" -> MANAGER_HOME
             "COLABORADOR" -> COLABORADOR_HOME
-            else -> LOGIN
+            else -> COLABORADOR_HOME
         }
     }
 }
