@@ -56,7 +56,8 @@ fun AppNavigation(
                 },
                 onNavigateToRegister = {
                     navController.navigate(AppRoutes.REGISTER)
-                }
+                },
+                authViewModel = TODO()
             )
         }
 

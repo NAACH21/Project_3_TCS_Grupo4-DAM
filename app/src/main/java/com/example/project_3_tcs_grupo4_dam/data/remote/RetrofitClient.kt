@@ -8,27 +8,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/**
- * Configuración singleton de Retrofit
- * Base URL: http://10.0.2.2:5260/ (emulador Android apuntando a localhost del host)
- */
 object RetrofitClient {
 
-    // Base URL del backend .NET
-    private const val BASE_URL = "http://172.19.211.84:5260/"
+    private const val BASE_URL = "http://192.168.1.8:5260/"
 
-    /**
-     * Cliente OkHttp con logging y timeouts configurados
-     */
     private val okHttpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) {
-                HttpLoggingInterceptor.Level.BODY
-            } else {
-                HttpLoggingInterceptor.Level.NONE
-            }
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+            else HttpLoggingInterceptor.Level.NONE
         }
-
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -37,12 +25,11 @@ object RetrofitClient {
             .build()
     }
 
-    /**
-     * Instancia de Retrofit configurada
-     */
     private val retrofit: Retrofit by lazy {
+        // si tu API devuelve fechas ISO / bson, ajusta el dateFormat:
         val gson = GsonBuilder()
             .setLenient()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") // ajusta si tu API usa otro formato
             .create()
 
         Retrofit.Builder()
@@ -52,31 +39,12 @@ object RetrofitClient {
             .build()
     }
 
-    /**
-     * API Service de autenticación
-     */
-    val authApi: AuthApiService by lazy {
-        retrofit.create(AuthApiService::class.java)
-    }
-
-    /**
-     * API Service de colaboradores
-     */
-    val colaboradorApi: ColaboradorApiService by lazy {
-        retrofit.create(ColaboradorApiService::class.java)
-    }
-
-    /**
-     * API Service de skills
-     */
-    val skillApi: SkillApiService by lazy {
-        retrofit.create(SkillApiService::class.java)
-    }
-
-    /**
-     * API Service de niveles de skill
-     */
-    val nivelSkillApi: NivelSkillApiService by lazy {
-        retrofit.create(NivelSkillApiService::class.java)
-    }
+    // Exponer los servicios usados en la app
+    val authApi: AuthApiService by lazy { retrofit.create(AuthApiService::class.java) }
+    val catalogoApi: CatalogoApiService by lazy { retrofit.create(CatalogoApiService::class.java) }
+    val colaboradorApi: ColaboradorApiService by lazy { retrofit.create(ColaboradorApiService::class.java) }
+    val vacanteApi: VacanteApiService by lazy { retrofit.create(VacanteApiService::class.java) }
+    val procesosMatchingApi: ProcesosMatchingApiService by lazy { retrofit.create(ProcesosMatchingApiService::class.java) }
+    val skillApi: SkillApiService by lazy { retrofit.create(SkillApiService::class.java) }
+    val nivelSkillApi: NivelSkillApiService by lazy { retrofit.create(NivelSkillApiService::class.java) }
 }

@@ -68,6 +68,7 @@ class AuthRepositoryImpl(
             }
         }
     }
+    override fun getUsername(): String? = sessionManager.getUsername()
 
     override fun getToken(): String? = sessionManager.getToken()
 

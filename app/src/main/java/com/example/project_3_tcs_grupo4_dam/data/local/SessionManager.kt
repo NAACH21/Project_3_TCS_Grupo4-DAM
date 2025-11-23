@@ -59,6 +59,7 @@ class SessionManager(context: Context) {
      */
     fun getColaboradorId(): String? = sharedPreferences.getString(KEY_COLABORADOR_ID, null)
 
+
     /**
      * Obtiene el username
      */

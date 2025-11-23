@@ -25,9 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
-import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
 
 /**
  * Pantalla de Login con Jetpack Compose
@@ -35,22 +32,14 @@ import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
  */
 @Composable
 fun LoginScreen(
+    authViewModel: AuthViewModel,
     onLoginSuccess: (role: String) -> Unit,
     onNavigateToRegister: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
-    // Inicialización del ViewModel con Factory
-    val repository = remember {
-        AuthRepositoryImpl(
-            apiService = RetrofitClient.authApi,
-            sessionManager = SessionManager(context)
-        )
-    }
-
-    val viewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(repository)
-    )
+    // Usamos el AuthViewModel proporcionado desde MainActivity/RootApp
+    val viewModel = authViewModel
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -270,4 +259,3 @@ fun LoginScreen(
         }
     }
 }
-

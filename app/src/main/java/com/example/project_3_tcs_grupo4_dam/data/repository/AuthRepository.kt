@@ -21,6 +21,7 @@ interface AuthRepository {
      */
     suspend fun register(request: AuthDtos.RegisterRequest): Result<ApiResponse<AuthDtos.RegisterResponse>>
 
+
     /**
      * Obtiene el token almacenado
      */
@@ -30,6 +31,7 @@ interface AuthRepository {
      * Obtiene el rol del usuario
      */
     fun getRol(): String?
+    fun getUsername(): String?
 
     /**
      * Verifica si hay sesión activa

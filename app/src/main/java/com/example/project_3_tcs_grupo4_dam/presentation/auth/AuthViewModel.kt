@@ -30,6 +30,10 @@ class AuthViewModel(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    // Exponemos el username como StateFlow para que la UI pueda observar cambios
+    private val _username = MutableStateFlow<String?>(repository.getUsername())
+    val username: StateFlow<String?> = _username.asStateFlow()
+
     /**
      * Realiza el login del usuario
      */
@@ -50,11 +54,13 @@ class AuthViewModel(
             repository.login(request).fold(
                 onSuccess = { apiResponse ->
                     if (apiResponse.success && apiResponse.data != null) {
-                        // Login exitoso
+                        // Login exitoso: guardar estado y username
                         _uiState.value = AuthUiState(
                             isSuccess = true,
                             userRole = apiResponse.data.rolSistema
                         )
+                        // Actualizar username reactivo
+                        _username.value = apiResponse.data.username
                     } else {
                         // Backend respondió pero con success=false
                         _uiState.value = AuthUiState(
@@ -125,10 +131,17 @@ class AuthViewModel(
     fun getUserRole(): String? = repository.getRol()
 
     /**
+     * Obtiene el username del usuario actual (desde el session manager / repositorio)
+     */
+    fun getUsername(): String? = repository.getUsername()
+
+    /**
      * Cierra sesión
      */
     fun logout() {
         repository.logout()
+        // Limpiar estado local
+        _username.value = null
         resetState()
     }
 
@@ -139,4 +152,3 @@ class AuthViewModel(
         _uiState.value = AuthUiState()
     }
 }
-
