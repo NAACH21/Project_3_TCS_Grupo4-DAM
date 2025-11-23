@@ -10,12 +10,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradorCard
 import com.example.project_3_tcs_grupo4_dam.presentation.components.colaborador.ColaboradoresHeader
@@ -34,6 +35,11 @@ fun ColaboradoresScreen(navController: NavController) {
     // Estado para el diálogo de confirmación de eliminación
     var showDeleteDialog by remember { mutableStateOf(false) }
     var colaboradorToDelete by remember { mutableStateOf<ColaboradorReadDto?>(null) }
+
+    // Refrescar la lista cuando la pantalla se vuelve visible
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
 
     // Diálogo de confirmación de eliminación
     if (showDeleteDialog && colaboradorToDelete != null) {
