@@ -1,5 +1,7 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.skills
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
@@ -55,7 +56,6 @@ fun ColaboradorSkillsScreen(
 
     val uiState by viewModel.uiState.collectAsState()
 
-    // Estados locales para filtros
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Todos") }
     var selectedStatus by remember { mutableStateOf("Todos") }
@@ -64,8 +64,7 @@ fun ColaboradorSkillsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Mis Skills", fontWeight = FontWeight.Bold) },
-                // CORRECCIÓN: Quitamos la flecha de retroceso
-                navigationIcon = {}, 
+                navigationIcon = {}, // Sin flecha de retroceso
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White,
                     titleContentColor = Color.Black
@@ -83,7 +82,6 @@ fun ColaboradorSkillsScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            // 1. Buscador
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -94,16 +92,13 @@ fun ColaboradorSkillsScreen(
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = Color.Gray) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color(0xFFF5F5F5),
-                    unfocusedContainerColor = Color(0xFFF5F5F5)
+                    unfocusedBorderColor = Color.Transparent
                 ),
                 shape = RoundedCornerShape(8.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Filtros
             FilterSection(
                 selectedType = selectedType,
                 onTypeSelected = { selectedType = it },
@@ -113,7 +108,6 @@ fun ColaboradorSkillsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Lista de Skills
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = TCSBlue)
@@ -133,8 +127,22 @@ fun ColaboradorSkillsScreen(
                         SkillColaboradorCard(
                             skill = skill,
                             onUpdateClick = {
-                                // NAVEGACIÓN A ACTUALIZAR SKILL
-                                navController.navigate(Routes.actualizarSkill(colaboradorId, skill.nombre))
+                                try {
+                                    if (colaboradorId.isNotEmpty()) {
+                                        // CAMBIO: Usamos la función helper Routes.actualizarSkill
+                                        // No hace falta codificar manualmente, el helper lo hace con Uri.encode
+                                        val route = Routes.actualizarSkill(colaboradorId, skill.nombre)
+                                        
+                                        Log.d("Navigation", "Navegando a Skill Details: $route")
+                                        navController.navigate(route)
+                                    } else {
+                                        Log.e("Navigation", "Error: colaboradorId vacío")
+                                        Toast.makeText(context, "Error: ID de colaborador no encontrado", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Navigation", "Error crítico al navegar", e)
+                                    Toast.makeText(context, "Error al abrir pantalla: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         )
                     }
@@ -145,7 +153,7 @@ fun ColaboradorSkillsScreen(
 }
 
 @Composable
-fun FilterSection(
+private fun FilterSection(
     selectedType: String,
     onTypeSelected: (String) -> Unit,
     selectedStatus: String,
@@ -168,7 +176,7 @@ fun FilterSection(
 }
 
 @Composable
-fun FilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+private fun FilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         color = if (isSelected) ChipSelectedBg else ChipUnselectedBg,
         shape = RoundedCornerShape(20.dp),
@@ -186,7 +194,7 @@ fun FilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun SkillColaboradorCard(
+private fun SkillColaboradorCard(
     skill: ColaboradorSkillDto,
     onUpdateClick: () -> Unit
 ) {
@@ -263,8 +271,18 @@ fun SkillColaboradorCard(
     }
 }
 
+private fun getNivelLabel(nivel: Int): String {
+    return when (nivel) {
+        1 -> "Básico"
+        2 -> "Intermedio"
+        3 -> "Avanzado"
+        4 -> "Experto"
+        else -> "Nivel $nivel"
+    }
+}
+
 @Composable
-fun SkillTag(text: String, isLevel: Boolean) {
+private fun SkillTag(text: String, isLevel: Boolean) {
     val colorText = if (isLevel) Color(0xFF2E7D32) else Color(0xFF666666)
     val colorBg = if (isLevel) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
 

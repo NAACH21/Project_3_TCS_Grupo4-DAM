@@ -97,7 +97,6 @@ fun ActualizarSkillScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentActualizarSkill(
-    // CORRECCIÓN: Usamos ColaboradorSkillDto que tiene la propiedad 'nivel'
     skill: com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto,
     viewModel: ActualizarSkillViewModel,
     onCancel: () -> Unit
@@ -307,7 +306,7 @@ fun ContentActualizarSkill(
 }
 
 @Composable
-fun SegmentedButton(
+private fun SegmentedButton(
     text: String,
     icon: ImageVector,
     isSelected: Boolean,
@@ -317,29 +316,20 @@ fun SegmentedButton(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .background(if (isSelected) LightBlueBg else Color.White)
+            .background(if (isSelected) LightBlueBg else Color.Transparent)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon, 
-                contentDescription = null, 
-                tint = if (isSelected) TCSBlue else Color.Gray,
-                modifier = Modifier.size(20.dp)
-            )
+            Icon(icon, contentDescription = null, tint = TCSBlue)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = text,
-                color = if (isSelected) TCSBlue else Color.Gray,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text, color = TCSBlue, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
         }
     }
 }
 
-fun getNivelLabel(nivel: Int): String {
-    return when(nivel) {
+private fun getNivelLabel(nivel: Int): String {
+    return when (nivel) {
         1 -> "Básico"
         2 -> "Intermedio"
         3 -> "Avanzado"

@@ -6,165 +6,159 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.skills.ActualizarSkillScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.skills.ColaboradorSkillsScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesColaboradorScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantScreen
 
-/**
- * NavHost principal de la aplicación
- * Maneja la navegación entre pantallas según el rol del usuario
- */
 @Composable
 fun AppNavigation(
     navController: NavHostController = rememberNavController()
 ) {
     val context = LocalContext.current
-
-    // Solo una instancia del SessionManager
     val sessionManager = remember { SessionManager(context) }
 
-    // Estados que se actualizarán automáticamente
-    var currentRole by remember { mutableStateOf(sessionManager.getRol()) }
-    var isLogged by remember { mutableStateOf(sessionManager.isLoggedIn()) }
-
-    // Determinar pantalla inicial
-    val startDestination =
-        if (isLogged && !currentRole.isNullOrEmpty()) {
-            AppRoutes.getHomeRouteByRole(currentRole!!)
-        } else {
-            AppRoutes.LOGIN
+    fun performLogout() {
+        sessionManager.clearSession()
+        navController.navigate(Routes.LOGIN) {
+            popUpTo(0) { inclusive = true }
         }
+    }
 
-    // Esto refresca cada recomposición importante
     LaunchedEffect(Unit) {
-        Log.d("DEBUG_NAV", "SessionManager.isLoggedIn() = ${sessionManager.isLoggedIn()}")
-        Log.d("DEBUG_NAV", "SessionManager.getRol() = '${sessionManager.getRol()}'")
-        Log.d("DEBUG_NAV", "Start destination = $startDestination")
-        currentRole = sessionManager.getRol()
-        isLogged = sessionManager.isLoggedIn()
+        val role = sessionManager.getRol()
+        val logged = sessionManager.isLoggedIn()
+        
+        if (logged && !role.isNullOrEmpty()) {
+            val destination = when (role.uppercase()) {
+                "COLABORADOR" -> Routes.COLABORADOR_HOME
+                "ADMIN" -> Routes.ADMIN_HOME
+                "MANAGER" -> Routes.MANAGER_HOME
+                else -> Routes.LOGIN
+            }
+            navController.navigate(destination) {
+                popUpTo(Routes.LOGIN) { inclusive = true }
+            }
+        }
     }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Routes.LOGIN
     ) {
-
-        // ---------------- LOGIN ----------------
-        composable(AppRoutes.LOGIN) {
+        // --- LOGIN ---
+        composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    val homeRoute = AppRoutes.getHomeRouteByRole(role)
-
-                    // IMPORTANTÍSIMO: ACTUALIZAMOS ESTADO LOCAL
-                    currentRole = role
-                    isLogged = true
-
-                    navController.navigate(homeRoute) {
-                        popUpTo(AppRoutes.LOGIN) { inclusive = true }
+                    val destination = when (role.uppercase()) {
+                        "COLABORADOR" -> Routes.COLABORADOR_HOME
+                        "ADMIN" -> Routes.ADMIN_HOME
+                        "MANAGER" -> Routes.MANAGER_HOME
+                        else -> Routes.LOGIN
+                    }
+                    navController.navigate(destination) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
-                onNavigateToRegister = {
-                    navController.navigate(AppRoutes.REGISTER)
-                }
+                onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
             )
         }
+        composable(Routes.REGISTER) { PlaceholderScreen("Registro") { navController.popBackStack() } }
 
-        // ---------------- REGISTER ----------------
-        composable(AppRoutes.REGISTER) {
-            // TODO
-        }
-
-        // ---------------- ADMIN ----------------
-        composable(AppRoutes.ADMIN_HOME) {
-            PlaceholderScreen(
-                title = "Admin Home",
-                onLogout = {
-                    sessionManager.clearSession()
-                    currentRole = null
-                    isLogged = false
-
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ---------------- MANAGER ----------------
-        composable(AppRoutes.MANAGER_HOME) {
-            PlaceholderScreen(
-                title = "Manager Home",
-                onLogout = {
-                    sessionManager.clearSession()
-                    currentRole = null
-                    isLogged = false
-
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ---------------- COLABORADOR HOME ----------------
-        composable(AppRoutes.COLABORADOR_HOME) {
+        // --- HOMES ---
+        composable(Routes.COLABORADOR_HOME) {
             ColaboradorHomeScreen(
                 navController = navController,
-                onLogout = {
-                    sessionManager.clearSession()
-                    currentRole = null
-                    isLogged = false
-
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                onNavigateToAlertas = {
-                    navController.navigate(AppRoutes.COLABORADOR_ALERTAS)
-                }
+                onLogout = { performLogout() },
+                onNavigateToAlertas = { navController.navigate(Routes.ALERTAS_COLABORADOR) }
             )
         }
-
-        // ---------------- COLABORADOR ALERTAS ----------------
-        composable(AppRoutes.COLABORADOR_ALERTAS) {
-            NotificacionesScreen(navController = navController)
+        composable(Routes.ADMIN_HOME) {
+            HomeScreen(navController = navController, onLogout = { performLogout() })
         }
+        composable(Routes.MANAGER_HOME) {
+            HomeScreen(navController = navController, onLogout = { performLogout() })
+        }
+
+        // --- VACANTES ---
+        composable(Routes.VACANTES_ADMIN) { VacantScreen(navController = navController) }
+        composable(Routes.VACANTES_COLABORADOR) { VacantesColaboradorScreen(navController = navController) }
+        composable(Routes.NEW_VACANT) { NewVacantScreen(navController = navController) { navController.popBackStack() } }
+        composable("newVacancy") { NewVacantScreen(navController = navController) { navController.popBackStack() } }
+
+        // --- GESTIÓN ADMIN ---
+        composable(Routes.COLABORADORES) { ColaboradoresScreen(navController = navController) }
+        composable(Routes.EVALUACIONES_ADMIN) { 
+            EvaluationsHistoryScreen(navController = navController, onNavigateToDetail = { id -> navController.navigate(Routes.evaluationDetail(id)) }) 
+        }
+        composable("evaluaciones") { 
+            EvaluationsHistoryScreen(navController = navController, onNavigateToDetail = { id -> navController.navigate(Routes.evaluationDetail(id)) }) 
+        }
+        composable(Routes.NUEVA_EVALUACION) { EvaluationScreen(navController = navController) }
+        composable(Routes.EVALUATION_SCREEN) { EvaluationScreen(navController = navController) }
+        composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
+        composable(Routes.ALERTAS_ADMIN) { NotificacionesScreen(navController = navController) }
+        composable(Routes.DASHBOARD_ADMIN) { PlaceholderScreen("Dashboard General") { navController.popBackStack() } }
+        
+        // ✅ CORRECCIÓN MATCHING: Ruta apuntando a la pantalla real
+        composable(Routes.MATCHING) { 
+            MatchingScreen(navController = navController) 
+        }
+
+        // --- GESTIÓN COLABORADOR ---
+        composable(Routes.COLABORADOR_SKILLS) { ColaboradorSkillsScreen(navController = navController) }
+        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesScreen(navController = navController) }
+        
+        composable(
+            route = "${Routes.ACTUALIZAR_SKILL_BASE}/{id}/{skill}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("skill") { type = NavType.StringType })
+        ) { back ->
+            val id = back.arguments?.getString("id") ?: ""
+            val skill = back.arguments?.getString("skill") ?: ""
+            ActualizarSkillScreen(navController, id, skill)
+        }
+
+        // --- OTROS ---
+        composable("${Routes.EVALUATION_DETAIL}/{id}") { PlaceholderScreen("Detalle Evaluación") { navController.popBackStack() } }
+        composable(Routes.NIVEL_SKILLS) { PlaceholderScreen("Niveles de Skills") { navController.popBackStack() } }
+        composable(Routes.SKILLS_ADMIN) { PlaceholderScreen("Brechas de Skills") { navController.popBackStack() } }
+        composable("skills") { PlaceholderScreen("Brechas de Skills") { navController.popBackStack() } }
+        composable("dashboard") { PlaceholderScreen("Dashboard") { navController.popBackStack() } }
     }
 }
 
 @Composable
-fun PlaceholderScreen(
-    title: String,
-    onLogout: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = title, style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onLogout) {
-            Text(text = "Cerrar Sesión")
-        }
+fun PlaceholderScreen(title: String, onBackOrLogout: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(title, style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onBackOrLogout) { Text("Volver") }
     }
 }
