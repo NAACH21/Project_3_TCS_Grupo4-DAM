@@ -340,7 +340,8 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            BottomNavItem("Inicio", Icons.Default.Home, Routes.HOME_COLABORADOR),
+            // CORRECCIÓN: Usar Routes.COLABORADOR_HOME
+            BottomNavItem("Inicio", Icons.Default.Home, Routes.COLABORADOR_HOME),
             BottomNavItem("Skills", Icons.Default.TrendingUp, Routes.COLABORADOR_SKILLS),
             BottomNavItem("Vacantes", Icons.Default.Work, Routes.VACANTES_COLABORADOR),
             BottomNavItem("Notificaciones", Icons.Outlined.Notifications, Routes.NOTIFICACIONES)
@@ -373,7 +374,7 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            popUpTo(Routes.HOME_COLABORADOR) { saveState = true }
+                            popUpTo(Routes.COLABORADOR_HOME) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }

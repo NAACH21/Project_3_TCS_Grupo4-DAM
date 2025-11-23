@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,7 +25,10 @@ import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    onLogout: () -> Unit = {} // Callback de logout por defecto vacío para compatibilidad
+) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val primaryBlue = Color(0xFF0A63C2)
@@ -63,40 +67,56 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier.padding(20.dp)
                 ) {
                     Text(
-                        text = "Hola, Leslie 👋",
+                        text = "Hola, Admin 👋",
                         color = Color.White,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Bienvenida al sistema de gestión de talento",
+                        text = "Bienvenido al sistema de gestión de talento",
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                // Campanita de notificaciones en la esquina superior derecha
-                IconButton(
-                    onClick = { navController.navigate(Routes.NOTIFICACIONES) },
+                // Botones de acción en la esquina superior derecha
+                Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 12.dp, end = 12.dp)
+                        .padding(top = 12.dp, end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box {
+                    // Notificaciones
+                    IconButton(
+                        onClick = { navController.navigate(Routes.NOTIFICACIONES) }
+                    ) {
+                        Box {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notificaciones",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Badge(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                            ) {
+                                Text("4", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    // Botón de Cerrar Sesión
+                    IconButton(onClick = onLogout) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notificaciones",
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar Sesión",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp)
                         )
-                        // Badge de notificaciones (opcional - muestra cantidad)
-                        Badge(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = 4.dp, y = (-4).dp)
-                        ) {
-                            Text("4", style = MaterialTheme.typography.labelSmall)
-                        }
                     }
                 }
             }

@@ -12,6 +12,7 @@ import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModelFactory
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.AppNavGraph
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.AppNavigation
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +30,8 @@ class MainActivity : ComponentActivity() {
 
         // 4. Crear la factory para el ViewModel
         val authViewModelFactory = AuthViewModelFactory(authRepository)
+// 🔥 LIMPIAR SESIÓN AL INICIAR
+        sessionManager.clearSession()
 
         setContent {
             MaterialTheme {
@@ -42,5 +45,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun RootApp(authViewModelFactory: AuthViewModelFactory) {
     val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-    AppNavGraph(viewModel = authViewModel, startDestination = Routes.LOGIN)
+    AppNavigation()
+
 }
