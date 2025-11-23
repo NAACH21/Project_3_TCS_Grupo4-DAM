@@ -26,7 +26,10 @@ fun ColaboradorDetalleScreen(
     colaboradorId: String,
     onBack: () -> Unit
 ) {
-    val viewModel: ColaboradorDetalleViewModel = viewModel()
+    // CORRECCIÓN CRÍTICA: Usar la Factory personalizada para pasar colaboradorId al ViewModel
+    val viewModel: ColaboradorDetalleViewModel = viewModel(
+        factory = ColaboradorDetalleViewModelFactory(colaboradorId)
+    )
 
     val colaborador by viewModel.colaborador.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()

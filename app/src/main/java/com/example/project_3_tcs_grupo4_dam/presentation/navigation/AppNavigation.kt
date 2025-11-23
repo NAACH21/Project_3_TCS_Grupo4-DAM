@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
@@ -115,6 +116,20 @@ fun AppNavigation(
 
         // --- GESTIÓN ADMIN ---
         composable(Routes.COLABORADORES) { ColaboradoresScreen(navController = navController) }
+        
+        composable(
+            route = "${Routes.COLABORADOR_DETALLE}/{colaboradorId}",
+            arguments = listOf(
+                navArgument("colaboradorId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val colaboradorId = backStackEntry.arguments?.getString("colaboradorId") ?: ""
+            ColaboradorDetalleScreen(
+                colaboradorId = colaboradorId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
         composable(Routes.EVALUACIONES_ADMIN) { 
             EvaluationsHistoryScreen(navController = navController, onNavigateToDetail = { id -> navController.navigate(Routes.evaluationDetail(id)) }) 
         }
@@ -124,10 +139,13 @@ fun AppNavigation(
         composable(Routes.NUEVA_EVALUACION) { EvaluationScreen(navController = navController) }
         composable(Routes.EVALUATION_SCREEN) { EvaluationScreen(navController = navController) }
         composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
+        
+        // ✅ AGREGA ESTA RUTA QUE FALTABA
+        composable(Routes.NOTIFICACIONES) { NotificacionesScreen(navController = navController) }
+        
         composable(Routes.ALERTAS_ADMIN) { NotificacionesScreen(navController = navController) }
         composable(Routes.DASHBOARD_ADMIN) { PlaceholderScreen("Dashboard General") { navController.popBackStack() } }
         
-        // ✅ CORRECCIÓN MATCHING: Ruta apuntando a la pantalla real
         composable(Routes.MATCHING) { 
             MatchingScreen(navController = navController) 
         }
