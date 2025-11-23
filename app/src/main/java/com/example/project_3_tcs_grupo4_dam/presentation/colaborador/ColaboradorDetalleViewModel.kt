@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,4 +54,3 @@ class ColaboradorDetalleViewModel(
         }
     }
 }
-

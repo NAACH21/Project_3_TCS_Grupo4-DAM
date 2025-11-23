@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // Base URL del backend .NET
-    private const val BASE_URL = "http://172.19.211.84:5260/"
+    private const val BASE_URL = "http://10.62.245.60:5260/"
 
     /**
      * Cliente OkHttp con logging y timeouts configurados
@@ -67,16 +67,9 @@ object RetrofitClient {
     }
 
     /**
-     * API Service de skills
+     * API Service de catálogo
      */
-    val skillApi: SkillApiService by lazy {
-        retrofit.create(SkillApiService::class.java)
-    }
-
-    /**
-     * API Service de niveles de skill
-     */
-    val nivelSkillApi: NivelSkillApiService by lazy {
-        retrofit.create(NivelSkillApiService::class.java)
+    val catalogoApi: CatalogoApiService by lazy {
+        retrofit.create(CatalogoApiService::class.java)
     }
 }

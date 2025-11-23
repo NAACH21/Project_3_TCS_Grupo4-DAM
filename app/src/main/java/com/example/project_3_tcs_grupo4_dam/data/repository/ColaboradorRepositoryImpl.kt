@@ -1,21 +1,16 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 
-// Esta clase implementa la interfaz
 class ColaboradorRepositoryImpl : ColaboradorRepository {
 
-    // Obtiene el servicio de API desde nuestro RetrofitClient
+    // Único servicio necesario ahora
     private val apiService = RetrofitClient.colaboradorApi
-    private val skillApiService = RetrofitClient.skillApi
-    private val nivelSkillApiService = RetrofitClient.nivelSkillApi
 
     override suspend fun getAllColaboradores(): List<ColaboradorReadDto> {
-        // Llama a la API y devuelve el resultado
         return apiService.getAllColaboradores()
     }
 
@@ -27,19 +22,19 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
         return apiService.createColaborador(body)
     }
 
-    override suspend fun updateColaborador(id: String, body: ColaboradorCreateDto): ColaboradorReadDto {
+    override suspend fun updateColaborador(
+        id: String,
+        body: ColaboradorUpdateDto
+    ): ColaboradorReadDto {
         return apiService.updateColaborador(id, body)
     }
 
     override suspend fun deleteColaborador(id: String) {
-        return apiService.deleteColaborador(id)
+        val response = apiService.deleteColaborador(id)
+        if (!response.isSuccessful) {
+            throw Exception("Error al eliminar colaborador: ${response.code()}")
+        }
     }
 
-    override suspend fun getAllSkills(): List<SkillDto> {
-        return skillApiService.getAllSkills()
-    }
 
-    override suspend fun getAllNiveles(): List<NivelSkillDto> {
-        return nivelSkillApiService.getAllNiveles()
-    }
 }
