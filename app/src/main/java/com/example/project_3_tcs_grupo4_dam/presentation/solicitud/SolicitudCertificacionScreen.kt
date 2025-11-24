@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.common.DatePickerTextField
+import com.example.project_3_tcs_grupo4_dam.presentation.components.common.toIsoString
+import java.time.LocalDate
 
 private val TCSBlue = Color(0xFF00549F)
 
@@ -23,10 +26,12 @@ fun SolicitudCertificacionScreen(
 ) {
     var nombre by remember { mutableStateOf("") }
     var institucion by remember { mutableStateOf("") }
-    var fechaObtencion by remember { mutableStateOf("") }
-    var fechaVencimiento by remember { mutableStateOf("") }
+    var fechaObtencion by remember { mutableStateOf<LocalDate?>(null) }
+    var fechaVencimiento by remember { mutableStateOf<LocalDate?>(null) }
     var pdfUrl by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var fechaObtencionError by remember { mutableStateOf(false) }
+    var fechaVencimientoError by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val isLoading by viewModel.isLoading.collectAsState()
@@ -107,25 +112,43 @@ fun SolicitudCertificacionScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = fechaObtencion,
-                onValueChange = { fechaObtencion = it },
-                label = { Text("Fecha de obtención (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                placeholder = { Text("2025-01-15") },
+            // ⭐ DatePicker para fecha de obtención (obligatorio)
+            DatePickerTextField(
+                label = "Fecha de obtención",
+                selectedDate = fechaObtencion,
+                onDateSelected = {
+                    fechaObtencion = it
+                    fechaObtencionError = false
+                    // Validar que fecha de vencimiento sea >= fecha de obtención
+                    if (fechaVencimiento != null && it != null && fechaVencimiento!! < it) {
+                        fechaVencimientoError = true
+                    } else {
+                        fechaVencimientoError = false
+                    }
+                },
+                isRequired = true,
+                isError = fechaObtencionError,
+                errorMessage = if (fechaObtencionError) "La fecha de obtención es obligatoria" else null,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = fechaVencimiento,
-                onValueChange = { fechaVencimiento = it },
-                label = { Text("Fecha de vencimiento (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                placeholder = { Text("2027-01-15") },
+            // ⭐ DatePicker para fecha de vencimiento (opcional)
+            DatePickerTextField(
+                label = "Fecha de vencimiento",
+                selectedDate = fechaVencimiento,
+                onDateSelected = {
+                    fechaVencimiento = it
+                    fechaVencimientoError = false
+                    // Validar que sea >= fecha de obtención
+                    if (it != null && fechaObtencion != null && it < fechaObtencion!!) {
+                        fechaVencimientoError = true
+                    }
+                },
+                isRequired = false,
+                isError = fechaVencimientoError,
+                errorMessage = if (fechaVencimientoError) "Debe ser igual o posterior a la fecha de obtención" else null,
                 enabled = !isLoading
             )
 
@@ -166,19 +189,42 @@ fun SolicitudCertificacionScreen(
                 Button(
                     onClick = {
                         errorMessage = null
+                        fechaObtencionError = false
+                        fechaVencimientoError = false
+
+                        // Validaciones
+                        var hasError = false
+
                         if (nombre.isBlank() || institucion.isBlank()) {
                             errorMessage = "Nombre e institución son obligatorios"
-                        } else {
+                            hasError = true
+                        }
+
+                        if (fechaObtencion == null) {
+                            fechaObtencionError = true
+                            errorMessage = "La fecha de obtención es obligatoria"
+                            hasError = true
+                        }
+
+                        if (fechaVencimiento != null && fechaObtencion != null && fechaVencimiento!! < fechaObtencion!!) {
+                            fechaVencimientoError = true
+                            errorMessage = "La fecha de vencimiento debe ser igual o posterior a la de obtención"
+                            hasError = true
+                        }
+
+                        if (!hasError) {
                             android.util.Log.d("SolicitudCertificacion", "Creando solicitud de certificación: $nombre")
+                            android.util.Log.d("SolicitudCertificacion", "Fecha obtención: ${fechaObtencion?.toIsoString()}")
+                            android.util.Log.d("SolicitudCertificacion", "Fecha vencimiento: ${fechaVencimiento?.toIsoString()}")
+
                             viewModel.crearSolicitudCertificacion(
                                 nombre.trim(),
                                 institucion.trim(),
-                                fechaObtencion.takeIf { it.isNotBlank() },
-                                fechaVencimiento.takeIf { it.isNotBlank() },
+                                fechaObtencion!!.toIsoString(), // Convertir a formato ISO
+                                fechaVencimiento?.toIsoString(), // null o ISO
                                 pdfUrl.takeIf { it.isNotBlank() }
                             )
                             android.util.Log.d("SolicitudCertificacion", "Navegando de vuelta")
-                            // Navegar de vuelta después de crear
                             navController.popBackStack()
                         }
                     },

@@ -6,10 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,10 +29,21 @@ private val TextSecondary = Color(0xFF666666)
 fun SolicitudListItem(
     solicitud: SolicitudReadDto,
     onClick: () -> Unit,
+    onAnularClick: ((String) -> Unit)? = null, // ⭐ Callback para anular
     modifier: Modifier = Modifier
 ) {
     // DEBUG: Log cuando se renderiza cada item
     android.util.Log.d("SolicitudListItem", "Renderizando card: ${solicitud.id} - ${solicitud.tipoSolicitudGeneral}")
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // Verificar si la solicitud puede ser anulada
+    val puedeAnular = onAnularClick != null &&
+                      (solicitud.estadoSolicitud == "PENDIENTE" || solicitud.estadoSolicitud == "EN_REVISION")
+
+    // Determinar si la card debe verse como anulada
+    val estaAnulada = solicitud.estadoSolicitud == "ANULADA"
 
     Card(
         modifier = modifier
@@ -39,14 +51,16 @@ fun SolicitudListItem(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(
+            containerColor = if (estaAnulada) Color.White.copy(alpha = 0.7f) else Color.White
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Fila superior: Tipo + Estado
+            // Fila superior: Tipo + Estado + Menú
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -54,16 +68,17 @@ fun SolicitudListItem(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = getTipoIcon(solicitud.tipoSolicitudGeneral),
                         contentDescription = null,
-                        tint = TCSBlue,
+                        tint = if (estaAnulada) TCSBlue.copy(alpha = 0.5f) else TCSBlue,
                         modifier = Modifier.size(20.dp)
                     )
                     Surface(
-                        color = getTipoColor(solicitud.tipoSolicitudGeneral).copy(alpha = 0.15f),
+                        color = getTipoColor(solicitud.tipoSolicitudGeneral).copy(alpha = if (estaAnulada) 0.08f else 0.15f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
@@ -71,12 +86,48 @@ fun SolicitudListItem(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = getTipoColor(solicitud.tipoSolicitudGeneral)
+                            color = getTipoColor(solicitud.tipoSolicitudGeneral).copy(alpha = if (estaAnulada) 0.5f else 1f)
                         )
                     }
                 }
 
-                EstadoChip(estado = solicitud.estadoSolicitud)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    EstadoChip(estado = solicitud.estadoSolicitud)
+
+                    // ⭐ Menú de tres puntos (solo si puede anular)
+                    if (puedeAnular) {
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "Más opciones",
+                                    tint = TextSecondary
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Anular solicitud",
+                                            color = Color(0xFFC62828) // Rojo
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        showConfirmDialog = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -86,7 +137,7 @@ fun SolicitudListItem(
                 text = getTipoSolicitudLabel(solicitud.tipoSolicitud),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = if (estaAnulada) TextPrimary.copy(alpha = 0.5f) else TextPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -98,12 +149,12 @@ fun SolicitudListItem(
                         Text(
                             text = cert.nombre,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = if (estaAnulada) TextSecondary.copy(alpha = 0.5f) else TextSecondary
                         )
                         Text(
                             text = cert.institucion,
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary.copy(alpha = 0.7f)
+                            color = if (estaAnulada) TextSecondary.copy(alpha = 0.35f) else TextSecondary.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -113,7 +164,7 @@ fun SolicitudListItem(
                             Text(
                                 text = "${cambios.size} cambio${if (cambios.size > 1) "s" else ""} de skill propuesto${if (cambios.size > 1) "s" else ""}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = if (estaAnulada) TextSecondary.copy(alpha = 0.5f) else TextSecondary
                             )
                         }
                     }
@@ -123,7 +174,7 @@ fun SolicitudListItem(
                         Text(
                             text = "Periodo: ${entrevista.periodo}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = if (estaAnulada) TextSecondary.copy(alpha = 0.5f) else TextSecondary
                         )
                     }
                 }
@@ -135,9 +186,43 @@ fun SolicitudListItem(
             Text(
                 text = "Creada: ${formatFecha(solicitud.fechaCreacion)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary.copy(alpha = 0.7f)
+                color = if (estaAnulada) TextSecondary.copy(alpha = 0.35f) else TextSecondary.copy(alpha = 0.7f)
             )
         }
+    }
+
+    // ⭐ Diálogo de confirmación para anular
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = {
+                Text(
+                    "Anular solicitud",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("¿Seguro que deseas anular esta solicitud? Esta acción no se puede revertir.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false
+                        onAnularClick?.invoke(solicitud.id)
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFC62828)
+                    )
+                ) {
+                    Text("Anular")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -204,6 +289,7 @@ private fun getEstadoColors(estado: String): Pair<Color, Color> {
         "APROBADA" -> Color(0xFFE8F5E9) to Color(0xFF2E7D32)
         "RECHAZADA" -> Color(0xFFFFEBEE) to Color(0xFFC62828)
         "PROGRAMADA" -> Color(0xFFF3E5F5) to Color(0xFF7B1FA2)
+        "ANULADA" -> Color(0xFFEEEEEE) to Color(0xFF757575) // ⭐ Gris para anulada
         else -> Color(0xFFF5F5F5) to Color(0xFF616161)
     }
 }
@@ -215,6 +301,7 @@ private fun getEstadoLabel(estado: String): String {
         "APROBADA" -> "Aprobada"
         "RECHAZADA" -> "Rechazada"
         "PROGRAMADA" -> "Programada"
+        "ANULADA" -> "Anulada" // ⭐ Label para anulada
         else -> estado
     }
 }
