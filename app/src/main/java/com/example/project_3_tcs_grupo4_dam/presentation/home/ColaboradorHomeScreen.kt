@@ -340,9 +340,9 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            // CORRECCIÓN: Usar Routes.COLABORADOR_HOME
             BottomNavItem("Inicio", Icons.Default.Home, Routes.COLABORADOR_HOME),
             BottomNavItem("Skills", Icons.Default.TrendingUp, Routes.COLABORADOR_SKILLS),
+            BottomNavItem("Solicitudes", Icons.Default.Assignment, Routes.SOLICITUDES_COLABORADOR),
             BottomNavItem("Vacantes", Icons.Default.Work, Routes.VACANTES_COLABORADOR),
             BottomNavItem("Notificaciones", Icons.Outlined.Notifications, Routes.NOTIFICACIONES)
         )

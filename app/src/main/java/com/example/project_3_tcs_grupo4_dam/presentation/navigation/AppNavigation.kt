@@ -36,6 +36,13 @@ import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ActualizarSkillScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ColaboradorSkillsScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudActualizacionSkillsScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudCertificacionScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorViewModel
+import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesColaboradorScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantScreen
@@ -155,6 +162,7 @@ fun AppNavigation(
         composable(Routes.NOTIFICACIONES) { NotificacionesScreen(navController = navController) }
         
         composable(Routes.ALERTAS_ADMIN) { NotificacionesScreen(navController = navController) }
+        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesScreen(navController = navController) }
         composable(Routes.DASHBOARD_ADMIN) { PlaceholderScreen("Dashboard General") { navController.popBackStack() } }
         
         composable(Routes.MATCHING) { 
@@ -163,8 +171,49 @@ fun AppNavigation(
 
         // --- GESTIÓN COLABORADOR ---
         composable(Routes.COLABORADOR_SKILLS) { ColaboradorSkillsScreen(navController = navController) }
-        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesScreen(navController = navController) }
-        
+
+        // Ruta de solicitudes del colaborador (pantalla principal)
+        composable(Routes.SOLICITUDES_COLABORADOR) {
+            SolicitudColaboradorScreen(navController = navController)
+        }
+
+        // --- SOLICITUDES COLABORADOR (Pantallas completas) ---
+        composable(Routes.SOLICITUD_CERTIFICACION_COLABORADOR) {
+            val viewModel: SolicitudColaboradorViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return SolicitudColaboradorViewModel(
+                            solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
+                            catalogoRepository = CatalogoRepositoryImpl(),
+                            sessionManager = sessionManager
+                        ) as T
+                    }
+                }
+            )
+            SolicitudCertificacionScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        composable(Routes.SOLICITUD_SKILLS_COLABORADOR) {
+            val viewModel: SolicitudColaboradorViewModel = viewModel(
+                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                        return SolicitudColaboradorViewModel(
+                            solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
+                            catalogoRepository = CatalogoRepositoryImpl(),
+                            sessionManager = sessionManager
+                        ) as T
+                    }
+                }
+            )
+            SolicitudActualizacionSkillsScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
         composable(
             route = "${Routes.ACTUALIZAR_SKILL_BASE}/{id}/{skill}",
             arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("skill") { type = NavType.StringType })

@@ -49,6 +49,9 @@ object Routes {
     const val ALERTAS_COLABORADOR = "alertas_colaborador"
     const val ACTUALIZAR_SKILL_BASE = "skill_details_screen"
     const val ACTUALIZAR_SKILL = "skill_details_screen" // Alias para AppNavigation
+    const val SOLICITUDES_COLABORADOR = "solicitudes_colaborador"
+    const val SOLICITUD_CERTIFICACION_COLABORADOR = "solicitud_certificacion_colaborador"
+    const val SOLICITUD_SKILLS_COLABORADOR = "solicitud_skills_colaborador"
 
     // --- ALERTAS ADMIN ---
     const val ALERTAS_ADMIN = "alertas_admin"
