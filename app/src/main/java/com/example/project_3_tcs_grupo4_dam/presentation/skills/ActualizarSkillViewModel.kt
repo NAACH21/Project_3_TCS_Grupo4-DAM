@@ -8,8 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ class ActualizarSkillViewModel(
 ) : ViewModel() {
 
     private var currentColaborador: ColaboradorReadDto? = null
-    private val _skillState = MutableStateFlow<ColaboradorSkillDto?>(null)
+    private val _skillState = MutableStateFlow<SkillReadDto?>(null)
     val skillState = _skillState.asStateFlow()
 
     var selectedNivel by mutableStateOf(0)
@@ -41,27 +41,17 @@ class ActualizarSkillViewModel(
         viewModelScope.launch {
             isLoading = true
             try {
-                // CORRECCIÓN: getColaboradorById devuelve Response<ColaboradorReadDto>
-                val response = apiService.getColaboradorById(colaboradorId)
-                
-                if (response.isSuccessful) {
-                    val data = response.body()
-                    if (data != null) {
-                        currentColaborador = data
-                        val skill = data.skills.find { 
-                            it.nombre.equals(skillName, ignoreCase = true) 
-                        }
-                        if (skill != null) {
-                            _skillState.value = skill
-                            selectedNivel = skill.nivel
-                        } else {
-                            errorMessage = "Skill no encontrado"
-                        }
-                    } else {
-                        errorMessage = "Datos vacíos"
-                    }
+                // La API devuelve ColaboradorReadDto directamente con skills embebidos
+                val data = apiService.getColaboradorById(colaboradorId)
+                currentColaborador = data
+                val skill = data.skills.find {
+                    it.nombre.equals(skillName, ignoreCase = true)
+                }
+                if (skill != null) {
+                    _skillState.value = skill
+                    selectedNivel = skill.nivel
                 } else {
-                    errorMessage = "Error HTTP: ${response.code()}"
+                    errorMessage = "Skill no encontrado"
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.message}"
@@ -72,40 +62,73 @@ class ActualizarSkillViewModel(
         }
     }
 
-    fun enviarValidacion() {
-        if (currentColaborador == null || _skillState.value == null) return
-        
+    fun actualizarSkill() {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
             try {
-                val updatedSkills = currentColaborador!!.skills.map { skill ->
+                val colab = currentColaborador ?: run {
+                    errorMessage = "No hay colaborador cargado"
+                    isLoading = false
+                    return@launch
+                }
+
+                // Buscar el skill actual y crear una copia actualizada
+                val skillActualizado = colab.skills.map { skill ->
                     if (skill.nombre.equals(skillName, ignoreCase = true)) {
-                        skill.copy(nivel = selectedNivel)
+                        com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto(
+                            nombre = skill.nombre,
+                            tipo = skill.tipo,
+                            nivel = selectedNivel,
+                            esCritico = skill.esCritico
+                        )
                     } else {
-                        skill
+                        com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto(
+                            nombre = skill.nombre,
+                            tipo = skill.tipo,
+                            nivel = skill.nivel,
+                            esCritico = skill.esCritico
+                        )
                     }
                 }
 
-                // updateColaborador devuelve Response<ColaboradorReadDto>
-                val response = apiService.updateColaborador(
-                    colaboradorId, 
-                    currentColaborador!!.copy(skills = updatedSkills)
-                )
-                
-                if (response.isSuccessful) {
-                    isSuccess = true
-                } else {
-                    errorMessage = "Error al actualizar: ${response.code()}"
+                // Convertir certificaciones de Read a Create
+                val certificacionesActualizadas = colab.certificaciones.map { cert ->
+                    com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto(
+                        nombre = cert.nombre,
+                        institucion = cert.institucion,
+                        fechaObtencion = cert.fechaObtencion,
+                        fechaVencimiento = cert.fechaVencimiento,
+                        archivoPdfUrl = cert.archivoPdfUrl
+                    )
                 }
 
+                // Crear DTO de actualización con los skills modificados
+                val updateDto = com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto(
+                    nombres = colab.nombres,
+                    apellidos = colab.apellidos,
+                    correo = colab.correo,
+                    area = colab.area,
+                    rolLaboral = colab.rolLaboral,
+                    estado = colab.estado,
+                    disponibleParaMovilidad = colab.disponibleParaMovilidad,
+                    skills = skillActualizado,
+                    certificaciones = certificacionesActualizadas
+                )
+
+                apiService.updateColaborador(colaboradorId, updateDto)
+                isSuccess = true
+                Log.d("ActualizarSkillVM", "Skill actualizado correctamente")
             } catch (e: Exception) {
-                errorMessage = "Excepción: ${e.message}"
+                errorMessage = "Error al actualizar: ${e.message}"
+                Log.e("ActualizarSkillVM", "Error al actualizar", e)
             } finally {
                 isLoading = false
             }
         }
     }
+
+    fun enviarValidacion() = actualizarSkill()
 }
 
 class ActualizarSkillViewModelFactory(

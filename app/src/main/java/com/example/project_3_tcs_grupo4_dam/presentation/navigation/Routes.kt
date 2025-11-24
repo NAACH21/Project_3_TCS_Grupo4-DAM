@@ -53,6 +53,10 @@ object Routes {
     const val SOLICITUD_CERTIFICACION_COLABORADOR = "solicitud_certificacion_colaborador"
     const val SOLICITUD_SKILLS_COLABORADOR = "solicitud_skills_colaborador"
 
+    // --- SOLICITUDES ADMIN (ENTREVISTAS) ---
+    const val SOLICITUDES_ADMIN = "solicitudes_admin" // Vista de entrevistas para admin
+    const val NUEVA_ENTREVISTA_ADMIN = "nueva_entrevista_admin" // Crear entrevista de desempeño
+
     // --- ALERTAS ADMIN ---
     const val ALERTAS_ADMIN = "alertas_admin"
     const val NOTIFICACIONES = "notificaciones" // Alias compartido o genérico

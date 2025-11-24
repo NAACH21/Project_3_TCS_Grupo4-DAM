@@ -257,10 +257,10 @@ fun HomeScreen(
                         onClick = { navController.navigate(Routes.SKILLS) }
                     )
                     QuickButton(
-                        text = "Ver Vacantes",
-                        color = Color(0xFF4CAF50),
+                        text = "Solicitudes Entrevista",
+                        color = Color(0xFF7B1FA2),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
+                        onClick = { navController.navigate(Routes.SOLICITUDES_ADMIN) }
                     )
                 }
 

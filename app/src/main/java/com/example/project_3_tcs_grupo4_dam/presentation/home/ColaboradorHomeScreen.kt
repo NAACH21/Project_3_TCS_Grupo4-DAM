@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -24,14 +25,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.R
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesViewModel
@@ -49,7 +49,7 @@ private val WarningOrange = Color(0xFFFF9800)
 fun ColaboradorHomeScreen(
     navController: NavController,
     onLogout: () -> Unit,
-    onNavigateToAlertas: () -> Unit
+    @Suppress("UNUSED_PARAMETER") onNavigateToAlertas: () -> Unit
 ) {
     val context = LocalContext.current
     val sessionManager = SessionManager(context)
@@ -66,6 +66,7 @@ fun ColaboradorHomeScreen(
     // ViewModel para las notificaciones (Badge)
     val notificacionesViewModel: NotificacionesViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return NotificacionesViewModel(sessionManager) as T
             }
@@ -87,12 +88,13 @@ fun ColaboradorHomeScreen(
                 .padding(16.dp)
         ) {
             // 1. Card de Perfil
-            if (colaborador != null) {
-                ProfileCard(colaborador!!)
-            } else {
-                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = TCSBlue)
-                }
+            colaborador?.let { colab ->
+                ProfileCard(colab)
+            } ?: Box(
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = TCSBlue)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -115,7 +117,7 @@ fun ColaboradorHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
             ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Cerrar Sesión")
             }
@@ -157,7 +159,7 @@ fun ProfileCard(colaborador: ColaboradorReadDto) {
                     color = TextPrimary
                 )
                 Text(
-                    text = colaborador.rolActual,
+                    text = colaborador.rolLaboral,
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary
                 )
@@ -165,9 +167,13 @@ fun ProfileCard(colaborador: ColaboradorReadDto) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Badge(text = colaborador.area ?: "Sin área", colorBg = Color(0xFFE3F2FD), colorText = TCSBlue)
+                    Badge(text = colaborador.area, colorBg = Color(0xFFE3F2FD), colorText = TCSBlue)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Badge(text = "Activo", colorBg = BadgeGreenBg, colorText = BadgeGreenText)
+                    Badge(
+                        text = if (colaborador.estado == "ACTIVO") "Activo" else "Inactivo",
+                        colorBg = if (colaborador.estado == "ACTIVO") BadgeGreenBg else Color(0xFFFFEBEE),
+                        colorText = if (colaborador.estado == "ACTIVO") BadgeGreenText else Color(0xFFC62828)
+                    )
                 }
             }
         }

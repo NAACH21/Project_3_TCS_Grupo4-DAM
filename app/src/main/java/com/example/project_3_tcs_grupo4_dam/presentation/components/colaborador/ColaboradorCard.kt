@@ -7,21 +7,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 
 @Composable
 fun ColaboradorCard(
-    colaborador: ColaboradorListDto, // Actualizado a ListDto
+    colaborador: ColaboradorReadDto,
     modifier: Modifier = Modifier,
     onVerDetalle: () -> Unit = {},
-    onEditar: (ColaboradorListDto) -> Unit = {},
-    onEliminar: (ColaboradorListDto) -> Unit = {}
+    onEditar: (ColaboradorReadDto) -> Unit = {},
+    onEliminar: (ColaboradorReadDto) -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -68,14 +72,12 @@ fun ColaboradorCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    // Rol (puede ser nulo en ListDto)
                     Text(
-                        text = colaborador.rol ?: "Sin rol",
+                        text = colaborador.rolLaboral,
                         style = MaterialTheme.typography.bodySmall
                     )
-                    // Área (puede ser nulo)
                     Text(
-                        text = colaborador.area ?: "Sin área",
+                        text = colaborador.area,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -111,25 +113,34 @@ fun ColaboradorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Chips de estado
+            // chips de estado y disponibilidad para movilidad
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Estado general (si existe en el DTO)
-                val estado = colaborador.estado ?: "Activo"
                 AssistChip(
                     onClick = {},
-                    label = { Text(estado) },
+                    label = { Text(colaborador.estado) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (estado.equals("Disponible", ignoreCase = true)) 
-                            MaterialTheme.colorScheme.primaryContainer 
-                        else 
-                            MaterialTheme.colorScheme.tertiaryContainer
+                        containerColor = if (colaborador.estado.uppercase() == "ACTIVO")
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer
+                    )
+                )
+
+                AssistChip(
+                    onClick = {},
+                    label = { Text(if (colaborador.disponibleParaMovilidad) "Disponible" else "No disponible") },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (colaborador.disponibleParaMovilidad)
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Botón "Ver detalle"
+            // botón "Ver detalle"
             OutlinedButton(
                 onClick = onVerDetalle,
                 modifier = Modifier.fillMaxWidth()

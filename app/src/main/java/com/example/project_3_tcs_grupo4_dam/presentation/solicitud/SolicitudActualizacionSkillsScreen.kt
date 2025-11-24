@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 
 private val TCSBlue = Color(0xFF00549F)
 
@@ -328,7 +328,7 @@ fun SolicitudActualizacionSkillsScreen(
 @Composable
 private fun CambioSkillCard(
     item: CambioSkillItemUI,
-    misSkillsActuales: List<ColaboradorSkillDto>,
+    misSkillsActuales: List<SkillReadDto>,
     skillsCatalogo: List<CatalogoDtos.SkillCatalogItemDto>,
     nivelesSkill: List<CatalogoDtos.NivelSkillDto>,
     onUpdate: (CambioSkillItemUI) -> Unit,
@@ -521,7 +521,7 @@ private fun CambioSkillCard(
 
 // Modelo UI interno para la pantalla
 private data class CambioSkillItemUI(
-    val skillExistenteSeleccionada: ColaboradorSkillDto? = null,
+    val skillExistenteSeleccionada: SkillReadDto? = null,
     val skillNuevaSeleccionada: CatalogoDtos.SkillCatalogItemDto? = null,
     val nivelPropuesto: CatalogoDtos.NivelSkillDto? = null,
     val esCriticoPropuesto: Boolean = false,
@@ -546,7 +546,7 @@ private data class CambioSkillItemUI(
                 tipo = skillExistenteSeleccionada.tipo,
                 nivelActual = skillExistenteSeleccionada.nivel,
                 nivelPropuesto = nivelPropuesto!!.codigo,
-                esCriticoActual = false,
+                esCriticoActual = skillExistenteSeleccionada.esCritico,
                 esCriticoPropuesto = esCriticoPropuesto,
                 motivo = motivo,
                 esNueva = false

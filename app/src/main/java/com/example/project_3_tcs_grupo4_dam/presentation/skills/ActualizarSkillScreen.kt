@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 
@@ -49,8 +50,8 @@ fun ActualizarSkillScreen(
         )
     )
 
-    val skillState by viewModel.skillState.collectAsState()
-    
+    val skill by viewModel.skillState.collectAsState()
+
     // Efecto para manejar éxito
     LaunchedEffect(viewModel.isSuccess) {
         if (viewModel.isSuccess) {
@@ -75,13 +76,13 @@ fun ActualizarSkillScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
-            if (viewModel.isLoading && skillState == null) {
+            if (viewModel.isLoading && skill == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = TCSBlue)
                 }
-            } else if (skillState != null) {
+            } else if (skill != null) {
                 ContentActualizarSkill(
-                    skill = skillState!!,
+                    skill = skill!!,
                     viewModel = viewModel,
                     onCancel = { navController.popBackStack() }
                 )
@@ -97,7 +98,7 @@ fun ActualizarSkillScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentActualizarSkill(
-    skill: com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto,
+    skill: SkillReadDto,
     viewModel: ActualizarSkillViewModel,
     onCancel: () -> Unit
 ) {
@@ -134,18 +135,13 @@ fun ContentActualizarSkill(
                 ) {
                     Column {
                         Text("Tipo", style = MaterialTheme.typography.bodySmall, color = GrayText)
-                        Text(skill.tipo ?: "Técnico", fontWeight = FontWeight.Bold)
+                        Text(skill.tipo, fontWeight = FontWeight.Bold)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("Nivel Actual", style = MaterialTheme.typography.bodySmall, color = GrayText)
                         Text(getNivelLabel(skill.nivel), fontWeight = FontWeight.Bold)
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Estado", style = MaterialTheme.typography.bodySmall, color = GrayText)
-                // Asumimos estado aprobado por defecto si ya existe
-                Text("Aprobado", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
             }
         }
 

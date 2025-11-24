@@ -16,7 +16,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionReadDto
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,14 +28,11 @@ fun ColaboradorDetalleScreen(
     colaboradorId: String,
     onBack: () -> Unit
 ) {
-    // CORRECCIÓN CRÍTICA: Usar la Factory personalizada para pasar colaboradorId al ViewModel
-    val viewModel: ColaboradorDetalleViewModel = viewModel(
-        factory = ColaboradorDetalleViewModelFactory(colaboradorId)
-    )
+    val viewModel: ColaboradorDetalleViewModel = viewModel()
 
-    val colaborador by viewModel.colaborador.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val colaborador by viewModel.colaborador.collectAsState(initial = null)
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val error by viewModel.error.collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -83,7 +82,7 @@ fun ColaboradorDetalleScreen(
 
                         // Sección de Skills
                         item {
-                            SkillsSection(nivelCodigo = colaborador!!.nivelCodigo)
+                            SkillsSection(skills = colaborador!!.skills)
                         }
 
                         // Sección de Certificaciones
@@ -98,7 +97,7 @@ fun ColaboradorDetalleScreen(
 }
 
 @Composable
-private fun ColaboradorHeader(colaborador: com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto) {
+private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -139,55 +138,56 @@ private fun ColaboradorHeader(colaborador: com.example.project_3_tcs_grupo4_dam.
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Rol actual
+            // Rol laboral
             Text(
-                text = colaborador.rolActual,
+                text = colaborador.rolLaboral,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Área (CORREGIDO: Manejo de nulo)
+            // Área
             Text(
-                text = colaborador.area ?: "Sin área",
+                text = colaborador.area,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Chips de disponibilidad (CORREGIDO: Manejo de nulo)
-            val disponibilidad = colaborador.disponibilidad
-            if (disponibilidad != null) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val estado = disponibilidad.estado ?: "No especificado"
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(estado) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (estado == "Disponible")
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.errorContainer
-                        )
+            // Chips de estado y disponibilidad para movilidad
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AssistChip(
+                    onClick = {},
+                    label = { Text(colaborador.estado) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (colaborador.estado.uppercase() == "ACTIVO")
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer
                     )
-                    
-                    val dias = disponibilidad.dias ?: 0
-                    AssistChip(
-                        onClick = {},
-                        label = { Text("$dias días") }
+                )
+
+                AssistChip(
+                    onClick = {},
+                    label = { Text(if (colaborador.disponibleParaMovilidad) "Disponible para movilidad" else "No disponible para movilidad") },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = if (colaborador.disponibleParaMovilidad)
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
                     )
-                }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun SkillsSection(nivelCodigo: Int?) {
+private fun SkillsSection(skills: List<SkillReadDto>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -198,49 +198,58 @@ private fun SkillsSection(nivelCodigo: Int?) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Skills Técnicos",
+                text = "Skills",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val nivelTexto = when (nivelCodigo) {
-                0 -> "No iniciado"
-                1 -> "Básico"
-                2 -> "Intermedio"
-                3 -> "Avanzado"
-                else -> "No especificado"
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if (skills.isEmpty()) {
                 Text(
-                    text = "Nivel de código:",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Sin skills registrados",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(nivelTexto) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = when (nivelCodigo) {
-                            3 -> MaterialTheme.colorScheme.primaryContainer
-                            2 -> MaterialTheme.colorScheme.secondaryContainer
-                            1 -> MaterialTheme.colorScheme.tertiaryContainer
-                            else -> MaterialTheme.colorScheme.surfaceVariant
+            } else {
+                skills.forEach { skill ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = skill.nombre,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = skill.tipo,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
-                )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AssistChip(onClick = {}, label = { Text("Nivel ${skill.nivel}") })
+                            if (skill.esCritico) {
+                                AssistChip(onClick = {}, label = { Text("Crítico") },
+                                    colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun CertificacionesSection(certificaciones: List<CertificacionDto>) {
+private fun CertificacionesSection(certificaciones: List<CertificacionReadDto>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -275,7 +284,7 @@ private fun CertificacionesSection(certificaciones: List<CertificacionDto>) {
 }
 
 @Composable
-private fun CertificacionItem(certificacion: CertificacionDto) {
+private fun CertificacionItem(certificacion: CertificacionReadDto) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         tonalElevation = 1.dp,
@@ -291,21 +300,24 @@ private fun CertificacionItem(certificacion: CertificacionDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // CORREGIDO: Nombre puede ser nulo
-                Text(
-                    text = certificacion.nombre ?: "Sin nombre",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = certificacion.nombre,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = certificacion.institucion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                // CORREGIDO: Estado puede ser nulo
-                val estado = certificacion.estado ?: "Desconocido"
                 AssistChip(
                     onClick = {},
-                    label = { Text(estado) },
+                    label = { Text(certificacion.estado) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (estado.lowercase() == "vigente")
+                        containerColor = if (certificacion.estado.lowercase() == "vigente")
                             MaterialTheme.colorScheme.primaryContainer
                         else
                             MaterialTheme.colorScheme.errorContainer
@@ -319,6 +331,24 @@ private fun CertificacionItem(certificacion: CertificacionDto) {
                     text = "Obtenida: ${formatearFecha(fecha)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            certificacion.fechaVencimiento?.let { fecha ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Vence: ${formatearFecha(fecha)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            certificacion.archivoPdfUrl?.let { url ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Ver archivo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

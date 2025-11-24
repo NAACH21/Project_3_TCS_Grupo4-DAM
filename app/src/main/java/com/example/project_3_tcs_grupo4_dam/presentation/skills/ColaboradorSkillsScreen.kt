@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
@@ -195,13 +195,13 @@ private fun FilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SkillColaboradorCard(
-    skill: ColaboradorSkillDto,
+    skill: SkillReadDto,
     onUpdateClick: () -> Unit
 ) {
-    val estado = skill.estado ?: "PENDIENTE"
-    val isApproved = estado.equals("APROBADO", ignoreCase = true)
-    val statusColorBg = if (isApproved) SkillApprovedGreen else SkillPendingOrange
-    val statusColorText = if (isApproved) SkillApprovedText else SkillPendingText
+    // Como SkillReadDto no tiene estado, asumimos que está aprobado
+    val isApproved = true
+    val statusColorBg = SkillApprovedGreen
+    val statusColorText = SkillApprovedText
 
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -229,7 +229,7 @@ private fun SkillColaboradorCard(
 
                 Surface(color = statusColorBg, shape = RoundedCornerShape(12.dp)) {
                     Text(
-                        text = estado,
+                        text = "APROBADO",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = statusColorText,
@@ -246,16 +246,6 @@ private fun SkillColaboradorCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            if (!skill.evidenciaUrl.isNullOrEmpty()) {
-                Text(
-                    text = "Evidencia: Ver evidencia",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TCSBlue,
-                    modifier = Modifier.clickable { /* TODO */ }
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
 
             Button(
                 onClick = onUpdateClick,

@@ -29,7 +29,8 @@ private val TextSecondary = Color(0xFF666666)
 fun SolicitudListItem(
     solicitud: SolicitudReadDto,
     onClick: () -> Unit,
-    onAnularClick: ((String) -> Unit)? = null, // ⭐ Callback para anular
+    onAnularClick: ((String) -> Unit)? = null, // ⭐ Callback para anular (colaborador)
+    onCambiarEstadoClick: ((String) -> Unit)? = null, // ⭐ Callback para cambiar estado (admin)
     modifier: Modifier = Modifier
 ) {
     // DEBUG: Log cuando se renderiza cada item
@@ -38,9 +39,12 @@ fun SolicitudListItem(
     var showMenu by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    // Verificar si la solicitud puede ser anulada
+    // Verificar si la solicitud puede ser anulada (colaborador)
     val puedeAnular = onAnularClick != null &&
                       (solicitud.estadoSolicitud == "PENDIENTE" || solicitud.estadoSolicitud == "EN_REVISION")
+
+    // Verificar si se puede cambiar estado (admin)
+    val puedeCambiarEstado = onCambiarEstadoClick != null
 
     // Determinar si la card debe verse como anulada
     val estaAnulada = solicitud.estadoSolicitud == "ANULADA"
@@ -97,8 +101,8 @@ fun SolicitudListItem(
                 ) {
                     EstadoChip(estado = solicitud.estadoSolicitud)
 
-                    // ⭐ Menú de tres puntos (solo si puede anular)
-                    if (puedeAnular) {
+                    // ⭐ Menú de tres puntos (colaborador o admin)
+                    if (puedeAnular || puedeCambiarEstado) {
                         Box {
                             IconButton(onClick = { showMenu = true }) {
                                 Icon(
@@ -112,18 +116,34 @@ fun SolicitudListItem(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "Anular solicitud",
-                                            color = Color(0xFFC62828) // Rojo
-                                        )
-                                    },
-                                    onClick = {
-                                        showMenu = false
-                                        showConfirmDialog = true
-                                    }
-                                )
+                                // Opción de anular (solo colaborador)
+                                if (puedeAnular) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Anular solicitud",
+                                                color = Color(0xFFC62828) // Rojo
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            showConfirmDialog = true
+                                        }
+                                    )
+                                }
+
+                                // Opción de cambiar estado (solo admin)
+                                if (puedeCambiarEstado) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("Cambiar estado")
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            onCambiarEstadoClick?.invoke(solicitud.id)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

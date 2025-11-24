@@ -6,7 +6,7 @@ import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.CambioSkillPropuestaCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
 import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionPropuestaCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudUpdateEstadoDto
@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 class SolicitudColaboradorViewModel(
     private val solicitudesRepository: SolicitudesRepository,
     private val catalogoRepository: CatalogoRepository,
-    private val sessionManager: SessionManager
+    sessionManager: SessionManager
 ) : ViewModel() {
 
     private val colaboradorId = sessionManager.getColaboradorId() ?: ""
@@ -57,9 +57,9 @@ class SolicitudColaboradorViewModel(
     private val _nivelesSkill = MutableStateFlow<List<CatalogoDtos.NivelSkillDto>>(emptyList())
     val nivelesSkill: StateFlow<List<CatalogoDtos.NivelSkillDto>> = _nivelesSkill.asStateFlow()
 
-    // NUEVO: Skills actuales del colaborador
-    private val _misSkillsActuales = MutableStateFlow<List<ColaboradorSkillDto>>(emptyList())
-    val misSkillsActuales: StateFlow<List<ColaboradorSkillDto>> = _misSkillsActuales.asStateFlow()
+    // Skills actuales del colaborador
+    private val _misSkillsActuales = MutableStateFlow<List<SkillReadDto>>(emptyList())
+    val misSkillsActuales: StateFlow<List<SkillReadDto>> = _misSkillsActuales.asStateFlow()
 
     // Solicitud seleccionada para detalle
     private val _solicitudSeleccionada = MutableStateFlow<SolicitudReadDto?>(null)

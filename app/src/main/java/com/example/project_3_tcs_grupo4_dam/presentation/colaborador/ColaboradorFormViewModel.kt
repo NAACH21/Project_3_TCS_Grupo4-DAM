@@ -4,19 +4,29 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.*
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
-import kotlinx.coroutines.async
+import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 class ColaboradorFormViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val repository: ColaboradorRepository = ColaboradorRepositoryImpl()
+    private val catalogoRepository: CatalogoRepository = CatalogoRepositoryImpl()
 
     // ID del colaborador (null si es modo crear, con valor si es modo editar)
     private val colaboradorId: String? = savedStateHandle.get<String>("colaboradorId")
@@ -28,39 +38,59 @@ class ColaboradorFormViewModel(
     private val _apellidos = MutableStateFlow("")
     val apellidos = _apellidos.asStateFlow()
 
+    private val _correo = MutableStateFlow("")
+    val correo = _correo.asStateFlow()
+
     private val _area = MutableStateFlow("")
     val area = _area.asStateFlow()
 
-    private val _rolActual = MutableStateFlow("")
-    val rolActual = _rolActual.asStateFlow()
+    private val _rolLaboral = MutableStateFlow("")
+    val rolLaboral = _rolLaboral.asStateFlow()
 
-    // Skills
-    private val _allSkills = MutableStateFlow<List<SkillDto>>(emptyList())
-    val allSkills = _allSkills.asStateFlow()
+    private val _disponibleParaMovilidad = MutableStateFlow(false)
+    val disponibleParaMovilidad = _disponibleParaMovilidad.asStateFlow()
+
+    // Estado del colaborador (ACTIVO/INACTIVO) - solo visible en modo edición
+    private val _estado = MutableStateFlow("ACTIVO")
+    val estado = _estado.asStateFlow()
+
+    // Catálogos
+    private val _areas = MutableStateFlow<List<String>>(emptyList())
+    val areas = _areas.asStateFlow()
+
+    private val _rolesLaborales = MutableStateFlow<List<String>>(emptyList())
+    val rolesLaborales = _rolesLaborales.asStateFlow()
+
+    private val _tiposSkill = MutableStateFlow<List<String>>(emptyList())
+    val tiposSkill = _tiposSkill.asStateFlow()
+
+    private val _nivelesSkill = MutableStateFlow<List<NivelSkillDto>>(emptyList())
+    val nivelesSkill = _nivelesSkill.asStateFlow()
+
+    // Catálogo de skills para el diálogo de selección
+    private val _skillCatalog = MutableStateFlow<List<SkillCatalogItemDto>>(emptyList())
+    val skillCatalog = _skillCatalog.asStateFlow()
+
+    // Estados del diálogo de selección de skill
+    private val _showSkillPickerDialog = MutableStateFlow(false)
+    val showSkillPickerDialog = _showSkillPickerDialog.asStateFlow()
+
+    private val _selectedTipoSkill = MutableStateFlow("TECNICO")
+    val selectedTipoSkill = _selectedTipoSkill.asStateFlow()
 
     private val _skillSearchText = MutableStateFlow("")
     val skillSearchText = _skillSearchText.asStateFlow()
 
-    private val _selectedSkills = MutableStateFlow<List<SkillDto>>(emptyList())
-    val selectedSkills = _selectedSkills.asStateFlow()
+    private val _filteredSkillSuggestions = MutableStateFlow<List<SkillCatalogItemDto>>(emptyList())
+    val filteredSkillSuggestions = _filteredSkillSuggestions.asStateFlow()
 
-    // Niveles
-    private val _niveles = MutableStateFlow<List<NivelSkillDto>>(emptyList())
-    val niveles = _niveles.asStateFlow()
+    // Skills embebidos (editable)
+    private val _skills = MutableStateFlow<List<SkillCreateDto>>(emptyList())
+    val skills = _skills.asStateFlow()
 
-    private val _selectedNivel = MutableStateFlow<NivelSkillDto?>(null)
-    val selectedNivel = _selectedNivel.asStateFlow()
-
-    // Certificaciones
+    // Certificaciones embebidas (editable)
     private val _certificaciones = MutableStateFlow<List<CertificacionCreateDto>>(emptyList())
     val certificaciones = _certificaciones.asStateFlow()
-
-    // Disponibilidad
-    private val _disponibilidadEstado = MutableStateFlow("Disponible")
-    val disponibilidadEstado = _disponibilidadEstado.asStateFlow()
-
-    private val _disponibilidadDias = MutableStateFlow<Int?>(null)
-    val disponibilidadDias = _disponibilidadDias.asStateFlow()
 
     // Estados de UI
     private val _isLoading = MutableStateFlow(false)
@@ -79,119 +109,144 @@ class ColaboradorFormViewModel(
     val isEditMode: Boolean = colaboradorId != null
 
     init {
-        loadInitialData()
+        loadCatalogos()
+        if (isEditMode) {
+            loadColaborador(colaboradorId!!)
+        }
     }
 
-    private fun loadInitialData() {
+    private fun loadCatalogos() {
+        viewModelScope.launch {
+            try {
+                val catalogo = catalogoRepository.getCatalogoCompleto()
+                _areas.value = catalogo.areas
+                _rolesLaborales.value = catalogo.rolesLaborales
+                _tiposSkill.value = catalogo.tiposSkill
+                _nivelesSkill.value = catalogo.nivelesSkill
+                Log.d("ColaboradorFormVM", "Catálogos cargados exitosamente")
+            } catch (e: Exception) {
+                Log.e("ColaboradorFormVM", "Error al cargar catálogos", e)
+                // Fallback a valores por defecto
+                _areas.value = listOf("Finanzas", "Tecnología", "Recursos Humanos", "Marketing")
+                _rolesLaborales.value = listOf("Tech Lead", "Backend Developer", "Frontend Developer")
+                _tiposSkill.value = listOf("TECNICO", "BLANDO")
+                _nivelesSkill.value = listOf(
+                    NivelSkillDto(1, "No iniciado"),
+                    NivelSkillDto(2, "Básico"),
+                    NivelSkillDto(3, "Intermedio"),
+                    NivelSkillDto(4, "Avanzado")
+                )
+            }
+        }
+    }
+
+    private fun loadColaborador(id: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Cargar skills y niveles en paralelo
-                val skillsDeferred = async { repository.getAllSkills() }
-                val nivelesDeferred = async { repository.getAllNiveles() }
-
-                _allSkills.value = skillsDeferred.await()
-                _niveles.value = nivelesDeferred.await()
-
-                Log.d("ColaboradorFormVM", "Skills cargados: ${_allSkills.value.size}")
-                Log.d("ColaboradorFormVM", "Niveles cargados: ${_niveles.value.size}")
-
-                // Si es modo edición, cargar los datos del colaborador
-                if (colaboradorId != null) {
-                    loadColaboradorData(colaboradorId)
-                }
+                val col = repository.getColaboradorById(id)
+                mapReadDtoToState(col)
+                Log.d("ColaboradorFormVM", "Colaborador cargado para edición: ${col.id}")
             } catch (e: Exception) {
-                Log.e("ColaboradorFormVM", "Error al cargar datos iniciales", e)
-                _errorMessage.value = "Error al cargar datos: ${e.message}"
+                Log.e("ColaboradorFormVM", "Error al cargar colaborador", e)
+                _errorMessage.value = e.message ?: "Error al cargar colaborador"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    private suspend fun loadColaboradorData(id: String) {
-        try {
-            val colaborador = repository.getColaboradorById(id)
+    private fun mapReadDtoToState(col: ColaboradorReadDto) {
+        _nombres.value = col.nombres
+        _apellidos.value = col.apellidos
+        _correo.value = col.correo
+        _area.value = col.area
+        _rolLaboral.value = col.rolLaboral
+        _disponibleParaMovilidad.value = col.disponibleParaMovilidad
+        _estado.value = col.estado ?: "ACTIVO" // Valor por defecto en caso de que sea nulo
 
-            // Rellenar campos básicos
-            _nombres.value = colaborador.nombres
-            _apellidos.value = colaborador.apellidos
-            _area.value = colaborador.area ?: "" // Manejo seguro de nulo
-            _rolActual.value = colaborador.rolActual
+        // Mapear skills read -> create
+        _skills.value = col.skills.map { s: SkillReadDto ->
+            SkillCreateDto(
+                nombre = s.nombre,
+                tipo = s.tipo,
+                nivel = s.nivel,
+                esCritico = s.esCritico
+            )
+        }
 
-            // Comparar por nombre, ya que ColaboradorReadDto.skills son objetos ColaboradorSkillDto
-            val skillsSeleccionados = _allSkills.value.filter { skill ->
-                colaborador.skills.any { it.nombre.equals(skill.nombre, ignoreCase = true) }
-            }
-            _selectedSkills.value = skillsSeleccionados
-
-            // Seleccionar nivel
-            val nivelSeleccionado = _niveles.value.find { it.codigo == colaborador.nivelCodigo }
-            _selectedNivel.value = nivelSeleccionado
-
-            // Cargar certificaciones
-            _certificaciones.value = colaborador.certificaciones.map {
-                CertificacionCreateDto(
-                    nombre = it.nombre ?: "",
-                    imagenUrl = it.imagenUrl,
-                    fechaObtencion = it.fechaObtencion
-                )
-            }
-
-            // Cargar disponibilidad (Manejo seguro de nulos)
-            _disponibilidadEstado.value = colaborador.disponibilidad?.estado ?: "Disponible"
-            _disponibilidadDias.value = colaborador.disponibilidad?.dias
-
-            Log.d("ColaboradorFormVM", "Datos del colaborador cargados para edición")
-        } catch (e: Exception) {
-            Log.e("ColaboradorFormVM", "Error al cargar colaborador", e)
-            _errorMessage.value = "Error al cargar colaborador: ${e.message}"
+        // Mapear certificaciones read -> create
+        _certificaciones.value = col.certificaciones.map { c: CertificacionReadDto ->
+            CertificacionCreateDto(
+                nombre = c.nombre,
+                institucion = c.institucion,
+                fechaObtencion = c.fechaObtencion,
+                fechaVencimiento = c.fechaVencimiento,
+                archivoPdfUrl = c.archivoPdfUrl
+            )
         }
     }
 
     // Métodos para actualizar campos
-    fun onNombresChange(value: String) {
-        _nombres.value = value
+    fun onNombresChange(value: String) { _nombres.value = value }
+    fun onApellidosChange(value: String) { _apellidos.value = value }
+    fun onCorreoChange(value: String) { _correo.value = value }
+    fun onAreaChange(value: String) { _area.value = value }
+    fun onRolLaboralChange(value: String) { _rolLaboral.value = value }
+    fun onDisponibleParaMovilidadChange(value: Boolean) { _disponibleParaMovilidad.value = value }
+    fun onEstadoChange(value: String) { _estado.value = value }
+
+    // Skills management
+    fun addSkill() {
+        val current = _skills.value.toMutableList()
+        current.add(SkillCreateDto(nombre = "", tipo = "TECNICO", nivel = 1, esCritico = false))
+        _skills.value = current
     }
 
-    fun onApellidosChange(value: String) {
-        _apellidos.value = value
-    }
-
-    fun onAreaChange(value: String) {
-        _area.value = value
-    }
-
-    fun onRolActualChange(value: String) {
-        _rolActual.value = value
-    }
-
-    fun onSkillSearchChange(value: String) {
-        _skillSearchText.value = value
-    }
-
-    fun toggleSkillSelection(skill: SkillDto) {
-        val currentSelected = _selectedSkills.value.toMutableList()
-        if (currentSelected.any { it.id == skill.id }) {
-            currentSelected.removeAll { it.id == skill.id }
-        } else {
-            currentSelected.add(skill)
+    fun updateSkillNombre(index: Int, nombre: String) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(nombre = nombre)
+            _skills.value = current
         }
-        _selectedSkills.value = currentSelected
     }
 
-    fun removeSkill(skill: SkillDto) {
-        _selectedSkills.value = _selectedSkills.value.filter { it.id != skill.id }
+    fun updateSkillTipo(index: Int, tipo: String) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(tipo = tipo)
+            _skills.value = current
+        }
     }
 
-    fun onNivelSelected(nivel: NivelSkillDto) {
-        _selectedNivel.value = nivel
+    fun updateSkillNivel(index: Int, nivel: Int) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(nivel = nivel)
+            _skills.value = current
+        }
     }
 
-    // Métodos para certificaciones
+    fun updateSkillEsCritico(index: Int, esCritico: Boolean) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(esCritico = esCritico)
+            _skills.value = current
+        }
+    }
+
+    fun removeSkill(index: Int) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current.removeAt(index)
+            _skills.value = current
+        }
+    }
+
+    // Certificaciones management
     fun addCertificacion() {
         val current = _certificaciones.value.toMutableList()
-        current.add(CertificacionCreateDto("", null, null))
+        current.add(CertificacionCreateDto(nombre = "", institucion = "", fechaObtencion = null, fechaVencimiento = null, archivoPdfUrl = null))
         _certificaciones.value = current
     }
 
@@ -203,18 +258,34 @@ class ColaboradorFormViewModel(
         }
     }
 
-    fun updateCertificacionUrl(index: Int, url: String) {
+    fun updateCertificacionInstitucion(index: Int, institucion: String) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
-            current[index] = current[index].copy(imagenUrl = url.ifBlank { null })
+            current[index] = current[index].copy(institucion = institucion)
             _certificaciones.value = current
         }
     }
 
-    fun updateCertificacionFecha(index: Int, fecha: String) {
+    fun updateCertificacionFechaObtencion(index: Int, fecha: String?) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
-            current[index] = current[index].copy(fechaObtencion = fecha.ifBlank { null })
+            current[index] = current[index].copy(fechaObtencion = fecha)
+            _certificaciones.value = current
+        }
+    }
+
+    fun updateCertificacionFechaVencimiento(index: Int, fecha: String?) {
+        val current = _certificaciones.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(fechaVencimiento = fecha)
+            _certificaciones.value = current
+        }
+    }
+
+    fun updateCertificacionArchivoUrl(index: Int, url: String?) {
+        val current = _certificaciones.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(archivoPdfUrl = url)
             _certificaciones.value = current
         }
     }
@@ -227,26 +298,125 @@ class ColaboradorFormViewModel(
         }
     }
 
-    fun onDisponibilidadEstadoChange(estado: String) {
-        _disponibilidadEstado.value = estado
+    fun clearErrorMessage() { _errorMessage.value = null }
+
+    // ========== Funciones para el diálogo de selección de skills ==========
+
+    /**
+     * Carga el catálogo de skills desde el backend
+     */
+    fun loadSkillsCatalogo() {
+        viewModelScope.launch {
+            try {
+                val catalog = catalogoRepository.getSkillsCatalogo()
+                _skillCatalog.value = catalog
+                // Inicializar con el primer tipo disponible o TECNICO por defecto
+                val firstTipo = _tiposSkill.value.firstOrNull() ?: "TECNICO"
+                _selectedTipoSkill.value = firstTipo
+                // Filtrar inmediatamente
+                updateFilteredSkills()
+                Log.d("ColaboradorFormVM", "Catálogo de skills cargado: ${catalog.size} items")
+            } catch (e: Exception) {
+                Log.e("ColaboradorFormVM", "Error al cargar catálogo de skills", e)
+                _skillCatalog.value = emptyList()
+            }
+        }
     }
 
-    fun onDisponibilidadDiasChange(dias: String) {
-        _disponibilidadDias.value = dias.toIntOrNull()
+    /**
+     * Abre el diálogo de selección de skill
+     */
+    fun openSkillPicker() {
+        _skillSearchText.value = ""
+        _showSkillPickerDialog.value = true
+        // Cargar catálogo si aún no está cargado
+        if (_skillCatalog.value.isEmpty()) {
+            loadSkillsCatalogo()
+        } else {
+            updateFilteredSkills()
+        }
     }
 
-    fun clearErrorMessage() {
-        _errorMessage.value = null
+    /**
+     * Cierra el diálogo de selección de skill
+     */
+    fun closeSkillPicker() {
+        _showSkillPickerDialog.value = false
+        _skillSearchText.value = ""
     }
 
-    // Método principal para guardar (crear o actualizar)
+    /**
+     * Cambia el tipo de skill seleccionado en el diálogo
+     */
+    fun onTipoSkillSelected(tipo: String) {
+        _selectedTipoSkill.value = tipo
+        updateFilteredSkills()
+    }
+
+    /**
+     * Actualiza el texto de búsqueda de skills
+     */
+    fun onSkillSearchTextChange(text: String) {
+        _skillSearchText.value = text
+        updateFilteredSkills()
+    }
+
+    /**
+     * Recalcula la lista filtrada de skills según tipo y búsqueda
+     */
+    private fun updateFilteredSkills() {
+        val tipo = _selectedTipoSkill.value
+        val searchText = _skillSearchText.value.trim().lowercase()
+
+        _filteredSkillSuggestions.value = _skillCatalog.value
+            .filter { it.tipo == tipo }
+            .filter {
+                searchText.isEmpty() || it.nombre.lowercase().contains(searchText)
+            }
+            .sortedBy { it.nombre }
+    }
+
+    /**
+     * Maneja el clic en una sugerencia de skill del catálogo
+     */
+    fun onSkillSuggestionClick(item: SkillCatalogItemDto) {
+        // Verificar si el skill ya existe en la lista
+        val alreadyExists = _skills.value.any {
+            it.nombre.equals(item.nombre, ignoreCase = true) && it.tipo == item.tipo
+        }
+
+        if (alreadyExists) {
+            _errorMessage.value = "El skill '${item.nombre}' ya está agregado"
+            return
+        }
+
+        // Crear el nuevo skill con valores por defecto
+        val newSkill = SkillCreateDto(
+            nombre = item.nombre,
+            tipo = item.tipo,
+            nivel = 1, // Nivel por defecto
+            esCritico = false
+        )
+
+        // Agregar a la lista
+        val current = _skills.value.toMutableList()
+        current.add(newSkill)
+        _skills.value = current
+
+        // Cerrar el diálogo
+        closeSkillPicker()
+
+        Log.d("ColaboradorFormVM", "Skill agregado: ${item.nombre} (${item.tipo})")
+    }
+
+    // Guardar colaborador (crear o actualizar)
     fun guardarColaborador() {
         viewModelScope.launch {
             _isSaving.value = true
             _errorMessage.value = null
 
             try {
-                // Validaciones
+                // Validaciones mínimas
                 if (_nombres.value.isBlank()) {
                     _errorMessage.value = "El nombre es obligatorio"
                     _isSaving.value = false
@@ -259,62 +429,46 @@ class ColaboradorFormViewModel(
                     return@launch
                 }
 
-                if (_area.value.isBlank()) {
-                    _errorMessage.value = "El área es obligatoria"
+                if (_correo.value.isBlank()) {
+                    _errorMessage.value = "El correo es obligatorio"
                     _isSaving.value = false
                     return@launch
                 }
 
-                if (_rolActual.value.isBlank()) {
-                    _errorMessage.value = "El rol actual es obligatorio"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                if (_selectedSkills.value.isEmpty()) {
-                    _errorMessage.value = "Debe seleccionar al menos un skill"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                if (_selectedNivel.value == null) {
-                    _errorMessage.value = "Debe seleccionar un nivel"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                // Construir el DTO
-                val dto = ColaboradorCreateDto(
+                // Construir DTO
+                val dtoCreate = ColaboradorCreateDto(
                     nombres = _nombres.value.trim(),
                     apellidos = _apellidos.value.trim(),
+                    correo = _correo.value.trim(),
                     area = _area.value.trim(),
-                    rolActual = _rolActual.value.trim(),
-                    skills = _selectedSkills.value.map { it.id }, // Asumiendo que para crear/editar se envían los IDs
-                    nivelCodigo = _selectedNivel.value?.codigo,
-                    certificaciones = _certificaciones.value.filter { it.nombre.isNotBlank() },
-                    disponibilidad = DisponibilidadCreateDto(
-                        estado = _disponibilidadEstado.value,
-                        dias = _disponibilidadDias.value
-                    )
+                    rolLaboral = _rolLaboral.value.trim(),
+                    disponibleParaMovilidad = _disponibleParaMovilidad.value,
+                    skills = _skills.value,
+                    certificaciones = _certificaciones.value
                 )
 
-                // Decidir entre POST o PUT según el modo
-                val result = if (colaboradorId == null) {
-                    // Modo crear (POST)
-                    repository.createColaborador(dto)
+                if (isEditMode && colaboradorId != null) {
+                    val updateDto = ColaboradorUpdateDto(
+                        nombres = dtoCreate.nombres,
+                        apellidos = dtoCreate.apellidos,
+                        correo = dtoCreate.correo,
+                        area = dtoCreate.area,
+                        rolLaboral = dtoCreate.rolLaboral,
+                        disponibleParaMovilidad = dtoCreate.disponibleParaMovilidad,
+                        skills = dtoCreate.skills,
+                        certificaciones = dtoCreate.certificaciones,
+                        estado = _estado.value // Enviar el estado seleccionado
+                    )
+                    repository.updateColaborador(colaboradorId, updateDto)
                 } else {
-                    // Modo editar (PUT)
-                    repository.updateColaborador(colaboradorId, dto)
+                    repository.createColaborador(dtoCreate)
                 }
 
-                Log.d("ColaboradorFormVM", "Colaborador guardado: ${result.id}")
-
-                // Éxito
                 _saveSuccess.value = true
 
             } catch (e: Exception) {
                 Log.e("ColaboradorFormVM", "Error al guardar colaborador", e)
-                _errorMessage.value = "Error al guardar: ${e.message}"
+                _errorMessage.value = e.message ?: "Error al guardar colaborador"
             } finally {
                 _isSaving.value = false
             }

@@ -99,27 +99,14 @@ object RetrofitClient {
     val colaboradorApi: ColaboradorApiService by lazy {
         retrofit.create(ColaboradorApiService::class.java)
     }
-
     /**
      * API Service de skills de colaborador
      */
-    val colaboradorSkillsApi: ColaboradorSkillsApiService by lazy {
-        retrofit.create(ColaboradorSkillsApiService::class.java)
-    }
 
     /**
      * API Service de skills
      */
-    val skillApi: SkillApiService by lazy {
-        retrofit.create(SkillApiService::class.java)
-    }
 
-    /**
-     * API Service de niveles de skill
-     */
-    val nivelSkillApi: NivelSkillApiService by lazy {
-        retrofit.create(NivelSkillApiService::class.java)
-    }
 
     /**
      * API Service de alertas

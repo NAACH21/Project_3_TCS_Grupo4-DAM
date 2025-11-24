@@ -40,6 +40,8 @@ import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudActu
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudCertificacionScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorViewModel
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudAdminScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.NuevaEntrevistaScreen
 import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -212,6 +214,15 @@ fun AppNavigation(
                 navController = navController,
                 viewModel = viewModel
             )
+        }
+
+        // --- SOLICITUDES ADMIN (Entrevistas de Desempeño) ---
+        composable(Routes.SOLICITUDES_ADMIN) {
+            SolicitudAdminScreen(navController = navController)
+        }
+
+        composable(Routes.NUEVA_ENTREVISTA_ADMIN) {
+            NuevaEntrevistaScreen(navController = navController)
         }
 
         composable(

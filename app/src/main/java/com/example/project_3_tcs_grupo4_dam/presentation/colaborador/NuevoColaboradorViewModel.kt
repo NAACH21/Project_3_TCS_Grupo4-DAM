@@ -3,13 +3,14 @@ package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.*
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.async
 
 class NuevoColaboradorViewModel : ViewModel() {
 
@@ -25,38 +26,21 @@ class NuevoColaboradorViewModel : ViewModel() {
     private val _area = MutableStateFlow("")
     val area = _area.asStateFlow()
 
-    private val _rolActual = MutableStateFlow("")
-    val rolActual = _rolActual.asStateFlow()
+    private val _rolLaboral = MutableStateFlow("")
+    val rolLaboral = _rolLaboral.asStateFlow()
 
-    // Skills
-    private val _allSkills = MutableStateFlow<List<SkillDto>>(emptyList())
-    val allSkills = _allSkills.asStateFlow()
+    private val _disponibleParaMovilidad = MutableStateFlow(false)
+    val disponibleParaMovilidad = _disponibleParaMovilidad.asStateFlow()
 
-    private val _skillSearchText = MutableStateFlow("")
-    val skillSearchText = _skillSearchText.asStateFlow()
-
-    private val _selectedSkills = MutableStateFlow<List<SkillDto>>(emptyList())
-    val selectedSkills = _selectedSkills.asStateFlow()
-
-    // Niveles
-    private val _niveles = MutableStateFlow<List<NivelSkillDto>>(emptyList())
-    val niveles = _niveles.asStateFlow()
-
-    private val _selectedNivel = MutableStateFlow<NivelSkillDto?>(null)
-    val selectedNivel = _selectedNivel.asStateFlow()
+    // Skills embebidos
+    private val _skills = MutableStateFlow<List<SkillCreateDto>>(emptyList())
+    val skills = _skills.asStateFlow()
 
     // Certificaciones
     private val _certificaciones = MutableStateFlow<List<CertificacionCreateDto>>(emptyList())
     val certificaciones = _certificaciones.asStateFlow()
 
-    // Disponibilidad
-    private val _disponibilidadEstado = MutableStateFlow("Disponible")
-    val disponibilidadEstado = _disponibilidadEstado.asStateFlow()
-
-    private val _disponibilidadDias = MutableStateFlow<Int?>(null)
-    val disponibilidadDias = _disponibilidadDias.asStateFlow()
-
-    // Estados de UI
+    // UI states
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
@@ -69,75 +53,64 @@ class NuevoColaboradorViewModel : ViewModel() {
     private val _saveSuccess = MutableStateFlow(false)
     val saveSuccess = _saveSuccess.asStateFlow()
 
-    init {
-        loadInitialData()
-    }
-
-    private fun loadInitialData() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                // Cargar skills y niveles en paralelo
-                val skillsDeferred = async { repository.getAllSkills() }
-                val nivelesDeferred = async { repository.getAllNiveles() }
-
-                _allSkills.value = skillsDeferred.await()
-                _niveles.value = nivelesDeferred.await()
-
-                Log.d("NuevoColaboradorVM", "Skills cargados: ${_allSkills.value.size}")
-                Log.d("NuevoColaboradorVM", "Niveles cargados: ${_niveles.value.size}")
-            } catch (e: Exception) {
-                Log.e("NuevoColaboradorVM", "Error al cargar datos iniciales", e)
-                _errorMessage.value = "Error al cargar datos: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     // Métodos para actualizar campos
-    fun onNombresChange(value: String) {
-        _nombres.value = value
+    fun onNombresChange(value: String) { _nombres.value = value }
+    fun onApellidosChange(value: String) { _apellidos.value = value }
+    fun onAreaChange(value: String) { _area.value = value }
+    fun onRolLaboralChange(value: String) { _rolLaboral.value = value }
+    fun onDisponibleParaMovilidadChange(value: Boolean) { _disponibleParaMovilidad.value = value }
+
+    // Skills management
+    fun addSkill() {
+        val current = _skills.value.toMutableList()
+        current.add(SkillCreateDto(nombre = "", tipo = "TECNICO", nivel = 1, esCritico = false))
+        _skills.value = current
     }
 
-    fun onApellidosChange(value: String) {
-        _apellidos.value = value
-    }
-
-    fun onAreaChange(value: String) {
-        _area.value = value
-    }
-
-    fun onRolActualChange(value: String) {
-        _rolActual.value = value
-    }
-
-    fun onSkillSearchChange(value: String) {
-        _skillSearchText.value = value
-    }
-
-    fun toggleSkillSelection(skill: SkillDto) {
-        val currentSelected = _selectedSkills.value.toMutableList()
-        if (currentSelected.any { it.id == skill.id }) {
-            currentSelected.removeAll { it.id == skill.id }
-        } else {
-            currentSelected.add(skill)
+    fun updateSkillNombre(index: Int, nombre: String) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(nombre = nombre)
+            _skills.value = current
         }
-        _selectedSkills.value = currentSelected
     }
 
-    fun removeSkill(skill: SkillDto) {
-        _selectedSkills.value = _selectedSkills.value.filter { it.id != skill.id }
+    fun updateSkillTipo(index: Int, tipo: String) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(tipo = tipo)
+            _skills.value = current
+        }
     }
 
-    fun onNivelSelected(nivel: NivelSkillDto) {
-        _selectedNivel.value = nivel
+    fun updateSkillNivel(index: Int, nivel: Int) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(nivel = nivel)
+            _skills.value = current
+        }
     }
 
-    // Métodos para certificaciones
+    fun updateSkillEsCritico(index: Int, esCritico: Boolean) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(esCritico = esCritico)
+            _skills.value = current
+        }
+    }
+
+    fun removeSkill(index: Int) {
+        val current = _skills.value.toMutableList()
+        if (index in current.indices) {
+            current.removeAt(index)
+            _skills.value = current
+        }
+    }
+
+    // Certificaciones management
     fun addCertificacion() {
         val current = _certificaciones.value.toMutableList()
-        current.add(CertificacionCreateDto("", null, null))
+        current.add(CertificacionCreateDto(nombre = "", institucion = "", fechaObtencion = null, fechaVencimiento = null, archivoPdfUrl = null))
         _certificaciones.value = current
     }
 
@@ -149,18 +122,34 @@ class NuevoColaboradorViewModel : ViewModel() {
         }
     }
 
-    fun updateCertificacionUrl(index: Int, url: String) {
+    fun updateCertificacionInstitucion(index: Int, institucion: String) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
-            current[index] = current[index].copy(imagenUrl = url.ifBlank { null })
+            current[index] = current[index].copy(institucion = institucion)
             _certificaciones.value = current
         }
     }
 
-    fun updateCertificacionFecha(index: Int, fecha: String) {
+    fun updateCertificacionFechaObtencion(index: Int, fecha: String?) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
-            current[index] = current[index].copy(fechaObtencion = fecha.ifBlank { null })
+            current[index] = current[index].copy(fechaObtencion = fecha)
+            _certificaciones.value = current
+        }
+    }
+
+    fun updateCertificacionFechaVencimiento(index: Int, fecha: String?) {
+        val current = _certificaciones.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(fechaVencimiento = fecha)
+            _certificaciones.value = current
+        }
+    }
+
+    fun updateCertificacionArchivoUrl(index: Int, url: String?) {
+        val current = _certificaciones.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = current[index].copy(archivoPdfUrl = url)
             _certificaciones.value = current
         }
     }
@@ -173,26 +162,14 @@ class NuevoColaboradorViewModel : ViewModel() {
         }
     }
 
-    fun onDisponibilidadEstadoChange(estado: String) {
-        _disponibilidadEstado.value = estado
-    }
+    fun clearErrorMessage() { _errorMessage.value = null }
 
-    fun onDisponibilidadDiasChange(dias: String) {
-        _disponibilidadDias.value = dias.toIntOrNull()
-    }
-
-    fun clearErrorMessage() {
-        _errorMessage.value = null
-    }
-
-    // Método principal para guardar
     fun saveColaborador() {
         viewModelScope.launch {
             _isSaving.value = true
             _errorMessage.value = null
 
             try {
-                // Validaciones
                 if (_nombres.value.isBlank()) {
                     _errorMessage.value = "El nombre es obligatorio"
                     _isSaving.value = false
@@ -205,55 +182,22 @@ class NuevoColaboradorViewModel : ViewModel() {
                     return@launch
                 }
 
-                if (_area.value.isBlank()) {
-                    _errorMessage.value = "El área es obligatoria"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                if (_rolActual.value.isBlank()) {
-                    _errorMessage.value = "El rol actual es obligatorio"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                if (_selectedSkills.value.isEmpty()) {
-                    _errorMessage.value = "Debe seleccionar al menos un skill"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                if (_selectedNivel.value == null) {
-                    _errorMessage.value = "Debe seleccionar un nivel"
-                    _isSaving.value = false
-                    return@launch
-                }
-
-                // Construir el DTO
                 val dto = ColaboradorCreateDto(
                     nombres = _nombres.value.trim(),
                     apellidos = _apellidos.value.trim(),
+                    correo = "",
                     area = _area.value.trim(),
-                    rolActual = _rolActual.value.trim(),
-                    skills = _selectedSkills.value.map { it.id },
-                    nivelCodigo = _selectedNivel.value?.codigo,
-                    certificaciones = _certificaciones.value.filter { it.nombre.isNotBlank() },
-                    disponibilidad = DisponibilidadCreateDto(
-                        estado = _disponibilidadEstado.value,
-                        dias = _disponibilidadDias.value
-                    )
+                    rolLaboral = _rolLaboral.value.trim(),
+                    disponibleParaMovilidad = _disponibleParaMovilidad.value,
+                    skills = _skills.value,
+                    certificaciones = _certificaciones.value
                 )
 
-                // Llamar al repositorio
-                val result = repository.createColaborador(dto)
-                Log.d("NuevoColaboradorVM", "Colaborador creado: ${result.id}")
-
-                // Éxito
+                repository.createColaborador(dto)
                 _saveSuccess.value = true
-
             } catch (e: Exception) {
                 Log.e("NuevoColaboradorVM", "Error al guardar colaborador", e)
-                _errorMessage.value = "Error al guardar: ${e.message}"
+                _errorMessage.value = e.message ?: "Error al guardar"
             } finally {
                 _isSaving.value = false
             }

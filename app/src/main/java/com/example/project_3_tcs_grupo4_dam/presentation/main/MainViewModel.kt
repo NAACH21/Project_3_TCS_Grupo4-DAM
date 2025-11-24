@@ -3,7 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorListDto // CORRECCIÓN: Importar DTO de lista
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,11 +17,10 @@ class MainViewModel : ViewModel() {
     private val repository: ColaboradorRepository = ColaboradorRepositoryImpl()
 
     // --- Estado de la UI ---
-    // CORRECCIÓN: Usar ColaboradorListDto en lugar de ColaboradorReadDto
-    private val _colaboradores = MutableStateFlow<List<ColaboradorListDto>>(emptyList())
+    private val _colaboradores = MutableStateFlow<List<ColaboradorReadDto>>(emptyList())
 
     // Un StateFlow público que la UI puede "observar" (solo leer)
-    val colaboradores: StateFlow<List<ColaboradorListDto>> = _colaboradores.asStateFlow()
+    val colaboradores: StateFlow<List<ColaboradorReadDto>> = _colaboradores.asStateFlow()
 
     // --- Estado de Carga ---
     private val _isLoading = MutableStateFlow(false)
@@ -36,9 +35,9 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true // Mostrar 'cargando'
             try {
-                // Llamamos al repositorio (ahora devuelve List<ColaboradorListDto>)
+                // La API ahora devuelve ColaboradorReadDto con skills y certificaciones embebidos
                 val lista = repository.getAllColaboradores()
-                _colaboradores.value = lista // Ahora los tipos coinciden
+                _colaboradores.value = lista
 
                 Log.d("MainViewModel", "Datos recibidos: ${lista.size} colaboradores")
 

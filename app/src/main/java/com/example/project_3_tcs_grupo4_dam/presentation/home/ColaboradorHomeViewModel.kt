@@ -3,7 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,17 +25,11 @@ class ColaboradorHomeViewModel(
     private fun fetchColaborador() {
         viewModelScope.launch {
             try {
-                // CORRECCIÓN: Ahora recibimos Response<ColaboradorReadDto> DIRECTO
-                val response = apiService.getColaboradorById(colaboradorId)
-                
-                if (response.isSuccessful) {
-                    // No buscamos "success" ni "data", usamos el body directo
-                    val data = response.body()
-                    if (data != null) {
-                        _colaborador.value = data
-                    }
-                }
+                // La API ahora devuelve ColaboradorReadDto directamente con skills y certificaciones embebidas
+                val data = apiService.getColaboradorById(colaboradorId)
+                _colaborador.value = data
             } catch (e: Exception) {
+                android.util.Log.e("ColaboradorHomeVM", "Error al cargar colaborador", e)
                 e.printStackTrace()
             }
         }
