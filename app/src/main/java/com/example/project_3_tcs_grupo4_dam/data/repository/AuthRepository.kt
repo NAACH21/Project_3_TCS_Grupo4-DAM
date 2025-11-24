@@ -40,5 +40,9 @@ interface AuthRepository {
      * Cierra la sesión
      */
     fun logout()
-}
 
+    /**
+     * Obtiene el SessionManager (necesario para leer usuarioId después del login)
+     */
+    fun getSessionManager(): com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+}

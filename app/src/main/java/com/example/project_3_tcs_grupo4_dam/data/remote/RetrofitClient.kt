@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // IP Actualizada: Asegúrate de que esta sea la IP de tu PC en la red local
-    private const val BASE_URL = "http://192.168.18.94:5260/"
+    private const val BASE_URL = "http://10.62.245.60:5260/"
 
     // Variable para almacenar el token JWT en memoria
     private var authToken: String? = null
@@ -126,5 +126,16 @@ object RetrofitClient {
      */
     val alertasApi: AlertasApiService by lazy {
         retrofit.create(AlertasApiService::class.java)
+    }
+
+    /**
+     * API Service de solicitudes
+     */
+    val solicitudesApi: SolicitudesApiService by lazy {
+        retrofit.create(SolicitudesApiService::class.java)
+    }
+
+    val catalogoApi: CatalogoApiService by lazy {
+        retrofit.create(CatalogoApiService::class.java)
     }
 }
