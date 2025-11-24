@@ -2,6 +2,7 @@ package com.example.project_3_tcs_grupo4_dam.data.remote
 
 import com.example.project_3_tcs_grupo4_dam.BuildConfig
 import com.google.gson.GsonBuilder
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -16,11 +17,30 @@ object RetrofitClient {
 
     // IP Actualizada: Asegúrate de que esta sea la IP de tu PC en la red local
     private const val BASE_URL = "http://192.168.18.94:5260/"
+
+    // Variable para almacenar el token JWT en memoria
+    private var authToken: String? = null
+
+    /**
+     * Función para establecer el token JWT después del login
+     */
+    fun setJwtToken(token: String) {
+        authToken = token
+    }
+
+    /**
+     * Función para limpiar el token al cerrar sesión
+     */
+    fun clearToken() {
+        authToken = null
+    }
  
     /**
-     * Cliente OkHttp con logging y timeouts configurados
+     * Cliente OkHttp con logging, timeouts y AuthInterceptor
      */
     private val okHttpClient: OkHttpClient by lazy {
+        
+        // Interceptor para Logging
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
@@ -29,8 +49,22 @@ object RetrofitClient {
             }
         }
 
+        // Interceptor para Autenticación (Bearer Token)
+        val authInterceptor = Interceptor { chain ->
+            val originalRequest = chain.request()
+            val requestBuilder = originalRequest.newBuilder()
+            
+            // Si hay un token, lo agregamos al header Authorization
+            authToken?.let { token ->
+                requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
+            
+            chain.proceed(requestBuilder.build())
+        }
+
         OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(authInterceptor) // Primero Auth para inyectar header
+            .addInterceptor(loggingInterceptor) // Luego Logger para verlo
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos
 import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepository
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,8 +65,13 @@ class AuthViewModel(
                     if (apiResponse.success && apiResponse.data != null) {
 
                         // ⭐ Guardar token y colaboradorId ⭐
-                        _onToken.value = apiResponse.data.token
+                        val token = apiResponse.data.token
+                        _onToken.value = token
                         _onColaboradorId.value = apiResponse.data.colaboradorId
+                        
+                        // CONFIGURAR TOKEN EN RETROFIT PARA PETICIONES FUTURAS
+                        RetrofitClient.setJwtToken(token)
+                        Log.d("AUTH_VM", "Token JWT configurado en RetrofitClient")
 
                         _uiState.value = AuthUiState(
                             isSuccess = true,
@@ -145,6 +151,7 @@ class AuthViewModel(
      */
     fun logout() {
         repository.logout()
+        RetrofitClient.clearToken() // Limpiar token de Retrofit también
         resetState()
     }
 
@@ -155,4 +162,3 @@ class AuthViewModel(
         _uiState.value = AuthUiState()
     }
 }
-

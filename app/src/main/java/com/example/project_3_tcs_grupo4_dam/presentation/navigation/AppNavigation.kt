@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
@@ -48,6 +49,8 @@ fun AppNavigation(
 
     fun performLogout() {
         sessionManager.clearSession()
+        // Limpiar token de Retrofit
+        RetrofitClient.clearToken()
         navController.navigate(Routes.LOGIN) {
             popUpTo(0) { inclusive = true }
         }
@@ -56,6 +59,15 @@ fun AppNavigation(
     LaunchedEffect(Unit) {
         val role = sessionManager.getRol()
         val logged = sessionManager.isLoggedIn()
+        
+        // --- NUEVO: Recuperar token si hay sesión activa ---
+        if (logged) {
+            val token = sessionManager.getToken()
+            if (!token.isNullOrEmpty()) {
+                RetrofitClient.setJwtToken(token)
+                Log.d("AppNavigation", "Sesión recuperada. Token JWT configurado.")
+            }
+        }
         
         if (logged && !role.isNullOrEmpty()) {
             val destination = when (role.uppercase()) {
@@ -140,7 +152,6 @@ fun AppNavigation(
         composable(Routes.EVALUATION_SCREEN) { EvaluationScreen(navController = navController) }
         composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
         
-        // ✅ AGREGA ESTA RUTA QUE FALTABA
         composable(Routes.NOTIFICACIONES) { NotificacionesScreen(navController = navController) }
         
         composable(Routes.ALERTAS_ADMIN) { NotificacionesScreen(navController = navController) }
