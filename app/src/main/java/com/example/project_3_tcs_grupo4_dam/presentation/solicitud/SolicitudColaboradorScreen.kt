@@ -214,7 +214,11 @@ fun SolicitudColaboradorScreen(
                             items(solicitudes) { solicitud ->
                                 SolicitudListItem(
                                     solicitud = solicitud,
-                                    onClick = { viewModel.mostrarDetalleSolicitud(solicitud) }
+                                    onClick = { viewModel.mostrarDetalleSolicitud(solicitud) },
+                                    onAnularClick = { solicitudId ->
+                                        // ⭐ Conectar con el ViewModel para anular
+                                        viewModel.anularSolicitud(solicitudId)
+                                    }
                                 )
                             }
 

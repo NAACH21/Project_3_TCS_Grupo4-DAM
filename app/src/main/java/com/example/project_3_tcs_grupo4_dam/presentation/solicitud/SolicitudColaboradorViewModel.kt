@@ -9,6 +9,7 @@ import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionPropuestaCre
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorSkillDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudUpdateEstadoDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -362,6 +363,70 @@ class SolicitudColaboradorViewModel(
 
     fun limpiarError() {
         _errorMessage.value = null
+    }
+
+    /**
+     * Anula una solicitud cambiando su estado a ANULADA
+     * Solo disponible para colaboradores con solicitudes en estado PENDIENTE o EN_REVISION
+     */
+    fun anularSolicitud(solicitudId: String) {
+        if (rolUsuario != "COLABORADOR") {
+            android.util.Log.e("SolicitudViewModel", "Error: Solo colaboradores pueden anular solicitudes. Rol actual: $rolUsuario")
+            _errorMessage.value = "Solo los colaboradores pueden anular sus propias solicitudes"
+            return
+        }
+
+        if (usuarioId.isBlank()) {
+            android.util.Log.e("SolicitudViewModel", "ERROR CRÍTICO: usuarioId está vacío al intentar anular solicitud")
+            _errorMessage.value = "Error: No se pudo obtener el ID de usuario. Por favor, cierra sesión y vuelve a iniciar."
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            try {
+                android.util.Log.d("SolicitudViewModel", "=== ANULANDO SOLICITUD ===")
+                android.util.Log.d("SolicitudViewModel", "SolicitudId: $solicitudId")
+                android.util.Log.d("SolicitudViewModel", "UsuarioId: $usuarioId")
+
+                // Construir el request de actualización de estado
+                val request = SolicitudUpdateEstadoDto(
+                    estadoSolicitud = "ANULADA",
+                    observacionAdmin = "Anulada por el colaborador desde la app móvil",
+                    revisadoPorUsuarioId = usuarioId
+                )
+
+                android.util.Log.d("SolicitudViewModel", "Request: $request")
+
+                // Llamar al repositorio para actualizar el estado
+                val solicitudActualizada = solicitudesRepository.updateEstadoSolicitud(solicitudId, request)
+
+                android.util.Log.d("SolicitudViewModel", "✅ Solicitud anulada exitosamente. Nuevo estado: ${solicitudActualizada.estadoSolicitud}")
+
+                // Actualizar la lista local
+                _todasSolicitudes.value = _todasSolicitudes.value.map { solicitud ->
+                    if (solicitud.id == solicitudId) {
+                        solicitudActualizada
+                    } else {
+                        solicitud
+                    }
+                }
+
+                // Reaplicar filtros para actualizar la vista
+                aplicarFiltros()
+
+                android.util.Log.d("SolicitudViewModel", "Lista de solicitudes actualizada")
+
+            } catch (e: Exception) {
+                android.util.Log.e("SolicitudViewModel", "❌ Error al anular solicitud", e)
+                android.util.Log.e("SolicitudViewModel", "Detalles del error: ${e.stackTraceToString()}")
+                _errorMessage.value = "Error al anular solicitud: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }
 
