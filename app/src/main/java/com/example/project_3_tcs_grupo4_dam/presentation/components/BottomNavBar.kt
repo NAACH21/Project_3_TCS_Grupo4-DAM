@@ -18,7 +18,8 @@ sealed class BottomNavItem(
 ) {
     object Home : BottomNavItem(Routes.HOME, "Inicio", Icons.Default.Home)
     object Colaboradores : BottomNavItem(Routes.COLABORADORES, "Colaboradores", Icons.Default.Person)
-    object Evaluaciones : BottomNavItem(Routes.EVALUACIONES, "Evaluaciones", Icons.Default.Assessment)
+    // Corrected Route to point to the main evaluation screen
+    object Evaluaciones : BottomNavItem(Routes.EVALUATION_SCREEN, "Evaluaciones", Icons.Default.Assessment)
     object Vacantes : BottomNavItem(Routes.VACANTES, "Vacantes", Icons.Default.Work)
     object Dashboard : BottomNavItem(Routes.DASHBOARD, "Dashboard", Icons.Default.Dashboard)
 }

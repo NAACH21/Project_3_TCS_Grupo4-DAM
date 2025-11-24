@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Configuración singleton de Retrofit
- * Base URL: http://10.0.2.2:5260/ (emulador Android apuntando a localhost del host)
+ * Asegúrate de que la IP sea accesible desde el dispositivo (mismo Wi-Fi o 10.0.2.2 para emulador)
  */
 object RetrofitClient {
 
-    // Base URL del backend .NET
-    private const val BASE_URL = "http://172.19.211.84:5260/"
-
+    // IP Actualizada: Asegúrate de que esta sea la IP de tu PC en la red local
+    private const val BASE_URL = "http://192.168.18.4:5260/"
+ 
     /**
      * Cliente OkHttp con logging y timeouts configurados
      */
@@ -67,6 +67,13 @@ object RetrofitClient {
     }
 
     /**
+     * API Service de skills de colaborador
+     */
+    //val colaboradorSkillsApi: ColaboradorSkillsApiService by lazy {
+        //retrofit.create(ColaboradorSkillsApiService::class.java)
+    //}
+
+    /**
      * API Service de skills
      */
     val skillApi: SkillApiService by lazy {
@@ -79,4 +86,11 @@ object RetrofitClient {
     val nivelSkillApi: NivelSkillApiService by lazy {
         retrofit.create(NivelSkillApiService::class.java)
     }
+
+    /**
+     * API Service de alertas
+     */
+    //val alertasApi: AlertasApiService by lazy {
+        //retrofit.create(AlertasApiService::class.java)
+    //}
 }
