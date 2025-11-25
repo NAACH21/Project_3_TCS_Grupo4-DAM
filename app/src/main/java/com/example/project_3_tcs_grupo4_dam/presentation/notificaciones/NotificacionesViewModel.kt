@@ -3,6 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.notificaciones
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.project_3_tcs_grupo4_dam.data.local.LocalAlertManager
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.AlertaDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
@@ -10,14 +11,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+// Modelo UI Wrapper para manejar estado local
+data class AlertaUiState(
+    val alerta: AlertaDto,
+    val isVisto: Boolean
+)
+
 class NotificacionesViewModel(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val context: android.content.Context // Necesitamos el contexto para LocalAlertManager
 ) : ViewModel() {
 
     private val apiService = RetrofitClient.alertasApi
+    private val localManager = LocalAlertManager(context) // Manager para persistencia local
 
-    private val _alertas = MutableStateFlow<List<AlertaDto>>(emptyList())
-    val alertas = _alertas.asStateFlow()
+    // Estado con la lista enriquecida (DTO + Visto)
+    private val _alertasUi = MutableStateFlow<List<AlertaUiState>>(emptyList())
+    val alertasUi = _alertasUi.asStateFlow()
+
+    // Badge real calculado
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount = _unreadCount.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -28,16 +42,13 @@ class NotificacionesViewModel(
 
     /**
      * Función auxiliar para extraer el ID ya sea string o objeto Mongo { $oid: "..." }
-     * Se ha simplificado para ser más estable y no depender de clases internas de GSON.
      */
     private fun extraerId(valor: Any?): String? {
         if (valor == null) return null
-        
         return try {
             when (valor) {
                 is String -> valor
                 is Map<*, *> -> valor["\$oid"]?.toString() ?: valor["oid"]?.toString()
-                // LinkedTreeMap implementa Map, por lo que entra en el caso anterior de forma segura
                 else -> valor.toString()
             }
         } catch (e: Exception) {
@@ -50,34 +61,25 @@ class NotificacionesViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // 1. Obtener datos del usuario logueado
+                // 1. Obtener datos sesión
                 val rolUsuario = sessionManager.getRol() ?: "INVITADO"
                 val rawColaboradorId = sessionManager.getColaboradorId()
                 val rawUsuarioId = sessionManager.getUsuarioId()
-
-                // Normalizar IDs locales
                 val miColaboradorId = rawColaboradorId?.trim()
                 val miUsuarioId = rawUsuarioId?.trim()
 
-                Log.d("NotificacionesVM", "--- INICIO CARGA ALERTAS ---")
-                Log.d("NotificacionesVM", "Usuario Logueado -> Rol: '$rolUsuario', ColabID: '$miColaboradorId', UserID: '$miUsuarioId'")
-
-                // 2. Obtener TODAS las alertas
+                // 2. Obtener TODAS las alertas (Backend)
                 val response = apiService.getAllAlertas()
                 val todasLasAlertas = response.data ?: emptyList()
-                Log.d("NotificacionesVM", "Backend devolvió: ${todasLasAlertas.size} alertas totales")
 
-                // 3. Filtrar en memoria
+                // 3. Filtrar alertas relevantes para este usuario (Lógica original)
                 val alertasFiltradas = if (rolUsuario.equals("COLABORADOR", ignoreCase = true)) {
                     todasLasAlertas.filter { alerta ->
-                        // A. Extraer ColaboradorId de la alerta (maneja string u objeto)
                         val alertaColabId = extraerId(alerta.colaboradorId)
-                        
                         val esParaMiColaborador = !miColaboradorId.isNullOrEmpty() && 
                                                   !alertaColabId.isNullOrEmpty() &&
                                                   alertaColabId == miColaboradorId
 
-                        // B. Extraer UsuarioId de los destinatarios
                         val soyDestinatarioDirecto = alerta.destinatarios?.any { dest ->
                             val destUsuarioId = extraerId(dest.usuarioId)
                             !miUsuarioId.isNullOrEmpty() && 
@@ -85,13 +87,9 @@ class NotificacionesViewModel(
                             destUsuarioId == miUsuarioId
                         } == true
 
-                        if (esParaMiColaborador) Log.d("NotificacionesVM", "MATCH Colaborador: ${alerta.id}")
-                        if (soyDestinatarioDirecto) Log.d("NotificacionesVM", "MATCH Destinatario: ${alerta.id}")
-
                         esParaMiColaborador || soyDestinatarioDirecto
                     }
                 } else {
-                    // Admin / Manager
                     todasLasAlertas.filter { alerta ->
                         alerta.destinatarios?.any { 
                             it.tipo?.equals(rolUsuario, ignoreCase = true) == true 
@@ -99,15 +97,48 @@ class NotificacionesViewModel(
                     }
                 }
 
-                Log.d("NotificacionesVM", "Final: Mostrando ${alertasFiltradas.size} alertas")
-                _alertas.value = alertasFiltradas
+                // 4. CRUCE DE DATOS: API vs LOCAL (Nuevo)
+                val readIds = localManager.getReadIds()
+                
+                val uiList = alertasFiltradas.map { alerta ->
+                    val id = extraerId(alerta.id) ?: ""
+                    val isRead = readIds.contains(id)
+                    
+                    AlertaUiState(
+                        alerta = alerta,
+                        isVisto = isRead
+                    )
+                }
+
+                // 5. Actualizar estados UI
+                _alertasUi.value = uiList
+                _unreadCount.value = uiList.count { !it.isVisto }
 
             } catch (e: Exception) {
                 Log.e("NotificacionesVM", "Error cargando alertas", e)
-                _alertas.value = emptyList()
+                _alertasUi.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    // Acción de usuario: Marcar como visto
+    fun marcarComoVisto(alertaId: String) {
+        // 1. Persistir localmente
+        localManager.markAsRead(alertaId)
+
+        // 2. Actualizar estado en memoria inmediatamente para UI responsiva
+        val currentList = _alertasUi.value.map { item ->
+            val itemId = extraerId(item.alerta.id)
+            if (itemId == alertaId) {
+                item.copy(isVisto = true)
+            } else {
+                item
+            }
+        }
+        
+        _alertasUi.value = currentList
+        _unreadCount.value = currentList.count { !it.isVisto }
     }
 }

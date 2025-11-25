@@ -54,10 +54,11 @@ fun SolicitudColaboradorScreen(
     val notificacionesViewModel: NotificacionesViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return NotificacionesViewModel(sessionManager) as T
+                return NotificacionesViewModel(sessionManager, context) as T   // ✅ ARREGLADO
             }
         }
     )
+
 
     // Estados del ViewModel
     val solicitudes by viewModel.solicitudesFiltradas.collectAsState()
@@ -68,7 +69,7 @@ fun SolicitudColaboradorScreen(
     val isDialogOpen by viewModel.isDialogNuevaSolicitudOpen.collectAsState()
     val showDetalleDialog by viewModel.showDetalleDialog.collectAsState()
     val solicitudSeleccionada by viewModel.solicitudSeleccionada.collectAsState()
-    val alertas by notificacionesViewModel.alertas.collectAsState()
+    val unreadCount by notificacionesViewModel.unreadCount.collectAsState()   // ✅ CORRECTO
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -119,7 +120,7 @@ fun SolicitudColaboradorScreen(
         bottomBar = {
             ColaboradorBottomNavBar(
                 navController = navController,
-                alertCount = alertas.size
+                alertCount = unreadCount
             )
         },
         floatingActionButton = {

@@ -13,7 +13,6 @@ object Routes {
     const val MANAGER_HOME = "home_manager"
 
     // --- CONSTANTES PARA BOTTOM BAR ADMIN (Alias) ---
-    // Estas constantes se usan en BottomNavBar.kt, así que las mapeamos a las rutas de Admin
     const val HOME = ADMIN_HOME 
     const val VACANTES = "vacantes_admin"             
     const val EVALUACIONES = "evaluaciones_admin"     

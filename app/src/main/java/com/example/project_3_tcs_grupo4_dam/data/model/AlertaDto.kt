@@ -22,7 +22,11 @@ data class AlertaDto(
     val destinatarios: List<DestinatarioDto>? = emptyList(),
 
     @SerializedName("detalle") 
-    val detalle: Any?
+    val detalle: Any?,
+    
+    // Campo agregado para mostrar la fecha en el detalle
+    @SerializedName("fechaCreacion")
+    val fechaCreacion: String? = null
 )
 
 data class DestinatarioDto(

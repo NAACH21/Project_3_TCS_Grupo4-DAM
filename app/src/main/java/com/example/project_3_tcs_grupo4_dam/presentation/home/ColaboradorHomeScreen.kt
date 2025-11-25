@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.project_3_tcs_grupo4_dam.R
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
@@ -68,16 +69,19 @@ fun ColaboradorHomeScreen(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return NotificacionesViewModel(sessionManager) as T
+                // ARREGLO: Pasamos el context que ahora es requerido por el ViewModel
+                return NotificacionesViewModel(sessionManager, context) as T
             }
         }
     )
     
-    val alertas by notificacionesViewModel.alertas.collectAsState()
+    // ARREGLO: Usamos unreadCount que es el Int para el badge
+    val unreadCount by notificacionesViewModel.unreadCount.collectAsState()
     val colaborador by homeViewModel.colaborador.collectAsState()
 
     Scaffold(
-        bottomBar = { ColaboradorBottomNavBar(navController, alertas.size) },
+        // ARREGLO: Pasamos el contador de no leídos (Int) al bottom bar
+        bottomBar = { ColaboradorBottomNavBar(navController, unreadCount) },
         containerColor = LightGrayBg
     ) { paddingValues ->
         Column(
@@ -167,8 +171,10 @@ fun ProfileCard(colaborador: ColaboradorReadDto) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Badge(text = colaborador.area, colorBg = Color(0xFFE3F2FD), colorText = TCSBlue)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    colaborador.area?.let { area ->
+                        Badge(text = area, colorBg = Color(0xFFE3F2FD), colorText = TCSBlue)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     Badge(
                         text = if (colaborador.estado == "ACTIVO") "Activo" else "Inactivo",
                         colorBg = if (colaborador.estado == "ACTIVO") BadgeGreenBg else Color(0xFFFFEBEE),
@@ -232,7 +238,7 @@ fun SkillsProgressCard(onSeeAllClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = 0.8f,
+                progress = { 0.8f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
@@ -353,7 +359,8 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
             BottomNavItem("Notificaciones", Icons.Outlined.Notifications, Routes.NOTIFICACIONES)
         )
         
-        val currentRoute = navController.currentDestination?.route
+        val currentBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = currentBackStackEntry?.destination?.route
 
         items.forEach { item ->
             NavigationBarItem(
@@ -380,20 +387,25 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            popUpTo(Routes.COLABORADOR_HOME) { saveState = true }
+                            popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = TCSBlue,
+                    unselectedIconColor = Color.Gray,
                     selectedTextColor = TCSBlue,
-                    indicatorColor = TCSBlue.copy(alpha = 0.1f)
+                    unselectedTextColor = Color.Gray,
+                    indicatorColor = Color(0xFFE3F2FD)
                 )
             )
         }
     }
 }
 
-data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
+data class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+)

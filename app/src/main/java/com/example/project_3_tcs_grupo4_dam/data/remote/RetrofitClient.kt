@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // IP Actualizada: Asegúrate de que esta sea la IP de tu PC en la red local
-    private const val BASE_URL = "http://10.62.245.60:5260/"
+    private const val BASE_URL = "http://192.168.18.94:5260/"
 
     // Variable para almacenar el token JWT en memoria
     private var authToken: String? = null
