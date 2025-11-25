@@ -16,7 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 
 private val TCSBlue = Color(0xFF00549F)
@@ -329,8 +330,8 @@ fun SolicitudActualizacionSkillsScreen(
 private fun CambioSkillCard(
     item: CambioSkillItemUI,
     misSkillsActuales: List<SkillReadDto>,
-    skillsCatalogo: List<CatalogoDtos.SkillCatalogItemDto>,
-    nivelesSkill: List<CatalogoDtos.NivelSkillDto>,
+    skillsCatalogo: List<SkillCatalogItemDto>,
+    nivelesSkill: List<NivelSkillDto>,
     onUpdate: (CambioSkillItemUI) -> Unit,
     onRemove: () -> Unit
 ) {
@@ -464,7 +465,7 @@ private fun CambioSkillCard(
                 onExpandedChange = { expandedNivel = it }
             ) {
                 OutlinedTextField(
-                    value = item.nivelPropuesto?.let { "${it.codigo} - ${it.descripcion}" } ?: "",
+                    value = item.nivelPropuesto?.let { "${it.nivel} - ${it.descripcion}" } ?: "",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Nivel propuesto *") },
@@ -480,7 +481,7 @@ private fun CambioSkillCard(
                 ) {
                     nivelesSkill.forEach { nivel ->
                         DropdownMenuItem(
-                            text = { Text("${nivel.codigo} - ${nivel.descripcion}") },
+                            text = { Text("${nivel.nivel} - ${nivel.descripcion}") },
                             onClick = {
                                 onUpdate(item.copy(nivelPropuesto = nivel))
                                 expandedNivel = false
@@ -522,8 +523,8 @@ private fun CambioSkillCard(
 // Modelo UI interno para la pantalla
 private data class CambioSkillItemUI(
     val skillExistenteSeleccionada: SkillReadDto? = null,
-    val skillNuevaSeleccionada: CatalogoDtos.SkillCatalogItemDto? = null,
-    val nivelPropuesto: CatalogoDtos.NivelSkillDto? = null,
+    val skillNuevaSeleccionada: SkillCatalogItemDto? = null,
+    val nivelPropuesto: NivelSkillDto? = null,
     val esCriticoPropuesto: Boolean = false,
     val motivo: String = "",
     val esNueva: Boolean = false
@@ -534,7 +535,7 @@ private data class CambioSkillItemUI(
                 nombre = skillNuevaSeleccionada!!.nombre,
                 tipo = skillNuevaSeleccionada.tipo,
                 nivelActual = null,
-                nivelPropuesto = nivelPropuesto!!.codigo,
+                nivelPropuesto = nivelPropuesto!!.nivel,
                 esCriticoActual = null,
                 esCriticoPropuesto = esCriticoPropuesto,
                 motivo = motivo,
@@ -545,7 +546,7 @@ private data class CambioSkillItemUI(
                 nombre = skillExistenteSeleccionada!!.nombre,
                 tipo = skillExistenteSeleccionada.tipo,
                 nivelActual = skillExistenteSeleccionada.nivel,
-                nivelPropuesto = nivelPropuesto!!.codigo,
+                nivelPropuesto = nivelPropuesto!!.nivel,
                 esCriticoActual = skillExistenteSeleccionada.esCritico,
                 esCriticoPropuesto = esCriticoPropuesto,
                 motivo = motivo,

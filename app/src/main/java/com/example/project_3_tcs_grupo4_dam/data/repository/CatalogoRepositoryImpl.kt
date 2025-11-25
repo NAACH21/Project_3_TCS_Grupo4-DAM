@@ -1,8 +1,8 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.CatalogoReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 
 /**
@@ -62,8 +62,9 @@ class CatalogoRepositoryImpl : CatalogoRepository {
         val response = apiService.getSkillsCatalogo()
         if (response.success && response.data != null) {
             // Aplanar la estructura agrupada a lista plana
+            // El response.data es List<SkillCatalogGroupDto>
             return response.data.flatMap { group ->
-                group.skills.map { skillName ->
+                group.items.map { skillName ->
                     SkillCatalogItemDto(
                         nombre = skillName,
                         tipo = group.tipo

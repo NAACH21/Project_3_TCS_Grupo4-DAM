@@ -19,13 +19,12 @@ object AuthDtos {
      * Response del login (dentro del campo "data")
      */
     data class LoginResponse(
-        // CORRECCIÓN: Lo hacemos nullable (String?) para evitar crashes si el backend no lo envía
-        @SerializedName("id", alternate = ["_id", "userId"]) // Agrego "userId" por si acaso
+        @SerializedName("id", alternate = ["_id", "userId"])
         val id: String?, 
         
         val token: String,
         val username: String,
-        val rolSistema: String, // "ADMIN", "BUSINESS_MANAGER", "COLABORADOR"
+        val rolSistema: String,
         val colaboradorId: String?
     )
 
@@ -46,3 +45,18 @@ object AuthDtos {
         val username: String
     )
 }
+
+// --- CLASES DE NIVEL SUPERIOR PARA EVITAR PROBLEMAS DE RESOLUCIÓN ---
+
+data class RoleDto(
+    @SerializedName("id", alternate = ["_id"])
+    val id: String,
+    val nombreRol: String
+)
+
+data class UsuarioDto(
+    @SerializedName("id", alternate = ["_id"])
+    val id: String,
+    val username: String,
+    val rolId: String
+)

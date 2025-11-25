@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -367,8 +368,9 @@ fun ColaboradorFormScreen(navController: NavController) {
 
                                         // Nivel (Dropdown desde catálogo con descripción)
                                         var expandedNivel by remember { mutableStateOf(false) }
-                                        val nivelActual = nivelesSkillCatalogo.find { it.codigo == skill.nivel }
-                                        val nivelTexto = nivelActual?.let { "Nivel ${it.codigo} - ${it.descripcion}" } ?: "Nivel ${skill.nivel}"
+                                        // CHANGE: Usar .nivel en lugar de .codigo
+                                        val nivelActual = nivelesSkillCatalogo.find { it.nivel == skill.nivel }
+                                        val nivelTexto = nivelActual?.let { "Nivel ${it.nivel} - ${it.descripcion}" } ?: "Nivel ${skill.nivel}"
 
                                         ExposedDropdownMenuBox(
                                             expanded = expandedNivel,
@@ -391,9 +393,11 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             ) {
                                                 nivelesSkillCatalogo.forEach { nivel ->
                                                     DropdownMenuItem(
-                                                        text = { Text("Nivel ${nivel.codigo} - ${nivel.descripcion}") },
+                                                        // CHANGE: Usar .nivel en lugar de .codigo
+                                                        text = { Text("Nivel ${nivel.nivel} - ${nivel.descripcion}") },
                                                         onClick = {
-                                                            viewModel.updateSkillNivel(index, nivel.codigo)
+                                                            // CHANGE: Usar .nivel en lugar de .codigo
+                                                            viewModel.updateSkillNivel(index, nivel.nivel)
                                                             expandedNivel = false
                                                         }
                                                     )
@@ -548,10 +552,10 @@ fun SkillPickerDialog(
     selectedTipo: String,
     tiposDisponibles: List<String>,
     searchText: String,
-    suggestions: List<com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto>,
+    suggestions: List<SkillCatalogItemDto>,
     onTipoChange: (String) -> Unit,
     onSearchTextChange: (String) -> Unit,
-    onSkillClick: (com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto) -> Unit,
+    onSkillClick: (SkillCatalogItemDto) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(

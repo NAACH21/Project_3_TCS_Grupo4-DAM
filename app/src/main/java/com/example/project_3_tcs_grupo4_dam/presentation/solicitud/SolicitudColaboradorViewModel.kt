@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.CambioSkillPropuestaCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
 import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionPropuestaCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudUpdateEstadoDto
@@ -51,11 +52,13 @@ class SolicitudColaboradorViewModel(
     val isDialogNuevaSolicitudOpen: StateFlow<Boolean> = _isDialogNuevaSolicitudOpen.asStateFlow()
 
     // Catálogo
-    private val _skillsCatalogo = MutableStateFlow<List<CatalogoDtos.SkillCatalogItemDto>>(emptyList())
-    val skillsCatalogo: StateFlow<List<CatalogoDtos.SkillCatalogItemDto>> = _skillsCatalogo.asStateFlow()
+    // FIXED: Cambio de CatalogoDtos.SkillCatalogItemDto a SkillCatalogItemDto (top-level)
+    private val _skillsCatalogo = MutableStateFlow<List<SkillCatalogItemDto>>(emptyList())
+    val skillsCatalogo: StateFlow<List<SkillCatalogItemDto>> = _skillsCatalogo.asStateFlow()
 
-    private val _nivelesSkill = MutableStateFlow<List<CatalogoDtos.NivelSkillDto>>(emptyList())
-    val nivelesSkill: StateFlow<List<CatalogoDtos.NivelSkillDto>> = _nivelesSkill.asStateFlow()
+    // FIXED: Cambio de CatalogoDtos.NivelSkillDto a NivelSkillDto (top-level)
+    private val _nivelesSkill = MutableStateFlow<List<NivelSkillDto>>(emptyList())
+    val nivelesSkill: StateFlow<List<NivelSkillDto>> = _nivelesSkill.asStateFlow()
 
     // Skills actuales del colaborador
     private val _misSkillsActuales = MutableStateFlow<List<SkillReadDto>>(emptyList())
@@ -159,7 +162,9 @@ class SolicitudColaboradorViewModel(
     private fun cargarCatalogo() {
         viewModelScope.launch {
             try {
+                // FIXED: Ahora getSkillsCatalogo() devuelve List<SkillCatalogItemDto> (top-level)
                 _skillsCatalogo.value = catalogoRepository.getSkillsCatalogo()
+                // FIXED: Ahora getNivelesSkill() devuelve List<NivelSkillDto> (top-level)
                 _nivelesSkill.value = catalogoRepository.getNivelesSkill()
                 android.util.Log.d("SolicitudViewModel", "Catálogo cargado: ${_skillsCatalogo.value.size} skills, ${_nivelesSkill.value.size} niveles")
             } catch (e: Exception) {

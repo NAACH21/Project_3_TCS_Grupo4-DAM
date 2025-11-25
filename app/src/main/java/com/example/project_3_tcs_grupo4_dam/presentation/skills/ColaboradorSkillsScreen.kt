@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
@@ -49,7 +50,8 @@ fun ColaboradorSkillsScreen(
 
     val viewModel: ColaboradorSkillsViewModel = viewModel(
         factory = ColaboradorSkillsViewModelFactory(
-            RetrofitClient.colaboradorApi, 
+            RetrofitClient.colaboradorApi,
+            sessionManager, // Se agregó el SessionManager faltante
             colaboradorId
         )
     )
@@ -59,6 +61,9 @@ fun ColaboradorSkillsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Todos") }
     var selectedStatus by remember { mutableStateOf("Todos") }
+    
+    // Estado para el diálogo de agregar skill
+    var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -73,6 +78,15 @@ fun ColaboradorSkillsScreen(
         },
         bottomBar = {
             ColaboradorBottomNavBar(navController)
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = TCSBlue,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Add, contentDescription = "Agregar") },
+                text = { Text("Agregar Skill") }
+            )
         },
         containerColor = Color.White
     ) { padding ->
@@ -121,7 +135,7 @@ fun ColaboradorSkillsScreen(
 
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(bottom = 80.dp) // Espacio para el FAB
                 ) {
                     items(filteredSkills) { skill ->
                         SkillColaboradorCard(
@@ -130,7 +144,6 @@ fun ColaboradorSkillsScreen(
                                 try {
                                     if (colaboradorId.isNotEmpty()) {
                                         // CAMBIO: Usamos la función helper Routes.actualizarSkill
-                                        // No hace falta codificar manualmente, el helper lo hace con Uri.encode
                                         val route = Routes.actualizarSkill(colaboradorId, skill.nombre)
                                         
                                         Log.d("Navigation", "Navegando a Skill Details: $route")
@@ -150,6 +163,70 @@ fun ColaboradorSkillsScreen(
             }
         }
     }
+    
+    // Diálogo para agregar Skill
+    if (showAddDialog) {
+        DialogAgregarSkill(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { nombre, tipo, nivel ->
+                viewModel.crearSkill(nombre, tipo, nivel)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun DialogAgregarSkill(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Int) -> Unit
+) {
+    var nombre by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf("TECNICO") } // TECNICO o BLANDO
+    // El backend puede no requerir nivel en creación, pero lo pedimos por si acaso
+    var nivel by remember { mutableStateOf(1) } 
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Agregar Nuevo Skill") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre del Skill") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Text("Tipo de Skill:", fontWeight = FontWeight.Bold)
+                Row {
+                    FilterChip(
+                        text = "Técnico",
+                        isSelected = tipo == "TECNICO",
+                        onClick = { tipo = "TECNICO" }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilterChip(
+                        text = "Blando",
+                        isSelected = tipo == "BLANDO",
+                        onClick = { tipo = "BLANDO" }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (nombre.isNotBlank()) onConfirm(nombre, tipo, nivel) },
+                colors = ButtonDefaults.buttonColors(containerColor = TCSBlue)
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable
@@ -165,13 +242,7 @@ private fun FilterSection(
             FilterChip(text = "Técnicos", isSelected = selectedType == "TECNICO", onClick = { onTypeSelected("TECNICO") })
             FilterChip(text = "Blandos", isSelected = selectedType == "BLANDO", onClick = { onTypeSelected("BLANDO") })
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(text = "Todos", isSelected = selectedStatus == "Todos", onClick = { onStatusSelected("Todos") })
-            FilterChip(text = "Aprobados", isSelected = selectedStatus == "Aprobado", onClick = { onStatusSelected("Aprobado") })
-            FilterChip(text = "Pendientes", isSelected = selectedStatus == "Pendiente", onClick = { onStatusSelected("Pendiente") })
-            FilterChip(text = "Rechazados", isSelected = selectedStatus == "Rechazado", onClick = { onStatusSelected("Rechazado") })
-        }
+        // Fila de estado eliminada visualmente o simplificada si no aplica
     }
 }
 
@@ -283,9 +354,10 @@ private fun SkillTag(text: String, isLevel: Boolean) {
     ) {
         Text(
             text = text,
+            color = colorText,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorText
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.skills
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,8 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
@@ -26,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 
 // Colores personalizados
@@ -42,20 +41,35 @@ fun ActualizarSkillScreen(
     colaboradorId: String,
     skillName: String
 ) {
+    val context = LocalContext.current
+    val sessionManager = SessionManager(context)
+
+    // Instanciamos el ViewModel con su Factory personalizado
     val viewModel: ActualizarSkillViewModel = viewModel(
         factory = ActualizarSkillViewModelFactory(
-            RetrofitClient.colaboradorApi,
-            colaboradorId,
-            skillName
+            sessionManager = sessionManager,
+            colaboradorId = colaboradorId,
+            skillName = skillName
         )
     )
 
-    val skill by viewModel.skillState.collectAsState()
+    // Recolectamos el estado del StateFlow
+    val skillState = viewModel.skillState.collectAsState()
+    val skill = skillState.value
+    
+    // Observamos mensajes de error
+    val errorMessage = viewModel.errorMessage
 
-    // Efecto para manejar éxito
     LaunchedEffect(viewModel.isSuccess) {
         if (viewModel.isSuccess) {
+            Toast.makeText(context, "Solicitud enviada para validación", Toast.LENGTH_LONG).show()
             navController.popBackStack()
+        }
+    }
+    
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -71,7 +85,6 @@ fun ActualizarSkillScreen(
             )
         },
         bottomBar = {
-            // Mantenemos la barra inferior visible como solicitado
             ColaboradorBottomNavBar(navController)
         }
     ) { paddingValues ->
@@ -82,13 +95,13 @@ fun ActualizarSkillScreen(
                 }
             } else if (skill != null) {
                 ContentActualizarSkill(
-                    skill = skill!!,
+                    skill = skill,
                     viewModel = viewModel,
                     onCancel = { navController.popBackStack() }
                 )
-            } else if (viewModel.errorMessage != null) {
+            } else if (errorMessage != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = viewModel.errorMessage!!, color = MaterialTheme.colorScheme.error)
+                    Text(text = errorMessage ?: "Error desconocido", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -119,7 +132,7 @@ fun ContentActualizarSkill(
         
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 1. Sección Información Actual (Ficha azul)
+        // 1. Sección Información Actual
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = LightBlueBg),
@@ -148,11 +161,11 @@ fun ContentActualizarSkill(
         Spacer(modifier = Modifier.height(24.dp))
 
         // 2. Sección Nuevo Nivel
-        Text("Nuevo Nivel", fontWeight = FontWeight.Bold)
+        Text("Nuevo Nivel Solicitado", fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         
         var expanded by remember { mutableStateOf(false) }
-        val niveles = listOf(1 to "Básico", 2 to "Intermedio", 3 to "Avanzado", 4 to "Experto")
+        val niveles = listOf(1, 2, 3, 4).filter { it > viewModel.currentNivel } // Solo niveles superiores
         
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -165,18 +178,15 @@ fun ContentActualizarSkill(
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = TCSBlue,
-                    unfocusedBorderColor = Color.LightGray
-                )
+                colors = OutlinedTextFieldDefaults.colors()
             )
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                niveles.forEach { (nivel, label) ->
+                niveles.forEach { nivel ->
                     DropdownMenuItem(
-                        text = { Text(label) },
+                        text = { Text(getNivelLabel(nivel)) },
                         onClick = {
                             viewModel.selectedNivel = nivel
                             expanded = false
@@ -186,7 +196,7 @@ fun ContentActualizarSkill(
             }
         }
         Text(
-            "Selecciona el nivel que deseas alcanzar con este skill",
+            "Selecciona el nivel que deseas validar.",
             style = MaterialTheme.typography.bodySmall,
             color = GrayText,
             modifier = Modifier.padding(top = 4.dp)
@@ -194,7 +204,7 @@ fun ContentActualizarSkill(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 3. Tipo de Evidencia (Segmented Control simulado)
+        // 3. Tipo de Evidencia
         Text("Tipo de Evidencia", fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         
@@ -231,25 +241,25 @@ fun ContentActualizarSkill(
             OutlinedTextField(
                 value = viewModel.urlEvidencia,
                 onValueChange = { viewModel.urlEvidencia = it },
-                placeholder = { Text("https://...") },
+                placeholder = { Text("https://ejemplo.com/certificado.pdf") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             )
             Text(
-                "Puede ser un enlace a certificación, proyecto, portafolio, etc.",
+                "Enlace a certificación, proyecto, portafolio, etc.",
                 style = MaterialTheme.typography.bodySmall,
                 color = GrayText
             )
         } else {
-            // Mock file picker UI
+            // UI Mock para selector de archivo
             OutlinedButton(
-                onClick = { /* Mock action */ },
+                onClick = { /* TODO: Implementar file picker */ },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Icon(Icons.Default.AttachFile, contentDescription = null)
+                Icon(Icons.Default.UploadFile, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Seleccionar archivo del dispositivo")
+                Text("Seleccionar archivo (No implementado)")
             }
         }
 
@@ -261,14 +271,9 @@ fun ContentActualizarSkill(
         OutlinedTextField(
             value = viewModel.notasAdicionales,
             onValueChange = { viewModel.notasAdicionales = it },
-            placeholder = { Text("Describe cómo adquiriste o mejoraste este skill...") },
+            placeholder = { Text("Ej: Experiencia liderando proyecto X...") },
             modifier = Modifier.fillMaxWidth().height(120.dp),
             shape = RoundedCornerShape(8.dp)
-        )
-        Text(
-            "Proporciona contexto adicional sobre tu experiencia con este skill",
-            style = MaterialTheme.typography.bodySmall,
-            color = GrayText
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -281,7 +286,8 @@ fun ContentActualizarSkill(
                 onClick = { viewModel.enviarValidacion() },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TCSBlue),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                enabled = viewModel.selectedNivel > viewModel.currentNivel && viewModel.urlEvidencia.isNotBlank()
             ) {
                 Text("Enviar para Validación", fontWeight = FontWeight.Bold)
             }
@@ -296,7 +302,6 @@ fun ContentActualizarSkill(
             }
         }
         
-        // Espacio extra para scroll
         Spacer(modifier = Modifier.height(50.dp))
     }
 }
@@ -316,10 +321,10 @@ private fun SegmentedButton(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = TCSBlue)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Icon(icon, contentDescription = text, tint = if (isSelected) TCSBlue else GrayText)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text, color = TCSBlue, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+            Text(text, color = if (isSelected) TCSBlue else GrayText, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
         }
     }
 }
@@ -330,6 +335,6 @@ private fun getNivelLabel(nivel: Int): String {
         2 -> "Intermedio"
         3 -> "Avanzado"
         4 -> "Experto"
-        else -> "Desconocido"
+        else -> "Nivel $nivel"
     }
 }

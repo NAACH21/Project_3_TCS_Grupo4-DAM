@@ -11,8 +11,8 @@ import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCrea
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepository
@@ -126,15 +126,15 @@ class ColaboradorFormViewModel(
                 Log.d("ColaboradorFormVM", "Catálogos cargados exitosamente")
             } catch (e: Exception) {
                 Log.e("ColaboradorFormVM", "Error al cargar catálogos", e)
-                // Fallback a valores por defecto
+                // Fallback a valores por defecto con constructor completo
                 _areas.value = listOf("Finanzas", "Tecnología", "Recursos Humanos", "Marketing")
                 _rolesLaborales.value = listOf("Tech Lead", "Backend Developer", "Frontend Developer")
                 _tiposSkill.value = listOf("TECNICO", "BLANDO")
                 _nivelesSkill.value = listOf(
-                    NivelSkillDto(1, "No iniciado"),
-                    NivelSkillDto(2, "Básico"),
-                    NivelSkillDto(3, "Intermedio"),
-                    NivelSkillDto(4, "Avanzado")
+                    NivelSkillDto(1, "No iniciado", "Sin experiencia previa"),
+                    NivelSkillDto(2, "Básico", "Conocimiento teórico o práctica limitada"),
+                    NivelSkillDto(3, "Intermedio", "Experiencia práctica autónoma"),
+                    NivelSkillDto(4, "Avanzado", "Dominio experto y capacidad de mentoría")
                 )
             }
         }

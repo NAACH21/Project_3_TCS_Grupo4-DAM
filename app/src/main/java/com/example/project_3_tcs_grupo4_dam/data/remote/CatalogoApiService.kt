@@ -1,9 +1,9 @@
 package com.example.project_3_tcs_grupo4_dam.data.remote
 
 import com.example.project_3_tcs_grupo4_dam.data.model.ApiResponse
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.CatalogoReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogGroupDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogGroupDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 

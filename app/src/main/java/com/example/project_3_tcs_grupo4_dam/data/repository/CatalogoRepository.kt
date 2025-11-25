@@ -1,12 +1,12 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.CatalogoReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillCatalogItemDto
 
 /**
  * Repositorio para el módulo de Catálogo
- * Proporciona acceso a las opciones precargadas para áreas, roles, niveles y tipos de skill
+ * Proporciona acceso a las opciones precargadas para áreas, roles, niveles, tipos de skill y skills
  */
 interface CatalogoRepository {
 
