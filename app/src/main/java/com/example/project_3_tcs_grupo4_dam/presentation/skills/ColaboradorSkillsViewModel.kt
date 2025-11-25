@@ -5,20 +5,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
-import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.CambioSkillPropuestaCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.RoleDto
-import com.example.project_3_tcs_grupo4_dam.data.model.UsuarioDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 data class ColaboradorSkillsUiState(
     val isLoading: Boolean = false,
@@ -34,11 +29,6 @@ class ColaboradorSkillsViewModel(
 
     private val _uiState = MutableStateFlow(ColaboradorSkillsUiState())
     val uiState: StateFlow<ColaboradorSkillsUiState> = _uiState.asStateFlow()
-    
-    // Usamos Solicitudes y Alertas, NO SkillApi
-    private val solicitudesApi = RetrofitClient.solicitudesApi
-    private val alertasApi = RetrofitClient.alertasApi
-    private val authApi = RetrofitClient.authApi
 
     init {
         fetchSkills()
@@ -62,113 +52,93 @@ class ColaboradorSkillsViewModel(
             }
         }
     }
-    
-    // --- AGREGAR SKILL VÍA SOLICITUD (POST /api/Solicitudes) ---
+
+    // --- AGREGAR SKILL DIRECTAMENTE (PUT /api/colaboradores/{id}) ---
+    // Cumpliendo regla: Agregar skill nuevo actualiza directamente el colaborador
     fun crearSkill(nombre: String, tipo: String, nivel: Int) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
-                // 1. Obtener Admins para notificación
-                val rolesResponse = authApi.getRoles()
-                val roles = rolesResponse.data ?: emptyList()
-                val adminRoleId = roles.find { it.nombreRol.equals("ADMIN", ignoreCase = true) }?.id
-                
-                val adminIds = if (adminRoleId != null) {
-                    val usuariosResponse = authApi.getUsuarios()
-                    val usuarios = usuariosResponse.data ?: emptyList()
-                    usuarios.filter { it.rolId == adminRoleId }.map { it.id }
-                } else {
-                    emptyList()
-                }
+                // 1. Obtener el colaborador actual completo para no perder datos
+                val colaboradorActual = apiService.getColaboradorById(colaboradorId)
 
-                // 2. Crear Solicitud
-                // Se usa un CambioSkillPropuesta simulando "Nivel Actual" como null (porque es nuevo)
-                val cambioDto = CambioSkillPropuestaCreateDto(
-                    nombre = nombre,
-                    tipo = tipo,
-                    nivelActual = null, // No tiene nivel actual
-                    nivelPropuesto = nivel,
-                    esCriticoActual = false,
-                    esCriticoPropuesto = false,
-                    motivo = "Solicitud de nuevo skill por colaborador"
-                )
-                
-                val solicitudDto = SolicitudCreateDto(
-                    tipoSolicitudGeneral = "ACTUALIZACION_SKILLS",
-                    tipoSolicitud = "NUEVO_SKILL", // Diferenciador opcional
-                    colaboradorId = colaboradorId,
-                    certificacionIdAnterior = null,
-                    certificacionPropuesta = null,
-                    datosEntrevistaPropuesta = null,
-                    cambiosSkillsPropuestos = listOf(cambioDto),
-                    creadoPorUsuarioId = sessionManager.getUsuarioId()
-                )
-                
-                val responseSolicitud = solicitudesApi.createSolicitud(solicitudDto)
-                
-                // 3. Crear Alerta
-                if (responseSolicitud.isSuccessful) {
-                     val fechaProxima = getSevenDaysFromNowIsoDate()
-                     val descripcionTexto = "Solicitud de NUEVO skill: $nombre (Nivel $nivel). Tipo: $tipo"
-                     
-                     val destinatariosList = adminIds.map { adminId ->
-                        mapOf("usuarioId" to adminId, "tipo" to "ADMIN")
-                     }
-                     
-                     val alertaBody = mapOf(
-                        "tipo" to "SOLICITUD_ACTUALIZACION_SKILL",
-                        "estado" to "PENDIENTE",
-                        "colaboradorId" to colaboradorId,
-                        "vacanteId" to null,
-                        "procesoMatchingId" to null,
-                        "usuarioResponsable" to (sessionManager.getUsuarioId() ?: ""),
-                        "destinatarios" to destinatariosList,
-                        "detalle" to mapOf(
-                            "fechaProximaEvaluacion" to fechaProxima,
-                            "skillsFaltantes" to emptyList<Any>(),
-                            "nombreSkill" to nombre,
-                            "nivelActual" to "Ninguno",
-                            "nivelSolicitado" to getNivelLabel(nivel),
-                            "descripcion" to descripcionTexto
-                        )
-                    )
-                    
-                    alertasApi.createAlerta(alertaBody)
-                    
-                    // Recargar para asegurar estado limpio (aunque la solicitud es pendiente)
-                    fetchSkills() 
-                } else {
+                // 2. Verificar si ya tiene el skill
+                val existe = colaboradorActual.skills.any { it.nombre.equals(nombre, ignoreCase = true) }
+                if (existe) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Error al crear solicitud: ${responseSolicitud.code()}"
+                        errorMessage = "El skill '$nombre' ya existe en tu perfil."
+                    )
+                    return@launch
+                }
+
+                // 3. Preparar la lista de skills actualizada
+                // Mapeamos los skills existentes de ReadDto a CreateDto
+                val skillsActualizados = colaboradorActual.skills.map { s ->
+                    SkillCreateDto(
+                        nombre = s.nombre,
+                        tipo = s.tipo,
+                        nivel = s.nivel,
+                        esCritico = s.esCritico
+                    )
+                }.toMutableList()
+
+                // Agregamos el nuevo skill
+                skillsActualizados.add(
+                    SkillCreateDto(
+                        nombre = nombre,
+                        tipo = tipo,
+                        nivel = nivel,
+                        esCritico = false // Por defecto false al crear
+                    )
+                )
+
+                // 4. Preparar lista de certificaciones (requerido por el UpdateDto)
+                // Debemos mapear las certificaciones existentes para no perderlas
+                val certificacionesActualizadas = colaboradorActual.certificaciones.map { c ->
+                    CertificacionCreateDto(
+                        nombre = c.nombre,
+                        institucion = c.institucion,
+                        fechaObtencion = c.fechaObtencion,
+                        fechaVencimiento = c.fechaVencimiento,
+                        archivoPdfUrl = c.archivoPdfUrl
                     )
                 }
 
+                // 5. Construir el DTO de actualización completo
+                val updateDto = ColaboradorUpdateDto(
+                    nombres = colaboradorActual.nombres,
+                    apellidos = colaboradorActual.apellidos,
+                    correo = colaboradorActual.correo,
+                    area = colaboradorActual.area,
+                    rolLaboral = colaboradorActual.rolLaboral,
+                    disponibleParaMovilidad = colaboradorActual.disponibleParaMovilidad,
+                    estado = colaboradorActual.estado,
+                    skills = skillsActualizados,
+                    certificaciones = certificacionesActualizadas
+                )
+
+                // 6. Llamar al PUT para guardar los cambios
+                val colaboradorActualizado = apiService.updateColaborador(colaboradorId, updateDto)
+
+                // 7. Actualizar UI con los nuevos datos devueltos por el backend
+                _uiState.value = _uiState.value.copy(
+                    skills = colaboradorActualizado.skills,
+                    isLoading = false
+                )
+
+                Log.d("ColaboradorSkillsVM", "Skill agregado exitosamente: $nombre")
+
             } catch (e: Exception) {
-                Log.e("ColaboradorSkillsVM", "Error creando solicitud", e)
+                Log.e("ColaboradorSkillsVM", "Error al agregar skill", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Error: ${e.message}"
+                    errorMessage = "Error al guardar skill: ${e.message}"
                 )
             }
         }
     }
 
-    private fun getSevenDaysFromNowIsoDate(): String {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_YEAR, 7)
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-        return sdf.format(calendar.time)
-    }
-
-    private fun getNivelLabel(nivel: Int): String = when(nivel) {
-        1 -> "Básico"
-        2 -> "Intermedio"
-        3 -> "Avanzado"
-        4 -> "Experto"
-        else -> "Nivel $nivel"
-    }
-    
     // Funciones de filtro se mantienen igual
     fun filterSkills(searchQuery: String, selectedType: String, selectedStatus: String): List<SkillReadDto> {
         var result = _uiState.value.skills
@@ -184,7 +154,7 @@ class ColaboradorSkillsViewModel(
 
 class ColaboradorSkillsViewModelFactory(
     private val apiService: ColaboradorApiService,
-    private val sessionManager: SessionManager, // Agregamos sessionManager
+    private val sessionManager: SessionManager,
     private val colaboradorId: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
