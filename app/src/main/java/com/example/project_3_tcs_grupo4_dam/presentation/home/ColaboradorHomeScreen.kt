@@ -52,21 +52,15 @@ private val WarningOrange = Color(0xFFFF9800)
 fun ColaboradorHomeScreen(
     navController: NavController,
     onLogout: () -> Unit,
-    @Suppress("UNUSED_PARAMETER") onNavigateToAlertas: () -> Unit
 ) {
     val context = LocalContext.current
     val sessionManager = SessionManager(context)
     val colaboradorId = sessionManager.getColaboradorId() ?: ""
 
-    // ViewModel para cargar datos del perfil
     val homeViewModel: ColaboradorHomeViewModel = viewModel(
-        factory = ColaboradorHomeViewModelFactory(
-            ColaboradorRepositoryImpl(), // Pasamos la implementación del repositorio
-            colaboradorId
-        )
+        factory = ColaboradorHomeViewModelFactory(ColaboradorRepositoryImpl(), colaboradorId)
     )
 
-    // ViewModel para las notificaciones (Badge)
     val notificacionesViewModel: NotificacionesViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -90,9 +84,8 @@ fun ColaboradorHomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // 1. Card de Perfil
-            colaborador?.let { colab ->
-                ProfileCard(colab)
+            colaborador?.let {
+                ProfileCard(it)
             } ?: Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,19 +97,18 @@ fun ColaboradorHomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Progreso de Skills
-            SkillsProgressCard(
-                onSeeAllClick = { navController.navigate(Routes.COLABORADOR_SKILLS) }
-            )
+            SkillsProgressCard {
+                navController.navigate(Routes.COLABORADOR_SKILLS)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Requerimientos Urgentes
-            UrgentRequirementsCard()
+            UrgentRequirementsCard {
+                navController.navigate(Routes.ALERTAS_COLABORADOR)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón de cerrar sesión
             OutlinedButton(
                 onClick = onLogout,
                 modifier = Modifier.fillMaxWidth(),
@@ -214,7 +206,7 @@ fun SkillsProgressCard(onSeeAllClick: () -> Unit) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.TrendingUp, 
+                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                     contentDescription = null,
                     tint = TCSBlue,
                     modifier = Modifier.size(20.dp)
@@ -289,12 +281,13 @@ fun StatItem(count: String, label: String, colorBg: Color, modifier: Modifier = 
 }
 
 @Composable
-fun UrgentRequirementsCard() {
+fun UrgentRequirementsCard(onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

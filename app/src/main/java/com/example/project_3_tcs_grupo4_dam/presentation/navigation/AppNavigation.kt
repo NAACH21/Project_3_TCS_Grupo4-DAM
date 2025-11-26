@@ -25,6 +25,7 @@ import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModelFactory
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 /**
  * NavHost principal de la aplicación
@@ -37,109 +38,25 @@ fun AppNavigation(
     val context = LocalContext.current
     val sessionManager = SessionManager(context)
 
-    // Determinar la ruta inicial
-    val startDestination = if (sessionManager.isLoggedIn()) {
-        val role = sessionManager.getRol() ?: ""
-        AppRoutes.getHomeRouteByRole(role)
+    // Determinar la ruta inicial asegurando que exista token y rol válidos
+    val storedToken = sessionManager.getToken()
+    val storedRole = sessionManager.getRol()
+
+    val startDestination = if (!storedToken.isNullOrBlank() && !storedRole.isNullOrBlank()) {
+        // Si hay sesión previa, configurar el token en Retrofit para no perder la autenticación
+        RetrofitClient.setJwtToken(storedToken)
+        when (storedRole.uppercase()) {
+            "ADMIN" -> Routes.ADMIN_HOME
+            "BUSINESS_MANAGER" -> Routes.MANAGER_HOME
+            "COLABORADOR" -> Routes.COLABORADOR_HOME
+            else -> Routes.LOGIN
+        }
     } else {
-        AppRoutes.LOGIN
+        Routes.LOGIN
     }
 
     val authRepository = AuthRepositoryImpl(RetrofitClient.authApi, sessionManager)
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-        // Pantalla de Login
-        composable(AppRoutes.LOGIN) {
-            LoginScreen(
-                authViewModel = authViewModel, // Error corregido
-                onLoginSuccess = { role ->
-                    val homeRoute = AppRoutes.getHomeRouteByRole(role)
-                    navController.navigate(homeRoute) {
-                        // Limpiar el back stack para que no pueda volver al login
-                        popUpTo(AppRoutes.LOGIN) { inclusive = true }
-                    }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(AppRoutes.REGISTER)
-                }
-            )
-        }
-
-        // Pantalla de Registro (si la implementas después)
-        composable(AppRoutes.REGISTER) {
-            // TODO: Implementar RegisterScreen
-        }
-
-        // Pantalla Home para ADMIN
-        composable(AppRoutes.ADMIN_HOME) {
-            // TODO: Implementar AdminHomeScreen
-            PlaceholderScreen(
-                title = "Admin Home",
-                onLogout = {
-                    sessionManager.clearSession()
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // Pantalla Home para BUSINESS_MANAGER
-        composable(AppRoutes.MANAGER_HOME) {
-            // TODO: Implementar ManagerHomeScreen
-            PlaceholderScreen(
-                title = "Manager Home",
-                onLogout = {
-                    sessionManager.clearSession()
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // Pantalla Home para COLABORADOR
-        composable(AppRoutes.COLABORADOR_HOME) {
-            // TODO: Implementar ColaboradorHomeScreen
-            PlaceholderScreen(
-                title = "Colaborador Home",
-                onLogout = {
-                    sessionManager.clearSession()
-                    navController.navigate(AppRoutes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-    }
-}
-
-/**
- * Pantalla placeholder temporal para las home screens
- */
-@Composable
-private fun PlaceholderScreen(
-    title: String,
-    onLogout: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onLogout) {
-            Text("Cerrar Sesión")
-        }
-    }
+    AppNavGraph(viewModel = authViewModel, startDestination = startDestination)
 }
