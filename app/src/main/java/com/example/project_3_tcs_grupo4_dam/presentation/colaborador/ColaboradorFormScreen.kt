@@ -687,8 +687,4 @@ fun SkillPickerDialog(
             }
         }
     )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/fix/LoginAndUser

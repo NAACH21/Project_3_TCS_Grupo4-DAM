@@ -4,6 +4,9 @@ import com.example.project_3_tcs_grupo4_dam.data.model.*
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.DisponibilidadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 
 class ColaboradorRepositoryImpl : ColaboradorRepository {
@@ -18,15 +21,14 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     override suspend fun getAllColaboradores(): List<ColaboradorReadDto> {
         val responses = apiService.getColaboradores()
 
-        // Se obtiene catálogo solo 1 vez
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // Se obtiene catálogo solo 1 vez (ya no es necesario para el mapeo directo aquí)
+        // val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // val nameToId = catalogSkills.associateBy(
+        //     keySelector = { it.nombre.trim().lowercase() },
+        //     valueTransform = { it.id }
+        // )
 
-        val nameToId = catalogSkills.associateBy(
-            keySelector = { it.nombre.trim().lowercase() },
-            valueTransform = { it.id }
-        )
-
-        return responses.map { mapResponseToReadDto(it, nameToId) }
+        return responses.map { mapResponseToReadDto(it) }
     }
 
     // ------------------------------------------------------------------
@@ -34,14 +36,13 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     // ------------------------------------------------------------------
     override suspend fun getColaboradorById(id: String): ColaboradorReadDto {
         val resp = apiService.getColaboradorById(id)
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // val nameToId = catalogSkills.associateBy(
+        //     keySelector = { it.nombre.trim().lowercase() },
+        //     valueTransform = { it.id }
+        // )
 
-        val nameToId = catalogSkills.associateBy(
-            keySelector = { it.nombre.trim().lowercase() },
-            valueTransform = { it.id }
-        )
-
-        return mapResponseToReadDto(resp, nameToId)
+        return mapResponseToReadDto(resp)
     }
 
     // ------------------------------------------------------------------
@@ -50,13 +51,13 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     override suspend fun createColaborador(body: ColaboradorCreateDto): ColaboradorReadDto {
         val resp = apiService.createColaborador(body)
 
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
-        val nameToId = catalogSkills.associateBy(
-            keySelector = { it.nombre.trim().lowercase() },
-            valueTransform = { it.id }
-        )
+        // val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // val nameToId = catalogSkills.associateBy(
+        //     keySelector = { it.nombre.trim().lowercase() },
+        //     valueTransform = { it.id }
+        // )
 
-        return mapResponseToReadDto(resp, nameToId)
+        return mapResponseToReadDto(resp)
     }
 
     // ------------------------------------------------------------------
@@ -65,13 +66,13 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     override suspend fun updateColaborador(id: String, body: ColaboradorUpdateDto): ColaboradorReadDto {
         val resp = apiService.updateColaborador(id, body)
 
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
-        val nameToId = catalogSkills.associateBy(
-            keySelector = { it.nombre.trim().lowercase() },
-            valueTransform = { it.id }
-        )
+        // val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        // val nameToId = catalogSkills.associateBy(
+        //     keySelector = { it.nombre.trim().lowercase() },
+        //     valueTransform = { it.id }
+        // )
 
-        return mapResponseToReadDto(resp, nameToId)
+        return mapResponseToReadDto(resp)
     }
 
     // ------------------------------------------------------------------
@@ -87,11 +88,11 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     // ------------------------------------------------------------------
     // CATÁLOGOS
     // ------------------------------------------------------------------
-    override suspend fun getAllSkills(): List<SkillDto> {
+    override suspend fun getAllSkills(): List<com.example.project_3_tcs_grupo4_dam.data.model.SkillDto> {
         return try { skillApiService.getAllSkills() } catch (e: Exception) { emptyList() }
     }
 
-    override suspend fun getAllNiveles(): List<NivelSkillDto> {
+    override suspend fun getAllNiveles(): List<com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.NivelSkillDto> {
         return try { nivelSkillApiService.getAllNiveles() } catch (e: Exception) { emptyList() }
     }
 
@@ -99,8 +100,7 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
     // MAPEO AVANZADO DE RESPUESTA -> ReadDto
     // ------------------------------------------------------------------
     private fun mapResponseToReadDto(
-        resp: ColaboradorResponse,
-        nameToId: Map<String, String>
+        resp: ColaboradorResponse
     ): ColaboradorReadDto {
 
         val id = resp.id?.`$oid` ?: ""
@@ -109,40 +109,44 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
         val rolActual = resp.rolLaboral ?: ""
 
         // Mapeo de skills
-        val skillsIds: List<String> = resp.skills.mapNotNull { skillResp ->
-            val nameKey = skillResp.nombre.trim().lowercase()
-            nameToId[nameKey] ?: skillResp.nombre // fallback si no existe en el catálogo
-        }
-
-        // Nivel
-        val nivelCodigo: Int? = resp.skills.firstOrNull()?.nivel
-
-        // Certificaciones
-        val certificaciones = resp.certificaciones.map { cert ->
-            CertificacionDto(
-                nombre = cert.nombre,
-                imagenUrl = cert.archivoPdfUrl,
-                fechaObtencion = cert.fechaObtencion?.toString(),
-                estado = cert.estado ?: ""
+        val skillsReadDto: List<SkillReadDto> = resp.skills.map { skillResp ->
+            SkillReadDto(
+                nombre = skillResp.nombre,
+                tipo = skillResp.tipo,
+                nivel = skillResp.nivel,
+                esCritico = skillResp.esCritico
             )
         }
 
-        // Disponibilidad default
-        val disponibilidad = DisponibilidadDto(
-            estado = "Disponible",
-            dias = 0
-        )
+        // Certificaciones
+        val certificaciones = resp.certificaciones.map { cert ->
+            CertificacionReadDto(
+                certificacionId = cert.certificacionId,
+                nombre = cert.nombre,
+                institucion = cert.institucion ?: "Desconocida",
+                fechaObtencion = cert.fechaObtencion?.toString(),
+                fechaVencimiento = cert.fechaVencimiento?.toString(),
+                archivoPdfUrl = cert.archivoPdfUrl,
+                estado = cert.estado ?: "",
+                fechaRegistro = cert.fechaRegistro?.toString(),
+                fechaActualizacion = cert.fechaActualizacion?.toString(),
+                proximaEvaluacion = cert.proximaEvaluacion?.toString()
+            )
+        }
 
         return ColaboradorReadDto(
             id = id,
             nombres = resp.nombres,
             apellidos = resp.apellidos,
+            correo = resp.correo ?: "",
             area = resp.area,
-            rolActual = rolActual,
-            skills = skillsIds,
-            nivelCodigo = nivelCodigo,
+            rolLaboral = rolActual,
+            estado = resp.estado,
+            disponibleParaMovilidad = resp.disponibleParaMovilidad,
+            skills = skillsReadDto,
             certificaciones = certificaciones,
-            disponibilidad = disponibilidad
+            fechaRegistro = resp.fechaRegistro?.toString(),
+            fechaActualizacion = resp.fechaActualizacion?.toString()
         )
     }
 }

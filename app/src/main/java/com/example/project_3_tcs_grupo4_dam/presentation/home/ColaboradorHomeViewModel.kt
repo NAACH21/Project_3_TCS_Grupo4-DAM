@@ -4,14 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl // Necesitas la implementación concreta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ColaboradorHomeViewModel(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String
 ) : ViewModel() {
 
@@ -25,8 +26,8 @@ class ColaboradorHomeViewModel(
     private fun fetchColaborador() {
         viewModelScope.launch {
             try {
-                // La API ahora devuelve ColaboradorReadDto directamente con skills y certificaciones embebidas
-                val data = apiService.getColaboradorById(colaboradorId)
+                // Ahora el repositorio ya devuelve ColaboradorReadDto
+                val data = repository.getColaboradorById(colaboradorId)
                 _colaborador.value = data
             } catch (e: Exception) {
                 android.util.Log.e("ColaboradorHomeVM", "Error al cargar colaborador", e)
@@ -37,13 +38,13 @@ class ColaboradorHomeViewModel(
 }
 
 class ColaboradorHomeViewModelFactory(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ColaboradorHomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ColaboradorHomeViewModel(apiService, colaboradorId) as T
+            return ColaboradorHomeViewModel(repository, colaboradorId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

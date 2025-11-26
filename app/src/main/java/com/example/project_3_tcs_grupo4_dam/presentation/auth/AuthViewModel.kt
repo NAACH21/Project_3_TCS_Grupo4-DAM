@@ -65,14 +65,11 @@ class AuthViewModel(
             repository.login(request).fold(
                 onSuccess = { apiResponse ->
 
-                    Log.d("AuthViewModel", "=== RESPUESTA JSON DEL BACKEND ===")
+                    Log.d("AuthViewModel", "=== RESPUEsta JSON DEL BACKEND ===")
                     Log.d("AuthViewModel", "JSON completo: $apiResponse")
                     Log.d("AuthViewModel", "Success: ${apiResponse.success}")
 
                     if (apiResponse.success && apiResponse.data != null) {
-<<<<<<< HEAD
-                        // Login exitoso: guardar estado y username
-=======
 
                         // ⭐ El AuthRepository ya decodificó el JWT y guardó el usuarioId en SessionManager ⭐
                         val token = apiResponse.data.token
@@ -103,7 +100,6 @@ class AuthViewModel(
                         RetrofitClient.setJwtToken(token)
                         Log.d("AuthViewModel", "✅ Token JWT configurado en RetrofitClient")
 
->>>>>>> origin/fix/Alertas
                         _uiState.value = AuthUiState(
                             isSuccess = true,
                             userRole = apiResponse.data.rolSistema
@@ -176,6 +172,7 @@ class AuthViewModel(
     fun checkSession(): Boolean = repository.isLoggedIn()
 
     /**
+
      * Obtiene el rol del usuario actual
      */
     fun getUserRole(): String? = repository.getRol()
@@ -190,12 +187,7 @@ class AuthViewModel(
      */
     fun logout() {
         repository.logout()
-<<<<<<< HEAD
-        // Limpiar estado local
-        _username.value = null
-=======
         RetrofitClient.clearToken() // Limpiar token de Retrofit también
->>>>>>> origin/fix/Alertas
         resetState()
     }
 

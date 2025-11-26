@@ -26,17 +26,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> origin/fix/LoginAndUser
 import com.example.project_3_tcs_grupo4_dam.R
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
-import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
->>>>>>> origin/fix/Alertas
 
 /**
  * Colores Corporativos TATA/ESAN
@@ -88,7 +79,7 @@ fun LoginScreen(
             android.util.Log.d("LoginScreen", "ColaboradorId a guardar: '$colaboradorId'")
             android.util.Log.d("LoginScreen", "Rol a guardar: '$userRole'")
             android.util.Log.d("LoginScreen", "Username a guardar: '$username'")
-            android.util.Log.d("LoginScreen", "Token a guardar: '${token.take(20)}...'")
+            android.util.Log.d("LoginScreen", "Token a guardar: '${token.take(20)}...'" )
 
             // ⭐ VALIDACIÓN FINAL: No permitir guardar sesión sin usuarioId ⭐
             if (usuarioId.isBlank()) {
@@ -287,26 +278,12 @@ fun LoginScreen(
                         } else {
                             PasswordVisualTransformation()
                         },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = "Ícono de contraseña",
-                                tint = TextGray
-                            )
-                        },
+                        leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Ícono de contraseña", tint = TextGray) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    imageVector = if (passwordVisible) {
-                                        Icons.Filled.Visibility
-                                    } else {
-                                        Icons.Filled.VisibilityOff
-                                    },
-                                    contentDescription = if (passwordVisible) {
-                                        "Ocultar contraseña"
-                                    } else {
-                                        "Mostrar contraseña"
-                                    },
+                                    imageVector = if (passwordVisible) { Icons.Filled.Visibility } else { Icons.Filled.VisibilityOff },
+                                    contentDescription = if (passwordVisible) { "Ocultar contraseña" } else { "Mostrar contraseña" },
                                     tint = TextGray
                                 )
                             }
@@ -326,49 +303,24 @@ fun LoginScreen(
 
                 // ========== E. BOTÓN DE ACCIÓN ==========
                 Button(
-                    onClick = {
-                        if (username.isNotBlank() && password.isNotBlank()) {
-                            viewModel.login(username, password)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
+                    onClick = { if (username.isNotBlank() && password.isNotBlank()) { viewModel.login(username, password) } },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
                     enabled = !uiState.isLoading && username.isNotBlank() && password.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BlueDark,
-                        disabledContainerColor = TextGray
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = BlueDark, disabledContainerColor = TextGray),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                     } else {
-                        Text(
-                            text = "Ingresar",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
+                        Text(text = "Ingresar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // ========== F. FOOTER ==========
-                TextButton(
-                    onClick = { /* Implementar lógica de recuperación */ }
-                ) {
-                    Text(
-                        text = "¿Olvidaste tu contraseña?",
-                        color = BluePrimary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                TextButton(onClick = { /* Implementar lógica de recuperación */ }) {
+                    Text(text = "¿Olvidaste tu contraseña?", color = BluePrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }

@@ -5,7 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,7 @@ data class ColaboradorSkillsUiState(
 )
 
 class ColaboradorSkillsViewModel(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String
 ) : ViewModel() {
 
@@ -33,8 +34,7 @@ class ColaboradorSkillsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
-                // La API ahora devuelve ColaboradorReadDto con skills embebidos
-                val colaborador = apiService.getColaboradorById(colaboradorId)
+                val colaborador = repository.getColaboradorById(colaboradorId)
 
                 Log.d("ColaboradorSkillsVM", "Colaborador: ${colaborador.nombres}")
                 Log.d("ColaboradorSkillsVM", "Skills recibidos: ${colaborador.skills.size}")
@@ -103,10 +103,10 @@ class ColaboradorSkillsViewModel(
 }
 
 class ColaboradorSkillsViewModelFactory(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ColaboradorSkillsViewModel(apiService, colaboradorId) as T
+        return ColaboradorSkillsViewModel(repository, colaboradorId) as T
     }
 }

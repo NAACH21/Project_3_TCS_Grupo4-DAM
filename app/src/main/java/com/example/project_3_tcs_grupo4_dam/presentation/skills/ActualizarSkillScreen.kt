@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 
 // Colores personalizados
@@ -44,7 +44,7 @@ fun ActualizarSkillScreen(
 ) {
     val viewModel: ActualizarSkillViewModel = viewModel(
         factory = ActualizarSkillViewModelFactory(
-            RetrofitClient.colaboradorApi,
+            ColaboradorRepositoryImpl(),
             colaboradorId,
             skillName
         )

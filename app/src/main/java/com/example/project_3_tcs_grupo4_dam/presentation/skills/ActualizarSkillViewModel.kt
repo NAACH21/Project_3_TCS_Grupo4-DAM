@@ -7,15 +7,16 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ActualizarSkillViewModel(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String,
     private val skillName: String
 ) : ViewModel() {
@@ -41,8 +42,7 @@ class ActualizarSkillViewModel(
         viewModelScope.launch {
             isLoading = true
             try {
-                // La API devuelve ColaboradorReadDto directamente con skills embebidos
-                val data = apiService.getColaboradorById(colaboradorId)
+                val data = repository.getColaboradorById(colaboradorId)
                 currentColaborador = data
                 val skill = data.skills.find {
                     it.nombre.equals(skillName, ignoreCase = true)
@@ -116,7 +116,7 @@ class ActualizarSkillViewModel(
                     certificaciones = certificacionesActualizadas
                 )
 
-                apiService.updateColaborador(colaboradorId, updateDto)
+                repository.updateColaborador(colaboradorId, updateDto)
                 isSuccess = true
                 Log.d("ActualizarSkillVM", "Skill actualizado correctamente")
             } catch (e: Exception) {
@@ -132,11 +132,11 @@ class ActualizarSkillViewModel(
 }
 
 class ActualizarSkillViewModelFactory(
-    private val apiService: ColaboradorApiService,
+    private val repository: ColaboradorRepository,
     private val colaboradorId: String,
     private val skillName: String
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ActualizarSkillViewModel(apiService, colaboradorId, skillName) as T
+        return ActualizarSkillViewModel(repository, colaboradorId, skillName) as T
     }
 }

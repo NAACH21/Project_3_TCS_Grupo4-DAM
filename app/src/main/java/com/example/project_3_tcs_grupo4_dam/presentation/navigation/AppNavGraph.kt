@@ -41,6 +41,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
 
         composable(Routes.LOGIN) {
             LoginScreen(
+                authViewModel = viewModel, // Error corregido
                 onLoginSuccess = { role ->
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
@@ -114,14 +115,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             )
         }
 
-        composable(Routes.EVALUATIONS_HISTORY) {
-            EvaluationsHistoryScreen(
-                navController = navController,
-                onNavigateToDetail = { id ->
-                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
-                }
-            )
-        }
+        // Bloque duplicado con ruta incorrecta eliminado
 
         composable(Routes.BULK_UPLOAD) {
             BulkUploadScreen(

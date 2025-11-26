@@ -94,6 +94,14 @@ object ColaboradorDtos {
     )
 
     // ===============================
+    // DTOs para DISPONIBILIDAD
+    // ===============================
+    data class DisponibilidadDto(
+        @SerializedName("estado") val estado: String,
+        @SerializedName("dias") val dias: Int
+    )
+
+    // ===============================
     // DTOs para COLABORADOR
     // ===============================
 
@@ -191,6 +199,10 @@ object ColaboradorDtos {
         val fechaRegistro: String?,
 
         @SerializedName("fechaActualizacion")
-        val fechaActualizacion: String?
+        val fechaActualizacion: String?,
+
+        // Añadir aquí la disponibilidad si es parte del ReadDto
+        // @SerializedName("disponibilidad")
+        // val disponibilidad: DisponibilidadDto? // Ejemplo
     )
 }

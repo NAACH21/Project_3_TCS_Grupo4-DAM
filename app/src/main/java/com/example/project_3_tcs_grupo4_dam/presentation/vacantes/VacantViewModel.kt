@@ -2,7 +2,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.vacantes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.Vacante
+import com.example.project_3_tcs_grupo4_dam.data.model.VacanteResponse
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.data.repository.VacanteRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,8 +13,8 @@ class VacantViewModel : ViewModel() {
 
     private val repository = VacanteRepository(RetrofitClient.vacanteApi)
 
-    private val _vacantes = MutableStateFlow<List<Vacante>>(emptyList())
-    val vacantes: StateFlow<List<Vacante>> = _vacantes
+    private val _vacantes = MutableStateFlow<List<VacanteResponse>>(emptyList())
+    val vacantes: StateFlow<List<VacanteResponse>> = _vacantes
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading

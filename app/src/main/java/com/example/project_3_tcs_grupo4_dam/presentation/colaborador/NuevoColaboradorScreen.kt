@@ -7,8 +7,5 @@ import androidx.navigation.NavController
 fun NuevoColaboradorScreen(navController: NavController) {
     // Reutilizamos la pantalla de formulario (modo crear: sin colaboradorId en SavedState)
     ColaboradorFormScreen(navController = navController)
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/fix/LoginAndUser
+

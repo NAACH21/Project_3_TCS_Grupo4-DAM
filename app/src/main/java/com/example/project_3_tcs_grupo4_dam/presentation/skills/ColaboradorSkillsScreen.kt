@@ -25,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
@@ -49,7 +49,7 @@ fun ColaboradorSkillsScreen(
 
     val viewModel: ColaboradorSkillsViewModel = viewModel(
         factory = ColaboradorSkillsViewModelFactory(
-            RetrofitClient.colaboradorApi, 
+            ColaboradorRepositoryImpl(), 
             colaboradorId
         )
     )

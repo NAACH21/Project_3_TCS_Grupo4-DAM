@@ -24,8 +24,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.model.VacanteResponse
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
-import com.example.project_3_tcs_grupo4_dam.data.model.Vacante
 
 // ======================================================
 // PANTALLA PARA ADMINISTRADOR
@@ -139,7 +139,7 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
 // CARD COMPONENT PARA ADMIN
 // ======================================================
 @Composable
-fun VacanteAdminCard(vacante: Vacante) {
+fun VacanteAdminCard(vacante: VacanteResponse) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),

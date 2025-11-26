@@ -14,11 +14,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
+import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModelFactory
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 
 /**
@@ -40,6 +45,9 @@ fun AppNavigation(
         AppRoutes.LOGIN
     }
 
+    val authRepository = AuthRepositoryImpl(RetrofitClient.authApi, sessionManager)
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -47,6 +55,7 @@ fun AppNavigation(
         // Pantalla de Login
         composable(AppRoutes.LOGIN) {
             LoginScreen(
+                authViewModel = authViewModel, // Error corregido
                 onLoginSuccess = { role ->
                     val homeRoute = AppRoutes.getHomeRouteByRole(role)
                     navController.navigate(homeRoute) {

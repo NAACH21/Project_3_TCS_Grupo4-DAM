@@ -13,7 +13,7 @@ import java.util.*
 
 class MatchingViewModel : ViewModel() {
 
-    private val vacanteRepo = VacanteRepository()
+    private val vacanteRepo = VacanteRepository(RetrofitClient.vacanteApi)
     private val colaboradorApi = RetrofitClient.colaboradorApi
     private val procesosRepo = ProcesosMatchingRepository()
 

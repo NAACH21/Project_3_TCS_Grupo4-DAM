@@ -8,7 +8,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
@@ -33,7 +35,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.project_3_tcs_grupo4_dam.R
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
-import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesViewModel
 
@@ -59,7 +61,7 @@ fun ColaboradorHomeScreen(
     // ViewModel para cargar datos del perfil
     val homeViewModel: ColaboradorHomeViewModel = viewModel(
         factory = ColaboradorHomeViewModelFactory(
-            RetrofitClient.colaboradorApi,
+            ColaboradorRepositoryImpl(), // Pasamos la implementación del repositorio
             colaboradorId
         )
     )
@@ -69,18 +71,15 @@ fun ColaboradorHomeScreen(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                // ARREGLO: Pasamos el context que ahora es requerido por el ViewModel
                 return NotificacionesViewModel(sessionManager, context) as T
             }
         }
     )
-    
-    // ARREGLO: Usamos unreadCount que es el Int para el badge
+
     val unreadCount by notificacionesViewModel.unreadCount.collectAsState()
     val colaborador by homeViewModel.colaborador.collectAsState()
 
     Scaffold(
-        // ARREGLO: Pasamos el contador de no leídos (Int) al bottom bar
         bottomBar = { ColaboradorBottomNavBar(navController, unreadCount) },
         containerColor = LightGrayBg
     ) { paddingValues ->
@@ -95,7 +94,9 @@ fun ColaboradorHomeScreen(
             colaborador?.let { colab ->
                 ProfileCard(colab)
             } ?: Box(
-                modifier = Modifier.fillMaxWidth().height(100.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = TCSBlue)
@@ -112,9 +113,9 @@ fun ColaboradorHomeScreen(
 
             // 3. Requerimientos Urgentes
             UrgentRequirementsCard()
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Botón de cerrar sesión
             OutlinedButton(
                 onClick = onLogout,
@@ -171,7 +172,7 @@ fun ProfileCard(colaborador: ColaboradorReadDto) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    colaborador.area?.let { area ->
+                    colaborador.area.let { area ->
                         Badge(text = area, colorBg = Color(0xFFE3F2FD), colorText = TCSBlue)
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -213,7 +214,7 @@ fun SkillsProgressCard(onSeeAllClick: () -> Unit) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.TrendingUp,
+                    imageVector = Icons.AutoMirrored.Filled.TrendingUp, 
                     contentDescription = null,
                     tint = TCSBlue,
                     modifier = Modifier.size(20.dp)
@@ -353,27 +354,27 @@ fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
     ) {
         val items = listOf(
             BottomNavItem("Inicio", Icons.Default.Home, Routes.COLABORADOR_HOME),
-            BottomNavItem("Skills", Icons.Default.TrendingUp, Routes.COLABORADOR_SKILLS),
-            BottomNavItem("Solicitudes", Icons.Default.Assignment, Routes.SOLICITUDES_COLABORADOR),
+            BottomNavItem("Skills", Icons.AutoMirrored.Filled.TrendingUp, Routes.COLABORADOR_SKILLS),
+            BottomNavItem("Solicitudes", Icons.AutoMirrored.Filled.Assignment, Routes.SOLICITUDES_COLABORADOR),
             BottomNavItem("Vacantes", Icons.Default.Work, Routes.VACANTES_COLABORADOR),
             BottomNavItem("Notificaciones", Icons.Outlined.Notifications, Routes.NOTIFICACIONES)
         )
-        
+
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = currentBackStackEntry?.destination?.route
 
         items.forEach { item ->
             NavigationBarItem(
-                icon = { 
+                icon = {
                     if (item.route == Routes.NOTIFICACIONES && alertCount > 0) {
                         BadgedBox(
-                            badge = { 
+                            badge = {
                                 Badge(
                                     containerColor = Color.Red,
                                     contentColor = Color.White
                                 ) { 
-                                    Text(text = if (alertCount > 99) "99+" else alertCount.toString()) 
-                                } 
+                                    Text(text = if (alertCount > 99) "99+" else alertCount.toString())
+                                }
                             }
                         ) {
                             Icon(item.icon, contentDescription = item.label)
