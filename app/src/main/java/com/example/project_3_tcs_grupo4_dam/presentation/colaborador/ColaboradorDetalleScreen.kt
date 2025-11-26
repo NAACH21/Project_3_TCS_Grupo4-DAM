@@ -138,7 +138,7 @@ private fun ColaboradorHeader(colaborador: com.example.project_3_tcs_grupo4_dam.
 
             // Rol actual
             Text(
-                text = colaborador.rolActual,
+                text = colaborador.rolLaboral,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )

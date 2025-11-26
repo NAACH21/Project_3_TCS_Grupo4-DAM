@@ -2,6 +2,14 @@ package com.example.project_3_tcs_grupo4_dam.data.model
 
 import com.google.gson.annotations.SerializedName
 
+// Estructura de la skill DENTRO del ColaboradorReadDto
+data class ColaboradorSkillDto(
+    @SerializedName("nombre") val nombre: String,
+    @SerializedName("tipo") val tipo: String,
+    @SerializedName("nivel") val nivel: Int,
+    @SerializedName("esCritico") val esCritico: Boolean
+)
+
 data class DisponibilidadDto(
     @SerializedName("estado") val estado: String,
     @SerializedName("dias") val dias: Int
@@ -27,22 +35,20 @@ data class ColaboradorReadDto(
     @SerializedName("area")
     val area: String,
 
-    @SerializedName("rolActual")
-    val rolActual: String,
+    // Corregido: El nombre del campo y la anotación ahora coinciden con el JSON de la API
+    @SerializedName("rolLaboral")
+    val rolLaboral: String,
 
-    // Ids de la colección skills
+    // Corregido: Ahora es una lista de objetos ColaboradorSkillDto
     @SerializedName("skills")
-    val skills: List<String>,
+    val skills: List<ColaboradorSkillDto>,
 
-    // Código del nivel (0, 1, 2, 3…)
     @SerializedName("nivelCodigo")
     val nivelCodigo: Int?,
 
-    // Certificaciones embebidas
     @SerializedName("certificaciones")
     val certificaciones: List<CertificacionDto>,
 
-    // Disponibilidad embebida
     @SerializedName("disponibilidad")
     val disponibilidad: DisponibilidadDto
 )

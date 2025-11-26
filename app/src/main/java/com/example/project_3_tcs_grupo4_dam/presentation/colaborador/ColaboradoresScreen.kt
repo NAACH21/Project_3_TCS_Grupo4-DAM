@@ -82,7 +82,7 @@ fun ColaboradoresScreen(navController: NavController) {
 
             // 🔹 Header con búsqueda / filtros / carga masiva / nuevo colaborador
             ColaboradoresHeader(
-                onNuevoColaborador = { navController.navigate(Routes.COLABORADOR_FORM) },
+                onNuevoColaborador = { navController.navigate(Routes.ColaboradorFormScreen.route) },
                 onCargaMasiva = { /* TODO: Abrir flujo de carga masiva */ },
                 onFiltros = { /* TODO: Mostrar filtros */ }
             )
@@ -120,10 +120,10 @@ fun ColaboradoresScreen(navController: NavController) {
                                 ColaboradorCard(
                                     colaborador = colaborador,
                                     onVerDetalle = {
-                                        navController.navigate("${Routes.COLABORADOR_DETALLE}/${colaborador.id}")
+                                        navController.navigate(Routes.ColaboradorDetailScreen.route.replace("{colaboradorId}", colaborador.id.toString()))
                                     },
                                     onEditar = {
-                                        navController.navigate("${Routes.COLABORADOR_FORM}/${colaborador.id}")
+                                        navController.navigate("${Routes.ColaboradorFormScreen.route}/${colaborador.id}")
                                     },
                                     onEliminar = {
                                         colaboradorToDelete = colaborador

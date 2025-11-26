@@ -44,6 +44,9 @@ fun BulkUploadScreen(
         }
     )
 
+    // Handle upload status dialogs
+    HandleUploadStatus(uiState = uiState, onDismiss = viewModel::onStatusConsumed)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -57,13 +60,20 @@ fun BulkUploadScreen(
         },
         bottomBar = {
             Button(
-                onClick = viewModel::processFile,
-                enabled = uiState.fileUri != null,
+                onClick = { viewModel.processFile(context) },
+                enabled = uiState.fileUri != null && !uiState.isProcessing,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
+                    .height(50.dp)
             ) {
-                Text("Procesar archivo")
+                if (uiState.isProcessing) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Procesando...")
+                } else {
+                    Text("Procesar archivo")
+                }
             }
         }
     ) { padding ->
@@ -84,6 +94,27 @@ fun BulkUploadScreen(
                 onFileSelect = { filePickerLauncher.launch("text/csv") }
             )
         }
+    }
+}
+
+@Composable
+private fun HandleUploadStatus(uiState: BulkUploadUiState, onDismiss: () -> Unit) {
+    if (uiState.uploadSuccess) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Éxito") },
+            text = { Text("El archivo ha sido procesado y las evaluaciones han sido creadas.") },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("Aceptar") } }
+        )
+    }
+
+    uiState.uploadError?.let {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Error") },
+            text = { Text(it) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } }
+        )
     }
 }
 
@@ -120,8 +151,8 @@ fun CsvTemplateCard(onDownload: () -> Unit) {
 • Líder evaluador (nombre del líder)
 • Fecha evaluación (YYYY-MM-DD)
 • Skills (habilidades evaluadas)
-• Nivel actual (No iniciado, Básico, Intermedio, Avanzado)
-• Nivel recomendado (No iniciado, Básico, Intermedio, Avanzado)
+• Nivel actual (Básico, Intermedio, Avanzado)
+• Nivel recomendado (Básico, Intermedio, Avanzado)
 • Tipo de evaluación
 • Comentarios (opcional)
                 """.trimIndent(),
@@ -166,8 +197,12 @@ fun FileUploadCard(uiState: BulkUploadUiState, onFileSelect: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = onFileSelect, modifier = Modifier.fillMaxWidth()) {
-                Text("Seleccionar archivo")
+            Button(
+                onClick = onFileSelect, 
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isProcessing
+            ) {
+                Text("Seleccionar otro archivo")
             }
         }
     }

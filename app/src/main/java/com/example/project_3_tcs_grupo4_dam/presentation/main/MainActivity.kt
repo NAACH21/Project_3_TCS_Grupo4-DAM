@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 // Usar wrapper composable para instanciar el ViewModel con la factory
-                RootApp(authViewModelFactory = authViewModelFactory, startDestination = Routes.LOGIN)
+                RootApp(authViewModelFactory = authViewModelFactory, startDestination = Routes.HomeScreen.route)
             }
         }
     }

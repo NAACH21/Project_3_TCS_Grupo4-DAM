@@ -1,172 +1,73 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Alignment
-import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
+import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorListScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationDetailScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.skills.SkillsScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.main.MainScreen
 
 @Composable
 fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
     val navController = rememberNavController()
-
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME
+        startDestination = startDestination
     ) {
-        composable(Routes.HOME) {
-            HomeScreen(navController)
-        }
-
-        composable(Routes.LOGIN) {
-            LoginScreen(navController, viewModel) {
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
+        composable(Routes.LoginScreen.route) {
+            LoginScreen(
+                navController = navController,
+                viewModel = viewModel,
+                onLoggedIn = {
+                    navController.navigate(Routes.HomeScreen.route) {
+                        popUpTo(Routes.LoginScreen.route) {
+                            inclusive = true
+                        }
+                    }
                 }
+            )
+        }
+        composable(Routes.HomeScreen.route) {
+            HomeScreen(navController = navController)
+        }
+        composable(Routes.MainScreen.route) {
+            MainScreen(navController = navController)
+        }
+        composable(Routes.ColaboradorListScreen.route) {
+            ColaboradorListScreen(navController = navController)
+        }
+        composable(Routes.ColaboradorDetailScreen.route) {
+            val colaboradorId = it.arguments?.getString("colaboradorId") ?: ""
+            ColaboradorDetalleScreen(colaboradorId = colaboradorId) {
+                navController.popBackStack()
             }
         }
-
-        composable(Routes.COLABORADORES) {
-            ColaboradoresScreen(navController)
+        composable(Routes.ColaboradorFormScreen.route) {
+            ColaboradorFormScreen(navController = navController) // TODO: Add onSave and onCancel
         }
-
-        composable(
-            route = "${Routes.COLABORADOR_DETALLE}/{colaboradorId}",
-            arguments = listOf(
-                navArgument("colaboradorId") {
-                    type = NavType.StringType
-                }
-            )
-        ) { backStackEntry ->
-            val colaboradorId = backStackEntry.arguments?.getString("colaboradorId")!!
-            ColaboradorDetalleScreen(
-                colaboradorId = colaboradorId,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.COLABORADOR_FORM) {
-            ColaboradorFormScreen(navController)
-        }
-
-        composable(
-            route = "${Routes.COLABORADOR_FORM}/{colaboradorId}",
-            arguments = listOf(
-                navArgument("colaboradorId") {
-                    type = NavType.StringType
-                    nullable = false
-                }
-            )
-        ) {
-            ColaboradorFormScreen(navController)
-        }
-
-        // Rutas adicionales
-        composable(Routes.SKILLS) {
-            SkillsScreen(navController = navController)
-        }
-
-        composable(Routes.NIVEL_SKILLS) {
-            SkillsScreen(navController = navController)
-        }
-
-        composable(Routes.NOTIFICACIONES) {
-            NotificacionesScreen(navController = navController)
-        }
-
-        // RUTAS DE EVALUACIONES
-        composable(Routes.EVALUATION_SCREEN) {
+        composable(Routes.EvaluationScreen.route) {
             EvaluationScreen(navController = navController)
         }
-
-        composable(Routes.EVALUACIONES) {
-            EvaluationsHistoryScreen(
-                navController = navController,
-                onNavigateToDetail = { id ->
-                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
-                }
-            )
+        composable(Routes.EvaluationHistoryScreen.route) {
+            EvaluationHistoryScreen(navController = navController)
         }
-
-        composable(Routes.EVALUATIONS_HISTORY) {
-            EvaluationsHistoryScreen(
-                navController = navController,
-                onNavigateToDetail = { id ->
-                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
-                }
-            )
+        composable(Routes.EvaluationDetailScreen.route) { backStackEntry ->
+            val evaluationId = backStackEntry.arguments?.getString("evaluationId") ?: ""
+            EvaluationDetailScreen(evaluationId = evaluationId, onBack = {
+                navController.popBackStack()
+            })
         }
-
-        composable(Routes.BULK_UPLOAD) {
-            BulkUploadScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+        composable(Routes.BulkUploadScreen.route) {
+            BulkUploadScreen(onBackClick = { navController.popBackStack() })
         }
-
-        composable(
-            route = "${Routes.EVALUATION_DETAIL}/{evaluationId}",
-            arguments = listOf(
-                navArgument("evaluationId") {
-                    type = NavType.StringType
-                }
-            )
-        ) { backStackEntry ->
-            val evaluationId = backStackEntry.arguments?.getString("evaluationId")
-            SimplePlaceholderScreen(
-                title = "Detalle de Evaluación #$evaluationId"
-            )
-        }
-
-        // RUTA DE VACANTES
-        composable(Routes.VACANTES) {
-            VacantScreen(navController = navController)
-        }
-
-        composable(Routes.VACANTES_COLABORADOR) {
-            VacantesScreen(navController = navController)
-        }
-
-        composable("newVacancy") {
-            NewVacantScreen(
-                navController = navController,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.DASHBOARD) {
-            SimplePlaceholderScreen(title = "Dashboard")
-        }
-
-        composable(Routes.MATCHING) {
-            MatchingScreen(navController)
-        }
-    }
-}
-
-@Composable
-private fun SimplePlaceholderScreen(title: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "Pantalla: $title")
     }
 }

@@ -117,11 +117,11 @@ class ColaboradorFormViewModel(
             _nombres.value = colaborador.nombres
             _apellidos.value = colaborador.apellidos
             _area.value = colaborador.area
-            _rolActual.value = colaborador.rolActual
+            _rolActual.value = colaborador.rolLaboral // Corregido aquí
 
             // Seleccionar skills
             val skillsSeleccionados = _allSkills.value.filter { skill ->
-                colaborador.skills.contains(skill.id)
+                colaborador.skills.any { it.nombre == skill.nombre }
             }
             _selectedSkills.value = skillsSeleccionados
 
@@ -321,4 +321,3 @@ class ColaboradorFormViewModel(
         }
     }
 }
-

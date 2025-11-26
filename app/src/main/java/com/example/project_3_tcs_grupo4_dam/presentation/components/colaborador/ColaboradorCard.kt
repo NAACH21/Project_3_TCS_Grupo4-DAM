@@ -73,7 +73,7 @@ fun ColaboradorCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = colaborador.rolActual,
+                        text = colaborador.rolLaboral, // Corregido aquí
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(

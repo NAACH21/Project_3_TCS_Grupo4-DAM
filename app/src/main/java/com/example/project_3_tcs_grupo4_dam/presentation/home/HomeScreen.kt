@@ -77,7 +77,7 @@ fun HomeScreen(navController: NavController) {
 
                 // Campanita de notificaciones en la esquina superior derecha
                 IconButton(
-                    onClick = { navController.navigate(Routes.NOTIFICACIONES) },
+                    onClick = { navController.navigate(Routes.NotificacionesScreen.route) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 12.dp, end = 12.dp)
@@ -121,14 +121,16 @@ fun HomeScreen(navController: NavController) {
                         value = "142",
                         subtitle = "Colaboradores activos",
                         iconColor = Color(0xFF245DFF),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.ColaboradorListScreen.route) }
                     )
                     MetricCardSmall(
                         title = "Evaluaciones",
                         value = "8",
                         subtitle = "Evaluaciones pendientes",
                         iconColor = Color(0xFFFF9800),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EvaluationScreen.route) }
                     )
                 }
 
@@ -143,14 +145,16 @@ fun HomeScreen(navController: NavController) {
                         value = "5",
                         subtitle = "Vacantes abiertas",
                         iconColor = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VacantesScreen.route) }
                     )
                     MetricCardSmall(
                         title = "Cobertura",
                         value = "78%",
                         subtitle = "% Cobertura de skills",
                         iconColor = Color(0xFF9C27B0),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.DashboardScreen.route) }
                     )
                 }
 
@@ -174,13 +178,13 @@ fun HomeScreen(navController: NavController) {
                         text = "Matching Inteligente",
                         color = Color(0xFF0A63C2),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.MATCHING) }
+                        onClick = { navController.navigate(Routes.MatchingScreen.route) }
                     )
                     QuickButton(
                         text = "Dashboard General",
                         color = Color(0xFF0A63C2),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.DASHBOARD) }
+                        onClick = { navController.navigate(Routes.DashboardScreen.route) }
                     )
                 }
 
@@ -190,57 +194,37 @@ fun HomeScreen(navController: NavController) {
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    QuickButton(
-                        text = "Historial Evaluaciones",
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.EVALUACIONES) }
-                    )
                     QuickButton(
                         text = "Carga Masiva",
                         color = Color(0xFF2196F3),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.BULK_UPLOAD) }
+                        onClick = { navController.navigate(Routes.BulkUploadScreen.route) }
                     )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
                     QuickButton(
                         text = "Nueva Evaluación",
                         color = Color(0xFFFF9800),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.EVALUATION_SCREEN) }
+                        onClick = { navController.navigate(Routes.EvaluationScreen.route) }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     QuickButton(
                         text = "Nivel Skills",
                         color = Color(0xFF9C27B0),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.NIVEL_SKILLS) }
+                        onClick = { navController.navigate(Routes.NivelSkillsScreen.route) }
                     )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
                     QuickButton(
                         text = "Brechas de Skills",
                         color = Color(0xFFFF5722),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.SKILLS) }
-                    )
-                    QuickButton(
-                        text = "Ver Vacantes",
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
+                        onClick = { navController.navigate(Routes.SkillsScreen.route) }
                     )
                 }
 
@@ -251,11 +235,25 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickButton(
+                        text = "Ver Vacantes",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VacantesColaboradorScreen.route) }
+                    )
+                    QuickButton(
                         text = "Gestión Vacantes",
                         color = Color(0xFF1976D2),
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.VACANTES) }
+                        onClick = { navController.navigate(Routes.VacantesScreen.route) }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     QuickButton(
                         text = "Alertas Automáticas",
                         color = Color(0xFFD32F2F),
@@ -308,15 +306,18 @@ fun HomeScreen(navController: NavController) {
 // COMPONENTES REUTILIZABLES
 // ======================================================
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MetricCardSmall(
     @Suppress("UNUSED_PARAMETER") title: String,
     value: String,
     subtitle: String,
     iconColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 4.dp,
@@ -418,7 +419,6 @@ fun ActivityCard(
                     )
                 }
             }
-
             Text(
                 text = timeAgo,
                 style = MaterialTheme.typography.bodySmall,
