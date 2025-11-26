@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // RECUERDA: 10.0.2.2 para emulador, o tu IP real para teléfono
-    private const val BASE_URL = "http://10.199.162.60:5260/"
+    private const val BASE_URL = "http://10.0.2.2:5000/"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
@@ -13,7 +13,6 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
     val authApi: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
     }
@@ -28,5 +27,9 @@ object RetrofitClient {
 
     val nivelSkillApi: NivelSkillApiService by lazy {
         retrofit.create(NivelSkillApiService::class.java)
+    }
+
+    val vacanteApi: VacanteApiService by lazy {
+        retrofit.create(VacanteApiService::class.java)
     }
 }

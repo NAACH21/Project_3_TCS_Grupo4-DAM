@@ -33,7 +33,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Routes.HOME
     ) {
         composable(Routes.HOME) {
             HomeScreen(navController)
