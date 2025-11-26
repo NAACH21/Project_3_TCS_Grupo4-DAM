@@ -1,4 +1,4 @@
-package com.example.project_3_tcs_grupo4_dam.presentation.home
+package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -10,24 +10,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class ColaboradoresViewModel : ViewModel() {
 
-    // Repositorio
+    // Repositorio que llama a la API
     private val repository: ColaboradorRepository = ColaboradorRepositoryImpl()
 
-    // Estado de la lista
+    // Estado: lista de colaboradores
     private val _colaboradores = MutableStateFlow<List<ColaboradorReadDto>>(emptyList())
     val colaboradores = _colaboradores.asStateFlow()
 
-    // Estado de carga
+    // Estado: cargando
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    // Estado de error
+    // Estado: error
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
     init {
+        fetchColaboradores()
+    }
+
+    fun refresh() {
         fetchColaboradores()
     }
 
@@ -36,14 +40,29 @@ class HomeViewModel : ViewModel() {
             _isLoading.value = true
             _error.value = null
             try {
-                _colaboradores.value = repository.getAllColaboradores()
-                Log.d("HomeViewModel", "Datos cargados: ${_colaboradores.value.size} items")
+                val lista = repository.getAllColaboradores()
+                _colaboradores.value = lista
+                Log.d("ColaboradoresVM", "Datos cargados: ${lista.size}")
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error al cargar colaboradores", e)
+                Log.e("ColaboradoresVM", "Error al cargar colaboradores", e)
                 _error.value = e.message ?: "Error desconocido"
                 _colaboradores.value = emptyList()
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun eliminarColaborador(id: String) {
+        viewModelScope.launch {
+            try {
+                repository.deleteColaborador(id)
+                // Actualizar la lista local eliminando el colaborador
+                _colaboradores.value = _colaboradores.value.filter { it.id != id }
+                Log.d("ColaboradoresVM", "Colaborador eliminado: $id")
+            } catch (e: Exception) {
+                Log.e("ColaboradoresVM", "Error al eliminar colaborador", e)
+                _error.value = e.message ?: "Error al eliminar"
             }
         }
     }

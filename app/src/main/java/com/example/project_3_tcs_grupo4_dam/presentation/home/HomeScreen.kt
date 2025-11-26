@@ -1,84 +1,429 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    // 1. Obtenemos la instancia del ViewModel.
-    // Compose se encarga de su ciclo de vida.
-    val viewModel: HomeViewModel = viewModel()
+fun HomeScreen(navController: NavController) {
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // 2. Observamos los StateFlows y los convertimos en Estado de Compose
-    val colaboradores by viewModel.colaboradores.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val primaryBlue = Color(0xFF0A63C2)
+    val backgroundBlue = Color(0xFF0E4F9C)
+    val bgLight = Color(0xFFF6F7FB)
 
-    // 3. Definimos la UI
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Colaboradores") })
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        bottomBar = {
+            BottomNavBar(navController = navController)
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.Center
+                .background(bgLight)
         ) {
-            when {
-                isLoading -> CircularProgressIndicator()
-                error != null -> Text(error ?: "Error", color = MaterialTheme.colorScheme.error)
-                colaboradores.isEmpty() -> Text("Sin datos por mostrar", style = MaterialTheme.typography.bodyMedium)
-                else -> ColaboradorList(colaboradores)
+            // 🔵 HEADER CON GRADIENTE
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(primaryBlue, backgroundBlue)
+                        )
+                    )
+                    .clip(
+                        RoundedCornerShape(
+                            bottomStart = 26.dp,
+                            bottomEnd = 26.dp
+                        )
+                    )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    Text(
+                        text = "Hola, Leslie 👋",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Bienvenida al sistema de gestión de talento",
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                // Campanita de notificaciones en la esquina superior derecha
+                IconButton(
+                    onClick = { navController.navigate(Routes.NOTIFICACIONES) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 12.dp)
+                ) {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notificaciones",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        // Badge de notificaciones (opcional - muestra cantidad)
+                        Badge(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp)
+                        ) {
+                            Text("4", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+
+            // Contenido con scroll
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp)
+            ) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 🔹 TARJETAS COMPACTAS (2x2 grid)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCardSmall(
+                        title = "Colaboradores",
+                        value = "142",
+                        subtitle = "Colaboradores activos",
+                        iconColor = Color(0xFF245DFF),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCardSmall(
+                        title = "Evaluaciones",
+                        value = "8",
+                        subtitle = "Evaluaciones pendientes",
+                        iconColor = Color(0xFFFF9800),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    MetricCardSmall(
+                        title = "Vacantes",
+                        value = "5",
+                        subtitle = "Vacantes abiertas",
+                        iconColor = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricCardSmall(
+                        title = "Cobertura",
+                        value = "78%",
+                        subtitle = "% Cobertura de skills",
+                        iconColor = Color(0xFF9C27B0),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // 🔸 SECCIÓN "ACCIONES RÁPIDAS"
+                Text(
+                    text = "Acciones rápidas",
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Botones de acciones rápidas en grid 2x2
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Matching Inteligente",
+                        color = Color(0xFF0A63C2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.MATCHING) }
+                    )
+                    QuickButton(
+                        text = "Dashboard General",
+                        color = Color(0xFF0A63C2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.DASHBOARD) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Historial Evaluaciones",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EVALUACIONES) }
+                    )
+                    QuickButton(
+                        text = "Carga Masiva",
+                        color = Color(0xFF2196F3),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.BULK_UPLOAD) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Nueva Evaluación",
+                        color = Color(0xFFFF9800),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EVALUATION_SCREEN) }
+                    )
+                    QuickButton(
+                        text = "Nivel Skills",
+                        color = Color(0xFF9C27B0),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.NIVEL_SKILLS) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Brechas de Skills",
+                        color = Color(0xFFFF5722),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.SKILLS) }
+                    )
+                    QuickButton(
+                        text = "Ver Vacantes",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickButton(
+                        text = "Gestión Vacantes",
+                        color = Color(0xFF1976D2),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES) }
+                    )
+                    QuickButton(
+                        text = "Alertas Automáticas",
+                        color = Color(0xFFD32F2F),
+                        modifier = Modifier.weight(1f),
+                        onClick = { /* TODO */ }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // 🔹 SECCIÓN "ACTIVIDAD RECIENTE"
+                Text(
+                    text = "Actividad reciente",
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Lista de actividades recientes
+                ActivityCard(
+                    title = "Nueva evaluación registrada",
+                    subtitle = "Carlos Mendoza - Desarrollador Senior",
+                    timeAgo = "2h"
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ActivityCard(
+                    title = "Vacante actualizada",
+                    subtitle = "Analista de Datos - Área BI",
+                    timeAgo = "5h"
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ActivityCard(
+                    title = "Alerta de brecha crítica",
+                    subtitle = "",
+                    timeAgo = "1d"
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
 }
 
+// ======================================================
+// COMPONENTES REUTILIZABLES
+// ======================================================
+
 @Composable
-fun ColaboradorList(colaboradores: List<ColaboradorReadDto>) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
+fun MetricCardSmall(
+    @Suppress("UNUSED_PARAMETER") title: String,
+    value: String,
+    subtitle: String,
+    iconColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 4.dp,
+        modifier = modifier.height(95.dp)
     ) {
-        items(colaboradores) { colaborador ->
-            ColaboradorItem(colaborador)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            // ICONO MINI
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(iconColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(iconColor)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                maxLines = 1
+            )
         }
     }
 }
 
 @Composable
-fun ColaboradorItem(colaborador: ColaboradorReadDto) {
-    // Un item simple, puedes mejorarlo
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = "${colaborador.nombres} ${colaborador.apellidos}",
-            style = MaterialTheme.typography.titleMedium
+fun QuickButton(
+    text: String,
+    color: Color,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = color,
+            contentColor = Color.White
         )
+    ) {
         Text(
-            text = "Rol: ${colaborador.rolActual}",
-            style = MaterialTheme.typography.bodySmall
+            text,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp
         )
-        Text(
-            text = "Skill: ${colaborador.skillPrimario}",
-            style = MaterialTheme.typography.bodySmall
-        )
+    }
+}
+
+@Composable
+fun ActivityCard(
+    title: String,
+    subtitle: String,
+    timeAgo: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (subtitle.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            Text(
+                text = timeAgo,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
     }
 }
