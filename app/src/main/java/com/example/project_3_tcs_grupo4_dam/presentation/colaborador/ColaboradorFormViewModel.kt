@@ -474,4 +474,8 @@ class ColaboradorFormViewModel(
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/fix/LoginAndUser

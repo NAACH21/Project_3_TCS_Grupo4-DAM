@@ -53,4 +53,8 @@ class ColaboradorDetalleViewModel(
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/fix/LoginAndUser
