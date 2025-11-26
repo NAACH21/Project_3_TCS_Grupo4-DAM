@@ -1,10 +1,10 @@
 package com.example.project_3_tcs_grupo4_dam.data.remote
 
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorResponse
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorResponse
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -16,22 +16,15 @@ interface ColaboradorApiService {
     @GET("api/Colaboradores")
     suspend fun getColaboradores(): List<ColaboradorResponse>
 
-    @GET("api/Colaboradores/{id}")
-    suspend fun getColaboradorById(@Path("id") id: String): ColaboradorResponse
-
     @GET("api/colaboradores/{id}")
     suspend fun getColaboradorById(
         @Path("id") id: String
     ): ColaboradorReadDto
-    @POST("api/Colaboradores")
-    suspend fun createColaborador(@Body body: ColaboradorCreateDto): ColaboradorResponse
 
     @POST("api/colaboradores")
     suspend fun createColaborador(
         @Body body: ColaboradorCreateDto
     ): ColaboradorReadDto
-    @PUT("api/Colaboradores/{id}")
-    suspend fun updateColaborador(@Path("id") id: String, @Body body: ColaboradorCreateDto): ColaboradorResponse
 
     @PUT("api/colaboradores/{id}")
     suspend fun updateColaborador(
@@ -40,7 +33,5 @@ interface ColaboradorApiService {
     ): ColaboradorReadDto
 
     @DELETE("api/colaboradores/{id}")
-    suspend fun deleteColaborador(@Path("id") id: String): retrofit2.Response<Unit>
-    @DELETE("api/Colaboradores/{id}")
-    suspend fun deleteColaborador(@Path("id") id: String)
+    suspend fun deleteColaborador(@Path("id") id: String): Response<Unit>
 }

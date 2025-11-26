@@ -1,22 +1,23 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
-import com.example.project_3_tcs_grupo4_dam.data.model.*
+import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorResponse
+import com.example.project_3_tcs_grupo4_dam.data.model.DisponibilidadDto
+import com.example.project_3_tcs_grupo4_dam.data.remote.ColaboradorApiService
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import javax.inject.Inject
 
-// Implementación del repositorio que llama a las APIs y transforma los modelos
-class ColaboradorRepositoryImpl : ColaboradorRepository {
-
-    // Único servicio necesario ahora
-    private val apiService = RetrofitClient.colaboradorApi
+class ColaboradorRepositoryImpl @Inject constructor(
+    private val apiService: ColaboradorApiService = RetrofitClient.colaboradorApi,
+    private val catalogoRepository: CatalogoRepository = CatalogoRepositoryImpl()
+) : ColaboradorRepository {
 
     override suspend fun getAllColaboradores(): List<ColaboradorReadDto> {
-        return apiService.getAllColaboradores()
         val responses = apiService.getColaboradores()
-        // Para resolver nombres de skills a ids, obtener catálogo una vez
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        val catalogSkills = catalogoRepository.getSkillsCatalogo()
         val nameToId = catalogSkills.associateBy({ it.nombre.trim().lowercase() }, { it.id })
 
         return responses.map { mapResponseToReadDto(it, nameToId) }
@@ -24,16 +25,13 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
 
     override suspend fun getColaboradorById(id: String): ColaboradorReadDto {
         val resp = apiService.getColaboradorById(id)
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
+        val catalogSkills = catalogoRepository.getSkillsCatalogo()
         val nameToId = catalogSkills.associateBy({ it.nombre.trim().lowercase() }, { it.id })
         return mapResponseToReadDto(resp, nameToId)
     }
 
     override suspend fun createColaborador(body: ColaboradorCreateDto): ColaboradorReadDto {
-        val resp = apiService.createColaborador(body)
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
-        val nameToId = catalogSkills.associateBy({ it.nombre.trim().lowercase() }, { it.id })
-        return mapResponseToReadDto(resp, nameToId)
+        return apiService.createColaborador(body)
     }
 
     override suspend fun updateColaborador(
@@ -41,31 +39,15 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
         body: ColaboradorUpdateDto
     ): ColaboradorReadDto {
         return apiService.updateColaborador(id, body)
-    override suspend fun updateColaborador(id: String, body: ColaboradorCreateDto): ColaboradorReadDto {
-        val resp = apiService.updateColaborador(id, body)
-        val catalogSkills = try { skillApiService.getAllSkills() } catch (_: Exception) { emptyList() }
-        val nameToId = catalogSkills.associateBy({ it.nombre.trim().lowercase() }, { it.id })
-        return mapResponseToReadDto(resp, nameToId)
     }
 
     override suspend fun deleteColaborador(id: String) {
-        apiService.deleteColaborador(id)
-    }
-
-    override suspend fun getAllSkills(): List<SkillDto> {
-        return try { skillApiService.getAllSkills() } catch (e: Exception) { emptyList() }
         val response = apiService.deleteColaborador(id)
         if (!response.isSuccessful) {
             throw Exception("Error al eliminar colaborador: ${response.code()}")
         }
     }
 
-
-    override suspend fun getAllNiveles(): List<NivelSkillDto> {
-        return try { nivelSkillApiService.getAllNiveles() } catch (e: Exception) { emptyList() }
-    }
-
-    // Helpers
     private fun mapResponseToReadDto(resp: ColaboradorResponse, nameToId: Map<String, String>): ColaboradorReadDto {
         // id
         val id = resp.id?.`$oid` ?: ""
