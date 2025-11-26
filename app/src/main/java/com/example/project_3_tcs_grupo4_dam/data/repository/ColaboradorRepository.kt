@@ -11,6 +11,7 @@ interface ColaboradorRepository {
     suspend fun createColaborador(body: ColaboradorCreateDto): ColaboradorReadDto
     suspend fun updateColaborador(id: String, body: ColaboradorCreateDto): ColaboradorReadDto
     suspend fun deleteColaborador(id: String)
+
     suspend fun getAllSkills(): List<SkillDto>
     suspend fun getAllNiveles(): List<NivelSkillDto>
 }

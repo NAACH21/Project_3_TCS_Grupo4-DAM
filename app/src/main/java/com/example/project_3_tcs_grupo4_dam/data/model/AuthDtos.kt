@@ -1,43 +1,43 @@
 package com.example.project_3_tcs_grupo4_dam.data.model
 
 /**
- * DTOs para autenticación basados en la respuesta del backend
+ * DTOs para el módulo de autenticación
  */
 object AuthDtos {
 
-    // Request para login
+    /**
+     * Request para el login
+     */
     data class LoginRequest(
-        val email: String,
+        val username: String,
         val password: String
     )
 
-    // Request para registro
+    /**
+     * Response del login (dentro del campo "data")
+     */
+    data class LoginResponse(
+        val token: String,
+        val username: String,
+        val rolSistema: String, // "ADMIN", "BUSINESS_MANAGER", "COLABORADOR"
+        val colaboradorId: String?
+    )
+
+    /**
+     * Request para el registro
+     */
     data class RegisterRequest(
         val nombreCompleto: String,
         val email: String,
         val password: String
     )
 
-    // Respuesta de autenticación del backend
-    data class AuthResponse(
-        val success: Boolean,
-        val message: String,
-        val data: AuthData?
-    )
-
-    // Data contenida en la respuesta exitosa
-    data class AuthData(
-        val token: String,
-        val refreshToken: String,
-        val tokenExpires: String,
-        val user: UserResponse
-    )
-
-    // Información del usuario
-    data class UserResponse(
-        val id: String,
-        val nombreCompleto: String,
-        val email: String,
-        val roles: List<String>
+    /**
+     * Response del registro
+     */
+    data class RegisterResponse(
+        val userId: String,
+        val username: String
     )
 }
+

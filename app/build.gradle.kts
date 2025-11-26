@@ -64,6 +64,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
     // Permite usar el `viewModel()` composable function
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation(libs.androidx.compose.foundation)
 
     // Tests / tooling
     testImplementation(libs.junit)

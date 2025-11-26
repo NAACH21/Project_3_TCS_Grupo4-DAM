@@ -1,189 +1,86 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.matching
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-
-// Datos del dominio mock
-
-data class SkillRequerido(
-    val nombre: String,
-    val nivel: String
-)
-
-data class SkillColaborador(
-    val nombre: String,
-    val nivel: String
-)
-
-data class Candidato(
-    val id: String,
-    val nombre: String,
-    val disponibilidadInmediata: Boolean,
-    val skills: List<SkillColaborador>
-)
-
-data class ResultadoMatch(
-    val candidato: Candidato,
-    val porcentaje: Float
-)
-
-enum class SortBy { MATCH, DISPONIBILIDAD }
+import androidx.lifecycle.viewModelScope
+import com.example.project_3_tcs_grupo4_dam.data.model.*
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.*
+import com.example.project_3_tcs_grupo4_dam.domain.MatchingEngine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import java.util.*
 
 class MatchingViewModel : ViewModel() {
 
-    // Variables MOCK solicitadas
-    val vacantesMock = listOf(
-        "Vacante QA Tester",
-        "Vacante Desarrollador Backend",
-        "Vacante Data Engineer",
-        "Vacante Analista de Talento"
-    )
+    private val vacanteRepo = VacanteRepository()
+    private val colaboradorApi = RetrofitClient.colaboradorApi
+    private val procesosRepo = ProcesosMatchingRepository()
 
-    val nivelesSkill = listOf("Básico", "Intermedio", "Avanzado", "Experto")
+    private val _vacantes = MutableStateFlow<List<VacanteResponse>>(emptyList())
+    val vacantes: StateFlow<List<VacanteResponse>> = _vacantes
 
-    var selectedVacante by mutableStateOf("")
-    var umbralMatch by mutableFloatStateOf(60f)
+    private val _colaboradores = MutableStateFlow<List<ColaboradorResponse>>(emptyList())
+    val colaboradores: StateFlow<List<ColaboradorResponse>> = _colaboradores
 
-    var listaSkills = mutableStateListOf(
-        SkillRequerido(nombre = "", nivel = nivelesSkill.first()) // skill inicial de guía
-    )
+    private val _resultados = MutableStateFlow<List<ResultadoMatchingItem>>(emptyList())
+    val resultados: StateFlow<List<ResultadoMatchingItem>> = _resultados
 
-    // Estado auxiliar
-    var loading by mutableStateOf(false)
-    var mensajeSistema by mutableStateOf<String?>(null)
-    var resultados = mutableStateListOf<ResultadoMatch>()
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading
 
-    // Criterio de ordenamiento (lógica lista; UI se implementará luego)
-    var sortBy by mutableStateOf(SortBy.MATCH)
-
-    fun agregarSkill() {
-        listaSkills.add(SkillRequerido(nombre = "", nivel = nivelesSkill.first()))
-    }
-
-    fun eliminarSkill(index: Int) {
-        if (index in listaSkills.indices) listaSkills.removeAt(index)
-    }
-
-    fun actualizarSkillNombre(index: Int, nombre: String) {
-        if (index in listaSkills.indices) {
-            val actual = listaSkills[index]
-            listaSkills[index] = actual.copy(nombre = nombre)
+    fun loadVacantes() = viewModelScope.launch {
+        try {
+            _loading.value = true
+            val all = vacanteRepo.getVacantes()
+            _vacantes.value = all.filter { it.estadoVacante.equals("ABIERTA", true) }
+        } finally {
+            _loading.value = false
         }
     }
 
-    fun actualizarSkillNivel(index: Int, nivel: String) {
-        if (index in listaSkills.indices) {
-            val actual = listaSkills[index]
-            listaSkills[index] = actual.copy(nivel = nivel)
+    fun loadColaboradores() = viewModelScope.launch {
+        try {
+            _loading.value = true
+            val cols = colaboradorApi.getColaboradores()
+            _colaboradores.value = cols
+        } finally {
+            _loading.value = false
         }
     }
 
-    // Mapeo de nivel textual -> numérico (1..4)
-    private fun nivelNumerico(nivel: String): Int = when (nivel.trim()) {
-        "Básico" -> 1
-        "Intermedio" -> 2
-        "Avanzado" -> 3
-        "Experto" -> 4
-        else -> 0
-    }
+    fun ejecutarMatching(
+        vacante: VacanteResponse,
+        umbral: Int,
+        guardarProceso: Boolean = true
+    ) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
 
-    // STUB: calcular el match por colaborador respecto a los skills requeridos
-    fun calcularMatchColaborador(
-        skillsRequeridos: List<SkillRequerido>,
-        skillsColaborador: List<SkillColaborador>
-    ): Float {
-        // Filtrar skills sin nombre para no alterar el cálculo
-        val filtrados = skillsRequeridos.filter { it.nombre.isNotBlank() }
-        if (filtrados.isEmpty()) return 0f
-        val mapaColab = skillsColaborador.associateBy { it.nombre.trim().lowercase() }
+                val resultados = MatchingEngine.runMatching(
+                    colaboradores = _colaboradores.value,
+                    vacante = vacante,
+                    umbralMinimo = umbral
+                )
 
-        var suma = 0f
-        var count = 0
-        for (req in filtrados) {
-            val reqNivel = nivelNumerico(req.nivel)
-            val colab = mapaColab[req.nombre.trim().lowercase()]
-            val puntaje = if (colab == null) {
-                0f // No posee la habilidad
-            } else {
-                val colabNivel = nivelNumerico(colab.nivel)
-                when {
-                    colabNivel >= reqNivel -> 1.0f
-                    colabNivel == reqNivel - 1 -> 0.75f
-                    colabNivel < reqNivel - 1 -> 0.25f
-                    else -> 0f
+                _resultados.value = resultados
+
+                if (guardarProceso) {
+                    val req = ProcesoMatchingRequest(
+                        vacanteId = vacante.id,
+                                umbral = umbral,
+                        fechaEjecucion = Date(),
+                        resultados = resultados
+                    )
+                    procesosRepo.createProceso(req)
                 }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _loading.value = false
             }
-            suma += puntaje
-            count++
         }
-        return (suma / count) * 100f
     }
-
-    // STUB: obtener candidatos (mock temporal)
-    fun obtenerCandidatos(): List<Candidato> {
-        return listOf(
-            Candidato(
-                id = "1",
-                nombre = "Ana Pérez",
-                disponibilidadInmediata = true,
-                skills = listOf(
-                    SkillColaborador("Testing", "Avanzado"),
-                    SkillColaborador("Automatización", "Intermedio"),
-                    SkillColaborador("Kotlin", "Intermedio"),
-                    SkillColaborador("SQL", "Básico")
-                )
-            ),
-            Candidato(
-                id = "2",
-                nombre = "Luis Gómez",
-                disponibilidadInmediata = false,
-                skills = listOf(
-                    SkillColaborador("Kotlin", "Experto"),
-                    SkillColaborador("Spring", "Avanzado"),
-                    SkillColaborador("Docker", "Intermedio"),
-                    SkillColaborador("SQL", "Intermedio")
-                )
-            ),
-            Candidato(
-                id = "3",
-                nombre = "María Rojas",
-                disponibilidadInmediata = true,
-                skills = listOf(
-                    SkillColaborador("Data Engineering", "Avanzado"),
-                    SkillColaborador("Python", "Experto"),
-                    SkillColaborador("Spark", "Intermedio"),
-                    SkillColaborador("SQL", "Avanzado")
-                )
-            )
-        )
-    }
-
-    // STUB: ejecutar matching usando la fórmula y el umbral
-    fun ejecutarMatchingMock(): List<String> {
-
-        if (selectedVacante.isEmpty()) {
-            mensajeSistema = "Debe seleccionar una vacante."
-            return emptyList()
-        }
-
-        if (listaSkills.isEmpty()) {
-            mensajeSistema = "Debe agregar al menos un skill técnico."
-            return emptyList()
-        }
-
-        // Resultados de prueba
-        val resultados = listOf(
-            "Carlos Ramírez – Backend – Match 92%",
-            "Valeria Soto – QA – Match 85%",
-            "Miguel Torres – Data Engineer – Match 70%"
-        )
-
-        mensajeSistema = "Matching ejecutado correctamente."
-        return resultados
-    }
-
 }
