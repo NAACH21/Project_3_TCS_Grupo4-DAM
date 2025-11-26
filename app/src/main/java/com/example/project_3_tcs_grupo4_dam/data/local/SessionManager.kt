@@ -7,7 +7,7 @@ import androidx.security.crypto.MasterKey
 
 /**
  * Maneja la sesión del usuario usando EncryptedSharedPreferences
- * Guarda: token, rolSistema, colaboradorId, username
+ * Guarda: token, rolSistema, colaboradorId, username, usuarioId
  */
 class SessionManager(context: Context) {
 
@@ -17,6 +17,7 @@ class SessionManager(context: Context) {
         private const val KEY_ROL = "rol_sistema"
         private const val KEY_COLABORADOR_ID = "colaborador_id"
         private const val KEY_USERNAME = "username"
+        private const val KEY_USUARIO_ID = "usuario_id" // Nuevo campo
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -33,15 +34,26 @@ class SessionManager(context: Context) {
 
     /**
      * Guarda la sesión del usuario después del login
+     * Actualizado para incluir usuarioId
      */
-    fun saveSession(token: String, rolSistema: String, colaboradorId: String?, username: String) {
+    fun saveSession(token: String, rolSistema: String, colaboradorId: String?, username: String, usuarioId: String) {
         sharedPreferences.edit().apply {
             putString(KEY_TOKEN, token)
             putString(KEY_ROL, rolSistema)
             putString(KEY_COLABORADOR_ID, colaboradorId)
             putString(KEY_USERNAME, username)
+            putString(KEY_USUARIO_ID, usuarioId)
             apply()
         }
+    }
+
+    /**
+     * Sobrecarga para compatibilidad temporal si se requiere,
+     * aunque se recomienda usar la versión completa.
+     */
+    fun saveSession(token: String, rolSistema: String, colaboradorId: String?, username: String) {
+        // Guarda una cadena vacía o nula para usuarioId si no se proporciona
+        saveSession(token, rolSistema, colaboradorId, username, "")
     }
 
     /**
@@ -66,6 +78,11 @@ class SessionManager(context: Context) {
     fun getUsername(): String? = sharedPreferences.getString(KEY_USERNAME, null)
 
     /**
+     * Obtiene el ID del usuario (Mongo ID)
+     */
+    fun getUsuarioId(): String? = sharedPreferences.getString(KEY_USUARIO_ID, null)
+
+    /**
      * Verifica si hay una sesión activa
      */
     fun isLoggedIn(): Boolean = getToken() != null
@@ -77,4 +94,3 @@ class SessionManager(context: Context) {
         sharedPreferences.edit().clear().apply()
     }
 }
-

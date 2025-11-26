@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 
 @Composable
 fun ColaboradorCard(
@@ -73,7 +73,7 @@ fun ColaboradorCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = colaborador.rolActual,
+                        text = colaborador.rolLaboral,
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
@@ -113,20 +113,27 @@ fun ColaboradorCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // chips de estado (ejemplo simple)
+            // chips de estado y disponibilidad para movilidad
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(
                     onClick = {},
-                    label = { Text("Activo") },
+                    label = { Text(colaborador.estado) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        containerColor = if (colaborador.estado.uppercase() == "ACTIVO")
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer
                     )
                 )
+
                 AssistChip(
                     onClick = {},
-                    label = { Text(colaborador.disponibilidad.estado) },
+                    label = { Text(if (colaborador.disponibleParaMovilidad) "Disponible" else "No disponible") },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = if (colaborador.disponibleParaMovilidad)
+                            MaterialTheme.colorScheme.secondaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }

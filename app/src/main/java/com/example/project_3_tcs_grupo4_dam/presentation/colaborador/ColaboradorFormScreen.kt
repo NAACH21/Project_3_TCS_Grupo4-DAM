@@ -1,6 +1,9 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,9 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.NivelSkillDto
-import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionCreateDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,20 +28,28 @@ fun ColaboradorFormScreen(navController: NavController) {
     // Observar estados
     val nombres by viewModel.nombres.collectAsState()
     val apellidos by viewModel.apellidos.collectAsState()
+    val correo by viewModel.correo.collectAsState()
     val area by viewModel.area.collectAsState()
-    val rolActual by viewModel.rolActual.collectAsState()
+    val rolLaboral by viewModel.rolLaboral.collectAsState()
+    val disponible by viewModel.disponibleParaMovilidad.collectAsState()
 
-    val allSkills by viewModel.allSkills.collectAsState()
+    // Catálogos
+    val areasCatalogo by viewModel.areas.collectAsState()
+    val rolesCatalogo by viewModel.rolesLaborales.collectAsState()
+    val tiposSkillCatalogo by viewModel.tiposSkill.collectAsState()
+    val nivelesSkillCatalogo by viewModel.nivelesSkill.collectAsState()
+
+    // Estado del colaborador
+    val estadoColaborador by viewModel.estado.collectAsState()
+
+    // Estados del diálogo de selección de skills
+    val showSkillPickerDialog by viewModel.showSkillPickerDialog.collectAsState()
+    val selectedTipoSkill by viewModel.selectedTipoSkill.collectAsState()
     val skillSearchText by viewModel.skillSearchText.collectAsState()
-    val selectedSkills by viewModel.selectedSkills.collectAsState()
+    val filteredSkillSuggestions by viewModel.filteredSkillSuggestions.collectAsState()
 
-    val niveles by viewModel.niveles.collectAsState()
-    val selectedNivel by viewModel.selectedNivel.collectAsState()
-
+    val skills by viewModel.skills.collectAsState()
     val certificaciones by viewModel.certificaciones.collectAsState()
-
-    val disponibilidadEstado by viewModel.disponibilidadEstado.collectAsState()
-    val disponibilidadDias by viewModel.disponibilidadDias.collectAsState()
 
     val isLoading by viewModel.isLoading.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
@@ -98,51 +108,400 @@ fun ColaboradorFormScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Sección 1: Datos Personales
-                DatosPersonalesSection(
-                    nombres = nombres,
-                    apellidos = apellidos,
-                    area = area,
-                    rolActual = rolActual,
-                    onNombresChange = viewModel::onNombresChange,
-                    onApellidosChange = viewModel::onApellidosChange,
-                    onAreaChange = viewModel::onAreaChange,
-                    onRolActualChange = viewModel::onRolActualChange
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "1. Datos personales",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                // Sección 2: Skills
-                SkillsSection(
-                    allSkills = allSkills,
-                    selectedSkills = selectedSkills,
-                    searchText = skillSearchText,
-                    onSearchChange = viewModel::onSkillSearchChange,
-                    onToggleSkill = viewModel::toggleSkillSelection,
-                    onRemoveSkill = viewModel::removeSkill
-                )
+                        OutlinedTextField(
+                            value = nombres,
+                            onValueChange = viewModel::onNombresChange,
+                            label = { Text("Nombres *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
 
-                // Sección 3: Nivel
-                NivelSection(
-                    niveles = niveles,
-                    selectedNivel = selectedNivel,
-                    onNivelSelected = viewModel::onNivelSelected
-                )
+                        OutlinedTextField(
+                            value = apellidos,
+                            onValueChange = viewModel::onApellidosChange,
+                            label = { Text("Apellidos *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
 
-                // Sección 4: Certificaciones
-                CertificacionesSection(
-                    certificaciones = certificaciones,
-                    onAddCertificacion = viewModel::addCertificacion,
-                    onUpdateNombre = viewModel::updateCertificacionNombre,
-                    onUpdateUrl = viewModel::updateCertificacionUrl,
-                    onUpdateFecha = viewModel::updateCertificacionFecha,
-                    onRemove = viewModel::removeCertificacion
-                )
+                        OutlinedTextField(
+                            value = correo,
+                            onValueChange = viewModel::onCorreoChange,
+                            label = { Text("Correo *") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
 
-                // Sección 5: Disponibilidad
-                DisponibilidadSection(
-                    estado = disponibilidadEstado,
-                    dias = disponibilidadDias,
-                    onEstadoChange = viewModel::onDisponibilidadEstadoChange,
-                    onDiasChange = viewModel::onDisponibilidadDiasChange
-                )
+                        // Dropdown para Área
+                        var expandedArea by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = expandedArea,
+                            onExpandedChange = { expandedArea = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = area,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Área *") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedArea) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedArea,
+                                onDismissRequest = { expandedArea = false }
+                            ) {
+                                areasCatalogo.forEach { areaItem ->
+                                    DropdownMenuItem(
+                                        text = { Text(areaItem) },
+                                        onClick = {
+                                            viewModel.onAreaChange(areaItem)
+                                            expandedArea = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown para Rol laboral
+                        var expandedRol by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = expandedRol,
+                            onExpandedChange = { expandedRol = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = rolLaboral,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Rol laboral *") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRol) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedRol,
+                                onDismissRequest = { expandedRol = false }
+                            ) {
+                                rolesCatalogo.forEach { rolItem ->
+                                    DropdownMenuItem(
+                                        text = { Text(rolItem) },
+                                        onClick = {
+                                            viewModel.onRolLaboralChange(rolItem)
+                                            expandedRol = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(text = "Disponible para movilidad")
+                            Switch(checked = disponible, onCheckedChange = viewModel::onDisponibleParaMovilidadChange)
+                        }
+
+                        // Dropdown de Estado - Solo visible en modo edición
+                        if (viewModel.isEditMode) {
+                            var expandedEstado by remember { mutableStateOf(false) }
+                            ExposedDropdownMenuBox(
+                                expanded = expandedEstado,
+                                onExpandedChange = { expandedEstado = it },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedTextField(
+                                    value = estadoColaborador,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Estado") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedEstado) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        unfocusedContainerColor = if (estadoColaborador == "ACTIVO")
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                        else
+                                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                                    )
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedEstado,
+                                    onDismissRequest = { expandedEstado = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("ACTIVO") },
+                                        onClick = {
+                                            viewModel.onEstadoChange("ACTIVO")
+                                            expandedEstado = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("INACTIVO") },
+                                        onClick = {
+                                            viewModel.onEstadoChange("INACTIVO")
+                                            expandedEstado = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Sección 2: Skills (editable lista embebida)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "2. Skills",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Button(onClick = { viewModel.openSkillPicker() }, modifier = Modifier.fillMaxWidth()) {
+                            Text(text = "+ Agregar skill")
+                        }
+
+                        if (skills.isEmpty()) {
+                            Text(text = "Sin skills agregados", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            skills.forEachIndexed { index, skill ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        // Header con título y botón eliminar
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Skill ${index + 1}",
+                                                fontWeight = FontWeight.SemiBold,
+                                                style = MaterialTheme.typography.titleSmall
+                                            )
+                                            IconButton(onClick = { viewModel.removeSkill(index) }) {
+                                                Icon(Icons.Default.Close, contentDescription = "Eliminar")
+                                            }
+                                        }
+
+                                        // Campo Nombre
+                                        OutlinedTextField(
+                                            value = skill.nombre,
+                                            onValueChange = { viewModel.updateSkillNombre(index, it) },
+                                            label = { Text("Nombre") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+
+                                        // Tipo (Dropdown desde catálogo)
+                                        var expandedTipo by remember { mutableStateOf(false) }
+                                        ExposedDropdownMenuBox(
+                                            expanded = expandedTipo,
+                                            onExpandedChange = { expandedTipo = it },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            OutlinedTextField(
+                                                value = skill.tipo,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Tipo") },
+                                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                            )
+                                            ExposedDropdownMenu(
+                                                expanded = expandedTipo,
+                                                onDismissRequest = { expandedTipo = false }
+                                            ) {
+                                                tiposSkillCatalogo.forEach { tipo ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(tipo) },
+                                                        onClick = {
+                                                            viewModel.updateSkillTipo(index, tipo)
+                                                            expandedTipo = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // Nivel (Dropdown desde catálogo con descripción)
+                                        var expandedNivel by remember { mutableStateOf(false) }
+                                        val nivelActual = nivelesSkillCatalogo.find { it.codigo == skill.nivel }
+                                        val nivelTexto = nivelActual?.let { "Nivel ${it.codigo} - ${it.descripcion}" } ?: "Nivel ${skill.nivel}"
+
+                                        ExposedDropdownMenuBox(
+                                            expanded = expandedNivel,
+                                            onExpandedChange = { expandedNivel = it },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            OutlinedTextField(
+                                                value = nivelTexto,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Nivel") },
+                                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNivel) },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                            )
+                                            ExposedDropdownMenu(
+                                                expanded = expandedNivel,
+                                                onDismissRequest = { expandedNivel = false }
+                                            ) {
+                                                nivelesSkillCatalogo.forEach { nivel ->
+                                                    DropdownMenuItem(
+                                                        text = { Text("Nivel ${nivel.codigo} - ${nivel.descripcion}") },
+                                                        onClick = {
+                                                            viewModel.updateSkillNivel(index, nivel.codigo)
+                                                            expandedNivel = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // Switch para Crítico
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Skill crítico",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Switch(
+                                                checked = skill.esCritico,
+                                                onCheckedChange = { viewModel.updateSkillEsCritico(index, it) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Sección 3: Certificaciones
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "3. Certificaciones",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Button(onClick = { viewModel.addCertificacion() }, modifier = Modifier.fillMaxWidth()) {
+                            Text(text = "+ Agregar certificación")
+                        }
+
+                        if (certificaciones.isEmpty()) {
+                            Text(text = "Sin certificaciones", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            certificaciones.forEachIndexed { index, cert ->
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(text = "Certificación ${index + 1}", fontWeight = FontWeight.SemiBold)
+                                            IconButton(onClick = { viewModel.removeCertificacion(index) }) {
+                                                Icon(Icons.Default.Close, contentDescription = "Eliminar")
+                                            }
+                                        }
+
+                                        OutlinedTextField(
+                                            value = cert.nombre,
+                                            onValueChange = { viewModel.updateCertificacionNombre(index, it) },
+                                            label = { Text("Nombre") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cert.institucion,
+                                            onValueChange = { viewModel.updateCertificacionInstitucion(index, it) },
+                                            label = { Text("Institución") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cert.fechaObtencion ?: "",
+                                            onValueChange = { viewModel.updateCertificacionFechaObtencion(index, it.ifBlank { null }) },
+                                            label = { Text("Fecha de obtención (ISO)") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cert.fechaVencimiento ?: "",
+                                            onValueChange = { viewModel.updateCertificacionFechaVencimiento(index, it.ifBlank { null }) },
+                                            label = { Text("Fecha de vencimiento (ISO)") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cert.archivoPdfUrl ?: "",
+                                            onValueChange = { viewModel.updateCertificacionArchivoUrl(index, it.ifBlank { null }) },
+                                            label = { Text("Archivo PDF URL") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Botón Guardar
                 Button(
@@ -163,366 +522,169 @@ fun ColaboradorFormScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
-}
 
-@Composable
-private fun DatosPersonalesSection(
-    nombres: String,
-    apellidos: String,
-    area: String,
-    rolActual: String,
-    onNombresChange: (String) -> Unit,
-    onApellidosChange: (String) -> Unit,
-    onAreaChange: (String) -> Unit,
-    onRolActualChange: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "1. Datos personales",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = nombres,
-                onValueChange = onNombresChange,
-                label = { Text("Nombres *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = apellidos,
-                onValueChange = onApellidosChange,
-                label = { Text("Apellidos *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = area,
-                onValueChange = onAreaChange,
-                label = { Text("Área *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = rolActual,
-                onValueChange = onRolActualChange,
-                label = { Text("Rol Actual *") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+        // Diálogo de selección de skills
+        if (showSkillPickerDialog) {
+            SkillPickerDialog(
+                selectedTipo = selectedTipoSkill,
+                tiposDisponibles = tiposSkillCatalogo,
+                searchText = skillSearchText,
+                suggestions = filteredSkillSuggestions,
+                onTipoChange = viewModel::onTipoSkillSelected,
+                onSearchTextChange = viewModel::onSkillSearchTextChange,
+                onSkillClick = viewModel::onSkillSuggestionClick,
+                onDismiss = viewModel::closeSkillPicker
             )
         }
     }
 }
 
+/**
+ * Diálogo para seleccionar un skill del catálogo
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SkillsSection(
-    allSkills: List<SkillDto>,
-    selectedSkills: List<SkillDto>,
+fun SkillPickerDialog(
+    selectedTipo: String,
+    tiposDisponibles: List<String>,
     searchText: String,
-    onSearchChange: (String) -> Unit,
-    onToggleSkill: (SkillDto) -> Unit,
-    onRemoveSkill: (SkillDto) -> Unit
+    suggestions: List<com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto>,
+    onTipoChange: (String) -> Unit,
+    onSearchTextChange: (String) -> Unit,
+    onSkillClick: (com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos.SkillCatalogItemDto) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
             Text(
-                text = "2. Skills *",
-                style = MaterialTheme.typography.titleMedium,
+                text = "Seleccionar Skill",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-
-            OutlinedTextField(
-                value = searchText,
-                onValueChange = onSearchChange,
-                label = { Text("Buscar skill...") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            // Mostrar skills filtrados para seleccionar
-            if (searchText.isNotBlank()) {
-                val filteredSkills = allSkills.filter {
-                    it.nombre.contains(searchText, ignoreCase = true)
-                }.take(5)
-
-                if (filteredSkills.isNotEmpty()) {
-                    Text(
-                        text = "Resultados:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    filteredSkills.forEach { skill ->
-                        val isSelected = selectedSkills.any { it.id == skill.id }
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { onToggleSkill(skill) },
-                            label = { Text("${skill.nombre} (${skill.tipo})") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-
-            // Skills seleccionados
-            if (selectedSkills.isNotEmpty()) {
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(500.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Selector de tipo de skill
                 Text(
-                    text = "Skills seleccionados:",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Tipo de skill",
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold
                 )
 
-                selectedSkills.forEach { skill ->
-                    AssistChip(
-                        onClick = { onRemoveSkill(skill) },
-                        label = { Text(skill.nombre) },
-                        trailingIcon = {
-                            Icon(Icons.Default.Close, contentDescription = "Eliminar")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NivelSection(
-    niveles: List<NivelSkillDto>,
-    selectedNivel: NivelSkillDto?,
-    onNivelSelected: (NivelSkillDto) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "3. Nivel *",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            var expanded by remember { mutableStateOf(false) }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
-            ) {
-                OutlinedTextField(
-                    value = selectedNivel?.nombre ?: "Seleccionar nivel",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Nivel de skill") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
-                )
-
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                var expandedTipo by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expandedTipo,
+                    onExpandedChange = { expandedTipo = it },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    niveles.forEach { nivel ->
-                        DropdownMenuItem(
-                            text = { Text("${nivel.nombre} (Código: ${nivel.codigo})") },
-                            onClick = {
-                                onNivelSelected(nivel)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CertificacionesSection(
-    certificaciones: List<CertificacionCreateDto>,
-    onAddCertificacion: () -> Unit,
-    onUpdateNombre: (Int, String) -> Unit,
-    onUpdateUrl: (Int, String) -> Unit,
-    onUpdateFecha: (Int, String) -> Unit,
-    onRemove: (Int) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "4. Certificaciones",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedButton(
-                onClick = onAddCertificacion,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("+ Agregar certificación")
-            }
-
-            certificaciones.forEachIndexed { index, cert ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
+                    OutlinedTextField(
+                        value = selectedTipo,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedTipo,
+                        onDismissRequest = { expandedTipo = false }
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Certificación ${index + 1}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                        tiposDisponibles.forEach { tipo ->
+                            DropdownMenuItem(
+                                text = { Text(tipo) },
+                                onClick = {
+                                    onTipoChange(tipo)
+                                    expandedTipo = false
+                                }
                             )
-                            IconButton(onClick = { onRemove(index) }) {
-                                Icon(Icons.Default.Close, contentDescription = "Eliminar")
-                            }
                         }
-
-                        OutlinedTextField(
-                            value = cert.nombre,
-                            onValueChange = { onUpdateNombre(index, it) },
-                            label = { Text("Nombre") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        OutlinedTextField(
-                            value = cert.imagenUrl ?: "",
-                            onValueChange = { onUpdateUrl(index, it) },
-                            label = { Text("URL de imagen") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        OutlinedTextField(
-                            value = cert.fechaObtencion ?: "",
-                            onValueChange = { onUpdateFecha(index, it) },
-                            label = { Text("Fecha (YYYY-MM-DDTHH:mm:ssZ)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
                     }
                 }
-            }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DisponibilidadSection(
-    estado: String,
-    dias: Int?,
-    onEstadoChange: (String) -> Unit,
-    onDiasChange: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "5. Disponibilidad",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            var expanded by remember { mutableStateOf(false) }
-            val estados = listOf("Disponible", "Ocupado", "Inactivo")
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it }
-            ) {
+                // Buscador
                 OutlinedTextField(
-                    value = estado,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Estado") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                    value = searchText,
+                    onValueChange = onSearchTextChange,
+                    label = { Text("Buscar skill...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Escribe para filtrar") }
                 )
 
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    estados.forEach { est ->
-                        DropdownMenuItem(
-                            text = { Text(est) },
-                            onClick = {
-                                onEstadoChange(est)
-                                expanded = false
-                            }
+                // Lista de sugerencias
+                Text(
+                    text = "Skills disponibles (${suggestions.size})",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (suggestions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No se encontraron skills",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(suggestions) { item ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSkillClick(item) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = item.nombre,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = item.tipo,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            OutlinedTextField(
-                value = dias?.toString() ?: "",
-                onValueChange = onDiasChange,
-                label = { Text("Días") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
         }
-    }
+    )
 }

@@ -1,5 +1,7 @@
 package com.example.project_3_tcs_grupo4_dam.data.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * DTOs para el módulo de autenticación
  */
@@ -17,6 +19,10 @@ object AuthDtos {
      * Response del login (dentro del campo "data")
      */
     data class LoginResponse(
+        // CORRECCIÓN: Lo hacemos nullable (String?) para evitar crashes si el backend no lo envía
+        @SerializedName("id", alternate = ["_id", "userId"]) // Agrego "userId" por si acaso
+        val id: String?, 
+        
         val token: String,
         val username: String,
         val rolSistema: String, // "ADMIN", "BUSINESS_MANAGER", "COLABORADOR"
@@ -40,4 +46,3 @@ object AuthDtos {
         val username: String
     )
 }
-

@@ -36,14 +36,11 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         startDestination = startDestination
     ) {
         composable(Routes.HOME) {
-            // Pasamos el AuthViewModel para que HomeScreen pueda leer el username y personalizar la UI
-            HomeScreen(navController, viewModel)
+            HomeScreen(navController)
         }
 
         composable(Routes.LOGIN) {
-            // Pasamos la misma instancia de AuthViewModel para que LoginScreen y HomeScreen compartan estado
             LoginScreen(
-                authViewModel = viewModel,
                 onLoginSuccess = { role ->
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
