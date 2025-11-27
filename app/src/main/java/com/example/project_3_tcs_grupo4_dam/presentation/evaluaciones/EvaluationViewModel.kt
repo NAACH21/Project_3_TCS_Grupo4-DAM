@@ -1,19 +1,29 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CertificacionDto
+import com.example.project_3_tcs_grupo4_dam.data.model.DisponibilidadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.EvaluacionCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillEvaluadoCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.remote.ApiClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 
 // Data class to represent the state of a single skill
 data class Skill(
     val id: UUID = UUID.randomUUID(),
     val name: String = "",
-    val type: String = "Técnico", // "Técnico" or "Soft"
+    val type: String = "TECNICO", // "TECNICO" or "BLANDO"
     val currentLevel: String = "Básico",
     val recommendedLevel: String = "Básico",
     val comments: String = ""
@@ -21,16 +31,24 @@ data class Skill(
 
 // Data class to represent the entire UI state
 data class EvaluationUiState(
-    val collaborator: String = "",
-    val currentRole: String = "Android Developer", // This would be derived from the collaborator
+    val selectedCollaboratorId: String? = null,
+    val currentRole: String = "", // This will be derived from the selected collaborator
     val evaluatorLeader: String = "",
     val evaluationDate: String = "",
     val evaluationType: String = "",
     val skills: List<Skill> = listOf(Skill()),
-    val collaboratorOptions: List<String> = listOf("Juan Pérez", "Ana García", "Luis Rodríguez"),
-    val evaluationTypeOptions: List<String> = listOf("Trimestral", "Semestral", "Anual", "Feedback"),
-    val skillTypeOptions: List<String> = listOf("Técnico", "Soft"),
-    val skillLevelOptions: List<String> = listOf("Básico", "Intermedio", "Avanzado")
+    val comments: String = "",
+
+    val collaboratorOptions: List<ColaboradorReadDto> = emptyList(), // Store full collaborator objects
+    val evaluationTypeOptions: List<String> = listOf("ENTREVISTA", "TRIMESTRAL", "SEMESTRAL", "ANUAL"),
+    val skillTypeOptions: List<String> = listOf("TECNICO", "BLANDO"),
+    val skillLevelOptions: List<String> = listOf("Básico", "Intermedio", "Avanzado"),
+
+    // Feedback states
+    val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
+    val saveSuccess: Boolean = false,
+    val saveError: String? = null
 )
 
 class EvaluationViewModel : ViewModel() {
@@ -38,9 +56,61 @@ class EvaluationViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(EvaluationUiState())
     val uiState: StateFlow<EvaluationUiState> = _uiState.asStateFlow()
 
-    fun onCollaboratorChange(newValue: String) {
-        _uiState.update { it.copy(collaborator = newValue) }
-        // Here you would typically fetch the collaborator's role
+    init {
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, saveError = null) }
+            try {
+                val collaboratorsResp = ApiClient.colaboradorApiService.getColaboradores()
+                // Mapear ColaboradorResponse -> ColaboradorReadDto para la UI
+                val collaboratorsDto = collaboratorsResp.map { resp ->
+                    ColaboradorReadDto(
+                        id = resp.getIdValue(),
+                        nombres = resp.nombres,
+                        apellidos = resp.apellidos,
+                        area = resp.area,
+                        rolActual = resp.rolLaboral ?: "",
+                        skills = resp.skills.map { it.nombre },
+                        nivelCodigo = null,
+                        certificaciones = resp.certificaciones.map { cert ->
+                            CertificacionDto(
+                                nombre = cert.nombre,
+                                imagenUrl = null,
+                                fechaObtencion = null,
+                                estado = cert.estado ?: ""
+                            )
+                        },
+                        disponibilidad = DisponibilidadDto(
+                            estado = if (resp.disponibleParaMovilidad) "DISPONIBLE" else "NO_DISPONIBLE",
+                            dias = 0
+                        )
+                    )
+                }
+
+                // Si ya hay un colaborador seleccionado previamente, mantenemos la selección
+                val currentSelectedId = _uiState.value.selectedCollaboratorId
+                val currentRole = currentSelectedId?.let { id ->
+                    collaboratorsResp.find { it.getIdValue() == id }?.rolLaboral
+                } ?: _uiState.value.currentRole
+
+                _uiState.update { it.copy(collaboratorOptions = collaboratorsDto, currentRole = if (currentRole.isBlank()) "" else currentRole, isLoading = false) }
+            } catch (e: Exception) {
+                Log.e("EvaluationViewModel", "Error al cargar colaboradores", e)
+                _uiState.update { it.copy(saveError = "Error al cargar colaboradores: ${e.message ?: "desconocido"}", isLoading = false) }
+            }
+        }
+    }
+
+    fun onCollaboratorChange(collaboratorId: String) {
+        val selectedCollaborator = _uiState.value.collaboratorOptions.find { it.id == collaboratorId }
+        // Colaborador DTO usa `rolActual` (no `rolLaboral`)
+        _uiState.update { it.copy(
+            selectedCollaboratorId = collaboratorId,
+            currentRole = selectedCollaborator?.rolActual ?: ""
+        ) }
     }
 
     fun onEvaluatorLeaderChange(newValue: String) {
@@ -55,41 +125,95 @@ class EvaluationViewModel : ViewModel() {
         _uiState.update { it.copy(evaluationType = newValue) }
     }
 
+    fun onCommentsChange(newValue: String) {
+        _uiState.update { it.copy(comments = newValue) }
+    }
+
     fun addSkill() {
-        viewModelScope.launch {
-            val newSkills = _uiState.value.skills.toMutableList().apply {
-                add(Skill())
-            }
-            _uiState.update { it.copy(skills = newSkills) }
-        }
+        val newSkills = _uiState.value.skills.toMutableList().apply { add(Skill()) }
+        _uiState.update { it.copy(skills = newSkills) }
     }
 
     fun removeSkill(skillId: UUID) {
-        viewModelScope.launch {
-            val updatedSkills = _uiState.value.skills.filterNot { it.id == skillId }
-            _uiState.update { it.copy(skills = updatedSkills) }
-        }
+        val updatedSkills = _uiState.value.skills.filterNot { it.id == skillId }
+        _uiState.update { it.copy(skills = updatedSkills) }
     }
 
     fun onSkillChange(skillId: UUID, update: (Skill) -> Skill) {
-        viewModelScope.launch {
-            val updatedSkills = _uiState.value.skills.map {
-                if (it.id == skillId) {
-                    update(it)
-                } else {
-                    it
-                }
-            }
-            _uiState.update { it.copy(skills = updatedSkills) }
+        val updatedSkills = _uiState.value.skills.map {
+            if (it.id == skillId) update(it) else it
         }
+        _uiState.update { it.copy(skills = updatedSkills) }
     }
 
     fun saveEvaluation() {
-        // Handle the logic to save the evaluation data
+        val uiStateValue = _uiState.value
+        if (uiStateValue.selectedCollaboratorId == null) {
+            _uiState.update { it.copy(saveError = "Por favor, seleccione un colaborador.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, saveError = null, saveSuccess = false) }
+            try {
+                val newEvaluation = EvaluacionCreateDto(
+                    colaboradorId = uiStateValue.selectedCollaboratorId,
+                    rolActual = uiStateValue.currentRole,
+                    liderEvaluador = uiStateValue.evaluatorLeader,
+                    fechaEvaluacion = toIso8601(uiStateValue.evaluationDate),
+                    tipoEvaluacion = uiStateValue.evaluationType,
+                    skillsEvaluados = uiStateValue.skills.map {
+                        SkillEvaluadoCreateDto(
+                            nombre = it.name,
+                            tipo = it.type,
+                            nivelActual = convertSkillLevelToInt(it.currentLevel),
+                            nivelRecomendado = convertSkillLevelToInt(it.recommendedLevel)
+                        )
+                    },
+                    comentarios = uiStateValue.comments,
+                    // TODO: Reemplazar por el ID del usuario que ha iniciado sesión.
+                    usuarioResponsable = "675000000000000000001001" // Placeholder ID
+                )
+
+                Log.d("SaveEvaluation", "Enviando: $newEvaluation")
+                ApiClient.evaluacionApiService.createEvaluacion(newEvaluation)
+                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+
+            } catch (e: Exception) {
+                Log.e("SaveEvaluation", "Error al guardar", e)
+                _uiState.update { it.copy(isSaving = false, saveError = e.message ?: "Ocurrió un error desconocido") }
+            }
+        }
+    }
+
+    fun onSaveStatusConsumed() {
+        _uiState.update { it.copy(saveSuccess = false, saveError = null) }
+    }
+
+    private fun toIso8601(dateString: String): String {
+        return try {
+            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val date = parser.parse(dateString)
+            val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            date?.let { formatter.format(it) } ?: dateString
+        } catch (e: Exception) {
+            Log.e("EvaluationViewModel", "Error al parsear la fecha: $dateString", e)
+            dateString
+        }
+    }
+
+    private fun convertSkillLevelToInt(level: String): Int {
+        return when (level) {
+            "Básico" -> 1
+            "Intermedio" -> 2
+            "Avanzado" -> 3
+            else -> 0
+        }
     }
 
     fun cancelEvaluation() {
-        // Handle the logic to cancel the operation, e.g., navigate back
+        // TODO: Implementar la lógica para cancelar la operación.
     }
 }
-

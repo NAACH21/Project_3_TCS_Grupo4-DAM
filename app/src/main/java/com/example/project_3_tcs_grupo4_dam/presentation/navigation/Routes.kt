@@ -3,6 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 import android.net.Uri
 
 object Routes {
+
     // --- AUTENTICACIÓN ---
     const val LOGIN = "login"
     const val REGISTER = "register"
@@ -12,56 +13,112 @@ object Routes {
     const val ADMIN_HOME = "home_admin"
     const val MANAGER_HOME = "home_manager"
 
-    // --- CONSTANTES PARA BOTTOM BAR ADMIN (Alias) ---
-    const val HOME = ADMIN_HOME 
-    const val VACANTES = "vacantes_admin"             
-    const val EVALUACIONES = "evaluaciones_admin"     
-    const val DASHBOARD = "dashboard_admin"
+    // Alias para Home general (Admin)
+    const val HOME = ADMIN_HOME
 
-    // --- VACANTES (ESPECÍFICAS) ---
-    const val VACANTES_COLABORADOR = "vacantes_colaborador" // Diseño Job Match
-    const val VACANTES_ADMIN = "vacantes_admin"             // Diseño Gestión (Lista simple)
-    const val NEW_VACANT = "new_vacant"                     // Crear vacante (Admin)
 
-    // --- GESTIÓN (ADMIN/MANAGER) ---
+    // ===============================
+    //        VACANTES
+    // ===============================
+
+    const val VACANTES_ADMIN = "vacantes_admin"     // Vista admin
+    const val VACANTES_COLABORADOR = "vacantes_colaborador" // Vista colaborador
+    const val NEW_VACANT = "new_vacant"             // Crear vacante
+
+    // Alias general para bottom bar
+    const val VACANTES = VACANTES_ADMIN
+
+
+
+    // ===============================
+    //        COLABORADORES
+    // ===============================
+
     const val COLABORADORES = "colaboradores"
     const val COLABORADOR_DETALLE = "colaborador_detalle"
     const val COLABORADOR_FORM = "colaborador_form"
-    
-    const val MATCHING = "matching"
-    const val DASHBOARD_ADMIN = "dashboard_admin" // Alias explícito
-    
-    // --- EVALUACIONES ---
-    const val EVALUACIONES_ADMIN = "evaluaciones_admin" // Alias explícito
-    const val NUEVA_EVALUACION = "nueva_evaluacion"     
-    const val EVALUATION_DETAIL = "evaluation_detail"
-    const val BULK_UPLOAD = "bulk_upload"
-    const val EVALUATION_SCREEN = "evaluation_screen" // Alias
 
-    // --- SKILLS Y NIVELES ---
-    const val SKILLS_ADMIN = "skills_gap_admin" 
-    const val SKILLS = "skills_gap_admin" // Alias para botones de home
-    const val NIVEL_SKILLS = "nivel_skills"
-
-    // --- COLABORADOR ESPECÍFICO ---
     const val COLABORADOR_SKILLS = "colaborador_skills"
-    const val ALERTAS_COLABORADOR = "alertas_colaborador"
-    const val ACTUALIZAR_SKILL_BASE = "skill_details_screen"
-    const val ACTUALIZAR_SKILL = "skill_details_screen" // Alias para AppNavigation
     const val SOLICITUDES_COLABORADOR = "solicitudes_colaborador"
     const val SOLICITUD_CERTIFICACION_COLABORADOR = "solicitud_certificacion_colaborador"
     const val SOLICITUD_SKILLS_COLABORADOR = "solicitud_skills_colaborador"
 
-    // --- SOLICITUDES ADMIN (ENTREVISTAS) ---
-    const val SOLICITUDES_ADMIN = "solicitudes_admin" // Vista de entrevistas para admin
-    const val NUEVA_ENTREVISTA_ADMIN = "nueva_entrevista_admin" // Crear entrevista de desempeño
+    const val ALERTAS_COLABORADOR = "alertas_colaborador"
 
-    // --- ALERTAS ADMIN ---
+
+
+    // ===============================
+    //        MATCHING
+    // ===============================
+
+    const val MATCHING = "matching"
+
+
+
+    // ===============================
+    //       SKILLS & GAP ANALYSIS
+    // ===============================
+
+    const val SKILLS_ADMIN = "skills_gap_admin"  // Vista admin
+    const val SKILLS = SKILLS_ADMIN              // Alias general
+
+    const val NIVEL_SKILLS = "nivel_skills"
+
+    // Pantalla para editar un skill individual
+    const val ACTUALIZAR_SKILL_BASE = "skill_details_screen"
+    const val ACTUALIZAR_SKILL = ACTUALIZAR_SKILL_BASE
+
+
+
+    // ===============================
+    //         EVALUACIONES
+    // ===============================
+
+    const val EVALUACIONES_ADMIN = "evaluaciones_admin"  // Vista admin
+    const val EVALUACIONES = EVALUACIONES_ADMIN           // Alias general
+
+    const val EVALUATION_SCREEN = "evaluation_screen"     // Pantalla principal
+    const val NUEVA_EVALUACION = "nueva_evaluacion"
+    const val BULK_UPLOAD = "bulk_upload"
+
+    const val EVALUATION_DETAIL = "evaluation_detail"
+
+    // (De tu rama fix) historial de evaluaciones
+    const val EVALUATIONS_HISTORY = "evaluations_history"
+
+
+
+    // ===============================
+    //       SOLICITUDES (ADMIN)
+    // ===============================
+
+    const val SOLICITUDES_ADMIN = "solicitudes_admin"
+    const val NUEVA_ENTREVISTA_ADMIN = "nueva_entrevista_admin"
+
+
+
+    // ===============================
+    //         DASHBOARD
+    // ===============================
+
+    const val DASHBOARD_ADMIN = "dashboard_admin"
+    const val DASHBOARD = DASHBOARD_ADMIN  // Alias general
+
+
+
+    // ===============================
+    //        NOTIFICACIONES
+    // ===============================
+
     const val ALERTAS_ADMIN = "alertas_admin"
-    const val NOTIFICACIONES = "notificaciones" // Alias compartido o genérico
+    const val NOTIFICACIONES = "notificaciones"
 
-    // --- HELPERS DE NAVEGACIÓN ---
-    
+
+
+    // ===============================
+    //       HELPERS DINÁMICOS
+    // ===============================
+
     fun evaluationDetail(id: String) = "$EVALUATION_DETAIL/$id"
 
     fun actualizarSkill(colaboradorId: String, skillName: String): String {

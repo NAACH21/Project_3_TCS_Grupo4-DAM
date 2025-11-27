@@ -121,14 +121,16 @@ fun HomeScreen(navController: NavController) {
                         value = "142",
                         subtitle = "Colaboradores activos",
                         iconColor = Color(0xFF245DFF),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.COLABORADORES) }
                     )
                     MetricCardSmall(
                         title = "Evaluaciones",
                         value = "8",
                         subtitle = "Evaluaciones pendientes",
                         iconColor = Color(0xFFFF9800),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.EVALUATION_SCREEN) }
                     )
                 }
 
@@ -143,14 +145,16 @@ fun HomeScreen(navController: NavController) {
                         value = "5",
                         subtitle = "Vacantes abiertas",
                         iconColor = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES) }
                     )
                     MetricCardSmall(
                         title = "Cobertura",
                         value = "78%",
                         subtitle = "% Cobertura de skills",
                         iconColor = Color(0xFF9C27B0),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.DASHBOARD) }
                     )
                 }
 
@@ -191,57 +195,37 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickButton(
-                        text = "Historial Evaluaciones",
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.EVALUACIONES) }
-                    )
-                    QuickButton(
                         text = "Carga Masiva",
                         color = Color(0xFF2196F3),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.BULK_UPLOAD) }
                     )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
                     QuickButton(
                         text = "Nueva Evaluación",
                         color = Color(0xFFFF9800),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.EVALUATION_SCREEN) }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     QuickButton(
                         text = "Nivel Skills",
                         color = Color(0xFF9C27B0),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.NIVEL_SKILLS) }
                     )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
                     QuickButton(
                         text = "Brechas de Skills",
                         color = Color(0xFFFF5722),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.SKILLS) }
                     )
-                    QuickButton(
-                        text = "Ver Vacantes",
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -251,11 +235,25 @@ fun HomeScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickButton(
+                        text = "Ver Vacantes",
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Routes.VACANTES_COLABORADOR) }
+                    )
+                    QuickButton(
                         text = "Gestión Vacantes",
                         color = Color(0xFF1976D2),
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Routes.VACANTES) }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     QuickButton(
                         text = "Alertas Automáticas",
                         color = Color(0xFFD32F2F),
@@ -308,15 +306,18 @@ fun HomeScreen(navController: NavController) {
 // COMPONENTES REUTILIZABLES
 // ======================================================
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MetricCardSmall(
     @Suppress("UNUSED_PARAMETER") title: String,
     value: String,
     subtitle: String,
     iconColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 4.dp,
@@ -418,7 +419,6 @@ fun ActivityCard(
                     )
                 }
             }
-
             Text(
                 text = timeAgo,
                 style = MaterialTheme.typography.bodySmall,
