@@ -1,13 +1,13 @@
 package com.example.project_3_tcs_grupo4_dam.domain
 
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorResponse
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.VacanteResponse
 import com.example.project_3_tcs_grupo4_dam.data.model.ResultadoMatchingItem
 
 object MatchingEngine {
 
     fun runMatching(
-        colaboradores: List<ColaboradorResponse>,
+        colaboradores: List<ColaboradorReadDto>,
         vacante: VacanteResponse,
         umbralMinimo: Int
     ): List<ResultadoMatchingItem> {
@@ -15,12 +15,9 @@ object MatchingEngine {
         val reqSkills = vacante.skillsRequeridos
         val reqCerts = vacante.certificacionesRequeridas
 
-        val tecnicasRequeridas = reqSkills.filter { it.tipo.equals("TECNICO", true) }
-        val blandasRequeridas = reqSkills.filter { it.tipo.equals("BLANDO", true) }
-
+        // Filtrar colaboradores por area y estado ACTIVO
         val colaboradoresFiltrados = colaboradores.filter {
-            it.area.equals(vacante.area, true) &&
-                    it.estado.equals("ACTIVO", true)
+            it.area.equals(vacante.area, true) && it.estado.equals("ACTIVO", true)
         }
 
         val resultados = colaboradoresFiltrados.map { col ->
@@ -38,15 +35,12 @@ object MatchingEngine {
                     colSkill == null -> 0.0
                     colSkill.nivel >= req.nivelDeseado -> 1.0
                     colSkill.nivel == req.nivelDeseado - 1 -> 0.75
-                    colSkill.nivel < req.nivelDeseado - 1 -> 0.25
+                    colSkill.nivel < req.nivelDeseado - 1 && colSkill.nivel > 0 -> 0.25
                     else -> 0.0
                 }
             }
 
-            val promedioSkills =
-                if (puntajesSkills.isNotEmpty())
-                    puntajesSkills.average()
-                else 0.0
+            val promedioSkills = if (puntajesSkills.isNotEmpty()) puntajesSkills.average() else 0.0
 
             // =====================================
             // 2. CERTIFICACIONES (1 SI TIENE, 0 NO)
@@ -55,10 +49,7 @@ object MatchingEngine {
                 if (colCerts.any { it.equals(certReq, true) }) 1.0 else 0.0
             }
 
-            val promedioCerts =
-                if (puntajesCerts.isNotEmpty())
-                    puntajesCerts.average()
-                else 0.0
+            val promedioCerts = if (puntajesCerts.isNotEmpty()) puntajesCerts.average() else 0.0
 
             // =====================================
             // 3. SCORE FINAL
@@ -66,7 +57,7 @@ object MatchingEngine {
             val scoreFinal = ((promedioSkills + promedioCerts) / 2.0) * 100.0
 
             ResultadoMatchingItem(
-                colaboradorId = col.id?.`$oid` ?: "",
+                colaboradorId = col.id,
                 nombres = col.nombres,
                 apellidos = col.apellidos,
                 puntaje = scoreFinal,
@@ -74,9 +65,10 @@ object MatchingEngine {
             )
         }
 
+        // Filtrar por umbral y ordenar por puntaje desc y disponibilidad inmediata (true primero)
         return resultados
             .filter { it.puntaje >= umbralMinimo }
-            .sortedByDescending { it.puntaje }
+            .sortedWith(compareByDescending<ResultadoMatchingItem> { it.puntaje }
+                .thenByDescending { it.disponibleParaMovilidad })
     }
 }
-

@@ -62,7 +62,7 @@ object MatchingEngine {
         val resultados = candidatos.map { c ->
             val puntaje = calculateMatchPercentage(c, vacante)
             ResultadoMatchingItem(
-                colaboradorId = c.id?.`$oid` ?: "",
+                colaboradorId = c.getIdValue(),
                 nombres = c.nombres,
                 apellidos = c.apellidos,
                 puntaje = puntaje,

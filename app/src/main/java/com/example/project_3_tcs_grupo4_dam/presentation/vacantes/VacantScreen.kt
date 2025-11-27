@@ -41,6 +41,7 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
     var searchText by remember { mutableStateOf("") }
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // Recargar lista al volver a la pantalla
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -71,9 +72,7 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
                 }
             )
         },
-        bottomBar = {
-            BottomNavBar(navController = navController)
-        },
+        bottomBar = { BottomNavBar(navController = navController) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("newVacancy") },
@@ -87,6 +86,7 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
             }
         }
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -113,21 +113,28 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            } else if (errorMessage != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = errorMessage!!, color = Color.Red)
+
+                errorMessage != null -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = errorMessage ?: "Error desconocido", color = Color.Red)
+                    }
                 }
-            } else {
-                // Lista de vacantes
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(vacantes.filter { it.nombrePerfil.contains(searchText, ignoreCase = true) }) { vacante ->
-                        VacanteAdminCard(vacante)
+
+                else -> {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(
+                            vacantes.filter {
+                                it.nombrePerfil.contains(searchText, ignoreCase = true)
+                            }
+                        ) { vacante ->
+                            VacanteAdminCard(vacante)
+                        }
                     }
                 }
             }
@@ -140,19 +147,31 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
 // ======================================================
 @Composable
 fun VacanteAdminCard(vacante: VacanteResponse) {
+
+    // Normalizar valores que pueden venir null
+    val urgencia = vacante.urgencia ?: "-"
+    val urgenciaUpper = urgencia.uppercase()
+
+    val estado = vacante.estadoVacante ?: "-"
+    val estadoUpper = estado.uppercase()
+
+    val area = vacante.area ?: "-"
+    val rol = vacante.rolLaboral ?: "-"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+
+                // Nombre del perfil
                 Text(
                     text = vacante.nombrePerfil,
                     fontSize = 16.sp,
@@ -165,7 +184,7 @@ fun VacanteAdminCard(vacante: VacanteResponse) {
                 // Badge de urgencia
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = when (vacante.urgencia.uppercase()) {
+                    color = when (urgenciaUpper) {
                         "ALTA" -> Color(0xFFFFEBEE)
                         "MEDIA" -> Color(0xFFFFF3E0)
                         "BAJA" -> Color(0xFFE8F5E9)
@@ -173,10 +192,10 @@ fun VacanteAdminCard(vacante: VacanteResponse) {
                     }
                 ) {
                     Text(
-                        text = vacante.urgencia,
+                        text = urgencia,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         fontSize = 11.sp,
-                        color = when (vacante.urgencia.uppercase()) {
+                        color = when (urgenciaUpper) {
                             "ALTA" -> Color(0xFFC62828)
                             "MEDIA" -> Color(0xFFEF6C00)
                             "BAJA" -> Color(0xFF2E7D32)
@@ -189,19 +208,20 @@ fun VacanteAdminCard(vacante: VacanteResponse) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Área • Rol
             Text(
-                text = "${vacante.area} • ${vacante.rolLaboral}",
+                text = "$area • $rol",
                 fontSize = 13.sp,
                 color = Color.Gray
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Estado
+            // Estado de la vacante
             Row {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = when (vacante.estadoVacante.uppercase()) {
+                    color = when (estadoUpper) {
                         "ABIERTA" -> Color(0xFF1976D2)
                         "OCUPADA" -> Color(0xFF388E3C)
                         "CERRADA" -> Color(0xFF757575)
@@ -209,7 +229,7 @@ fun VacanteAdminCard(vacante: VacanteResponse) {
                     }
                 ) {
                     Text(
-                        text = vacante.estadoVacante,
+                        text = estado,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         fontSize = 11.sp,
                         color = Color.White,

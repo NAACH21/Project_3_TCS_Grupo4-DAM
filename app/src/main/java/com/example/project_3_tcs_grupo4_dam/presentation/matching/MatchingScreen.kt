@@ -33,18 +33,24 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
     val resultados by vm.resultados.collectAsState()
     val colaboradores by vm.colaboradores.collectAsState()
     val loading by vm.loading.collectAsState()
+    val message by vm.message.collectAsState()
 
     // Dropdown state: guardamos solo el id para persistir con rememberSaveable
     var expanded by remember { mutableStateOf(false) }
     var selectedVacanteId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Derivar el objeto seleccionado a partir del id y la lista de vacantes
-    val selectedVacante: VacanteResponse? = selectedVacanteId?.let { id -> vacantes.firstOrNull { it.id == id } }
+    val selectedVacante: VacanteResponse? = selectedVacanteId?.let { id -> vacantes.firstOrNull { it.getIdValue() == id } }
 
     // Cuando se carguen vacantes y no exista selección, seleccionar la primera por defecto
+    LaunchedEffect(Unit) {
+        vm.loadVacantes()
+        vm.loadColaboradores()
+    }
+
     LaunchedEffect(vacantes) {
         if (vacantes.isNotEmpty() && selectedVacanteId == null) {
-            selectedVacanteId = vacantes.firstOrNull()?.id
+            selectedVacanteId = vacantes.firstOrNull()?.getIdValue()
         }
     }
 
@@ -105,37 +111,78 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
                         // ==========================
                         // DROPDOWN CORRECTO
                         // ==========================
-                        Box(modifier = Modifier.fillMaxWidth().clickable { expanded = true }) {
-                            OutlinedTextField(
-                                value = selectedVacante?.nombrePerfil ?: "Seleccione una vacante",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Vacante") },
-                                trailingIcon = {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                                }
-                            )
-
-                            DropdownMenu(
+                        // Reemplazo por Spinner estilo Android usando ExposedDropdownMenuBox (Material3)
+                        Column {
+                            ExposedDropdownMenuBox(
                                 expanded = expanded,
-                                onDismissRequest = { expanded = false }
+                                onExpandedChange = { expanded = !expanded }
                             ) {
-                                vacantes.forEach { v ->
-                                    DropdownMenuItem(
-                                        text = { Text(v.nombrePerfil) },
-                                        onClick = {
-                                            selectedVacanteId = v.id
-                                            expanded = false
-                                        }
-                                    )
+                                OutlinedTextField(
+                                    value = selectedVacante?.nombrePerfil ?: "Seleccione una vacante",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Vacante") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor()
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    vacantes.forEach { item ->
+                                        DropdownMenuItem(
+                                            text = { Text(item.nombrePerfil) },
+                                            onClick = {
+                                                selectedVacanteId = item.getIdValue()
+                                                expanded = false
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
                                 }
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(12.dp))
+
+                        // Mostrar información completa de la vacante seleccionada
+                        selectedVacante?.let { vac ->
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Text("Área: ${vac.area}")
+                            Text("Urgencia: ${vac.urgencia ?: "-"}")
+                            Spacer(Modifier.height(8.dp))
+
+                            Text("Skills requeridos (Críticas)", fontWeight = FontWeight.SemiBold)
+                            val criticas = vac.skillsRequeridos.filter { it.esCritico }
+                            if (criticas.isEmpty()) Text("- Ninguna") else {
+                                criticas.forEach { s ->
+                                    Text("• ${s.nombre} — Nivel: ${s.nivelDeseado}")
+                                }
+                            }
+
+                            Spacer(Modifier.height(6.dp))
+                            Text("Skills requeridos (No críticas)", fontWeight = FontWeight.SemiBold)
+                            val noCrit = vac.skillsRequeridos.filter { !it.esCritico }
+                            if (noCrit.isEmpty()) Text("- Ninguna") else {
+                                noCrit.forEach { s ->
+                                    Text("• ${s.nombre} — Nivel: ${s.nivelDeseado}")
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+                            Text("Certificaciones requeridas:")
+                            if (vac.certificacionesRequeridas.isEmpty()) Text("- Ninguna") else
+                                vac.certificacionesRequeridas.forEach { c -> Text("• $c") }
+
+                        }
+
+                        Spacer(Modifier.height(12.dp))
 
                         // ==========================
-                        // SLIDER UMBRAL
+                        // SLIDER UMBRAL 10-100
                         // ==========================
                         Text("Umbral mínimo (%)", color = Color.Gray)
 
@@ -143,9 +190,9 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
 
                             Slider(
                                 value = umbral,
-                                onValueChange = { umbral = it },
-                                valueRange = 0f..100f,
-                                steps = 99,
+                                onValueChange = { umbral = it.coerceIn(10f, 100f) },
+                                valueRange = 10f..100f,
+                                steps = 9,
                                 modifier = Modifier.weight(1f)
                             )
 
@@ -199,31 +246,100 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
                     Spacer(Modifier.height(8.dp))
                     CircularProgressIndicator()
                 }
+
+                message?.let { msg ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(msg, color = Color(0xFF8A2F2F))
+                }
             }
 
             // ==========================
             // RESULTADOS
             // ==========================
-            itemsIndexed(resultados) { _, result ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showDetailFor = result.colaboradorId },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Row(
-                        Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            if (resultados.isEmpty()) {
+
+                item {
+                    Column(Modifier.fillMaxWidth()) {
+                        Text("No hay candidatos para mostrar", color = Color.Gray)
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    vm.crearAlerta(
+                                        tipo = "Brecha de skills",
+                                        descripcion = "No se encontraron colaboradores que cumplan el umbral para la vacante ${selectedVacante?.nombrePerfil}",
+                                        vacanteId = selectedVacante?.getIdValue()
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text("Crear alerta de brecha de skills")
+                        }
+                    }
+                }
+
+            } else {
+
+                itemsIndexed(resultados) { _, result ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDetailFor = result.colaboradorId },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("${result.nombres} ${result.apellidos}", fontWeight = FontWeight.SemiBold)
-                            Text("Match: ${"%.2f".format(result.puntaje)}%")
+                        Row(
+                            Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("${result.nombres} ${result.apellidos}", fontWeight = FontWeight.SemiBold)
+                                Text("Match: ${"%.2f".format(result.puntaje)}%")
+                            }
+                            if (result.disponibleParaMovilidad) {
+                                Text("Disponible", color = Color(0xFF0C8E32))
+                            }
                         }
-                        if (result.disponibleParaMovilidad) {
-                            Text("Disponible", color = Color(0xFF0C8E32))
-                        }
+                    }
+                }
+            }
+
+            // ==========================
+            // BOTÓN ADICIONAL SI HAY VACANTE SELECCIONADA
+            // ==========================
+            item {
+                if (selectedVacante != null) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                vm.crearAlerta(
+                                    tipo = "Colaboradores solicitados",
+                                    descripcion = "El administrador solicitó colaboradores para la vacante ${selectedVacante.nombrePerfil}",
+                                    vacanteId = selectedVacante.getIdValue()
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0E7AE6),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Crear alerta: Colaboradores solicitados", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -234,7 +350,7 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
     // DETALLE DEL COLABORADOR
     // ==========================
     showDetailFor?.let { id ->
-        val col = colaboradores.firstOrNull { it.id?.`$oid` == id }
+        val col = colaboradores.firstOrNull { it.id == id }
 
         if (col != null) {
             AlertDialog(
@@ -248,12 +364,35 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
                 text = {
                     Column {
                         Text("Área: ${col.area}")
-                        Text("Rol: ${col.rolLaboral ?: "-"}")
+                        Text("Rol: ${col.rolLaboral}")
+                        Text("Correo: ${col.correo}")
+                        Text("Estado: ${col.estado}")
                         Spacer(Modifier.height(8.dp))
-                        Text("Skills:")
-                        col.skills.forEach { s ->
-                            Text("- ${s.nombre} (${s.nivel})")
+
+                        Text("Skills técnicas:")
+                        val tecnicas = col.skills.filter { it.tipo.equals("TECNICO", true) }
+                        if (tecnicas.isEmpty()) Text("- Ninguna") else tecnicas.forEach { s ->
+                            Text("- ${s.nombre} (Nivel ${s.nivel})")
                         }
+
+                        Spacer(Modifier.height(6.dp))
+                        Text("Skills blandas:")
+                        val blandas = col.skills.filter { it.tipo.equals("BLANDO", true) }
+                        if (blandas.isEmpty()) Text("- Ninguna") else blandas.forEach { s ->
+                            Text("- ${s.nombre} (Nivel ${s.nivel})")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Certificaciones:")
+                        if (col.certificaciones.isEmpty()) Text("- Ninguna") else col.certificaciones.forEach { c ->
+                            Text("- ${c.nombre} — Vencimiento: ${c.fechaVencimiento ?: "-"}")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Disponible para movilidad: ${if (col.disponibleParaMovilidad) "Sí" else "No"}")
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Fecha registro: ${col.fechaRegistro ?: "-"}")
                     }
                 }
             )
