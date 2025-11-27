@@ -52,7 +52,7 @@ private const val BASE_URL = "http://10.0.2.2:5260/"
 
 **Importante:**
 - `10.0.2.2` apunta a `localhost` del host cuando usas el **emulador de Android**
-- Si usas un **dispositivo físico**, cambia a tu IP local (ej: `http://192.168.1.10:5260/`)
+- Si usas un **dispositivo físico**, cambia a tu IP local (ej: `http://10.0.2.2:5000/`)
 
 ### 3. Endpoints del Backend
 
@@ -234,7 +234,7 @@ Colaborador:
 ## 📞 Soporte
 
 Si encuentras algún problema:
-1. Verifica que tu backend esté corriendo en `http://localhost:5260`
+1. Verifica que tu backend esté corriendo en `http://localhost:5000`
 2. Revisa los logs de Retrofit en Logcat (búsqueda: "OkHttp")
 3. Confirma que los endpoints coincidan con tu backend .NET
 
