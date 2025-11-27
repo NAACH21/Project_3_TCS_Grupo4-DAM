@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,7 +56,12 @@ fun BulkUploadScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF0A63C2), // Azul oscuro
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         },
         bottomBar = {
@@ -65,14 +71,15 @@ fun BulkUploadScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .height(50.dp)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)) // Azul oscuro
             ) {
                 if (uiState.isProcessing) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Procesando...")
+                    Text("Procesando...", color = Color.White)
                 } else {
-                    Text("Procesar archivo")
+                    Text("Procesar archivo", color = Color.White)
                 }
             }
         }
@@ -87,7 +94,7 @@ fun BulkUploadScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            CsvTemplateCard(onDownload = viewModel::downloadTemplate)
+            CsvTemplateCard()
 
             FileUploadCard(
                 uiState = uiState,
@@ -120,11 +127,11 @@ private fun HandleUploadStatus(uiState: BulkUploadUiState, onDismiss: () -> Unit
 
 
 @Composable
-fun CsvTemplateCard(onDownload: () -> Unit) {
+fun CsvTemplateCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        border = BorderStroke(1.dp, Color(0xFF0A63C2)), // Azul oscuro
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -132,7 +139,8 @@ fun CsvTemplateCard(onDownload: () -> Unit) {
             Text(
                 "Plantilla CSV",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0A63C2) // Azul oscuro
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -159,12 +167,6 @@ fun CsvTemplateCard(onDownload: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 lineHeight = 20.sp
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(onClick = onDownload, modifier = Modifier.align(Alignment.End)) {
-                Text("Descargar plantilla CSV")
-            }
         }
     }
 }
@@ -179,7 +181,7 @@ fun FileUploadCard(uiState: BulkUploadUiState, onFileSelect: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            Text("Cargar archivo de evaluaciones", style = MaterialTheme.typography.titleLarge)
+            Text("Cargar archivo de evaluaciones", style = MaterialTheme.typography.titleLarge, color = Color(0xFF0A63C2)) // Azul oscuro
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
@@ -200,9 +202,10 @@ fun FileUploadCard(uiState: BulkUploadUiState, onFileSelect: () -> Unit) {
             Button(
                 onClick = onFileSelect, 
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isProcessing
+                enabled = !uiState.isProcessing,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)) // Azul oscuro
             ) {
-                Text("Seleccionar otro archivo")
+                Text("Seleccionar otro archivo", color = Color.White)
             }
         }
     }
@@ -215,14 +218,14 @@ fun FileUploadBox(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+            .border(2.dp, Color(0xFF0A63C2), RoundedCornerShape(8.dp)) // Azul oscuro
             .clickable(onClick = onClick)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
-        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(48.dp))
+        Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color(0xFF0A63C2)) // Azul oscuro
         Spacer(modifier = Modifier.height(8.dp))
         Text("Selecciona un archivo CSV con las evaluaciones", textAlign = TextAlign.Center)
     }

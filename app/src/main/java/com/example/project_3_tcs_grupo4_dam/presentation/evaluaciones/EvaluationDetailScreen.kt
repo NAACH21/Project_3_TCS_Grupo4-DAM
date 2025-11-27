@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,12 +22,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -58,7 +59,12 @@ fun EvaluationDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF0A63C2), // Azul oscuro
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         }
     ) {
@@ -93,7 +99,8 @@ private fun EvaluationDetails(evaluation: EvaluacionReadDto) {
             Text(
                 text = "Skills Evaluados",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0A63C2) // Azul oscuro
             )
         }
         items(evaluation.skillsEvaluados) { skill ->
@@ -109,6 +116,13 @@ private fun EvaluationDetails(evaluation: EvaluacionReadDto) {
 private fun EvaluationInfoCard(evaluation: EvaluacionReadDto) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Información General",
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF0A63C2) // Azul oscuro
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             InfoRow("Colaborador ID:", evaluation.colaboradorId)
             InfoRow("Rol Actual:", evaluation.rolActual)
             InfoRow("Líder Evaluador:", evaluation.liderEvaluador)
@@ -123,7 +137,7 @@ private fun EvaluationInfoCard(evaluation: EvaluacionReadDto) {
 private fun SkillDetailCard(skill: SkillEvaluadoDto) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = skill.nombre, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(text = skill.nombre, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF0A63C2)) // Azul oscuro
             InfoRow("Tipo:", skill.tipo)
             InfoRow("Nivel Actual:", skill.nivelActual.toString())
             InfoRow("Nivel Recomendado:", skill.nivelRecomendado.toString())
@@ -135,7 +149,7 @@ private fun SkillDetailCard(skill: SkillEvaluadoDto) {
 private fun CommentsCard(comments: String) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Comentarios Generales", fontWeight = FontWeight.Bold)
+            Text("Comentarios Generales", fontWeight = FontWeight.Bold, color = Color(0xFF0A63C2)) // Azul oscuro
             Spacer(modifier = Modifier.height(8.dp))
             Text(comments)
         }

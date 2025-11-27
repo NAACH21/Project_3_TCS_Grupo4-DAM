@@ -118,8 +118,4 @@ class BulkUploadViewModel : ViewModel() {
             else -> 0 // No iniciado
         }
     }
-
-    fun downloadTemplate() {
-        // TODO: Implement CSV template download logic
-    }
 }

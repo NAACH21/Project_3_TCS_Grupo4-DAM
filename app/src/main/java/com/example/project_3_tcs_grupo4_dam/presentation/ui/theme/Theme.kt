@@ -11,8 +11,12 @@ import androidx.compose.ui.graphics.Color
 private val LightColors: ColorScheme = lightColorScheme(
     primary = Color(0xFF0A63C2),
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFD3E5FF), // Azul claro para el contenedor primario
+    onPrimaryContainer = Color(0xFF001D35),
     secondary = Color(0xFF0E4F9C),
     onSecondary = Color.White,
+    secondaryContainer = Color(0xFFCDE5FF),
+    onSecondaryContainer = Color(0xFF001D36),
     background = Color(0xFFF6F7FB),
     onBackground = Color.Black,
     surface = Color.White,

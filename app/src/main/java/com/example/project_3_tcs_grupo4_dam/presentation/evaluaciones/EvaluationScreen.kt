@@ -174,14 +174,17 @@ fun EvaluationTopAppBar(
         },
         actions = {
             TextButton(onClick = onHistoryClick) {
-                Text("Historial")
+                Text("Historial", color = Color.White)
             }
             TextButton(onClick = onBulkLoadClick) {
-                Text("Carga masiva")
+                Text("Carga masiva", color = Color.White)
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = Color(0xFF0A63C2), // Azul oscuro
+            titleContentColor = Color.White,
+            navigationIconContentColor = Color.White,
+            actionIconContentColor = Color.White
         )
     )
 }
@@ -273,11 +276,11 @@ fun EvaluatedSkillsSection(viewModel: EvaluationViewModel) {
         )
         Button(
             onClick = viewModel::addSkill,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)) // Azul oscuro
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Agregar")
+            Text("Agregar", color = Color.White)
         }
     }
 }
@@ -455,20 +458,20 @@ fun BottomActionButtons(onCancel: () -> Unit, onSave: () -> Unit, isSaving: Bool
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
                 onClick = onCancel,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 enabled = !isSaving
             ) {
                 Text("Cancelar")
             }
             Button(
                 onClick = onSave,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)), // Azul oscuro
                 enabled = !isSaving
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Guardar evaluación")
+                    Text("Guardar evaluación", color = Color.White)
                 }
             }
         }

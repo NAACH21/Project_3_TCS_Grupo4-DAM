@@ -1,5 +1,6 @@
 package com.example.project_3_tcs_grupo4_dam.data.remote
 
+import com.example.project_3_tcs_grupo4_dam.data.model.BulkUploadResponse
 import com.example.project_3_tcs_grupo4_dam.data.model.EvaluacionCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.EvaluacionReadDto
 import retrofit2.http.Body
@@ -13,7 +14,7 @@ interface EvaluacionApiService {
     suspend fun createEvaluacion(@Body evaluacion: EvaluacionCreateDto): EvaluacionReadDto
 
     @POST("api/evaluaciones/bulk")
-    suspend fun createEvaluationsBulk(@Body evaluations: List<EvaluacionCreateDto>): List<EvaluacionReadDto>
+    suspend fun createEvaluationsBulk(@Body evaluations: List<EvaluacionCreateDto>): BulkUploadResponse
 
     @GET("api/evaluaciones")
     suspend fun getEvaluaciones(): List<EvaluacionReadDto>

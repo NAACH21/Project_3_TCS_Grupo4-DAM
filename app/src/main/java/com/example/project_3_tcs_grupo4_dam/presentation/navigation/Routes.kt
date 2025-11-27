@@ -22,6 +22,6 @@ sealed class Routes(val route: String) {
     object VacantesColaboradorScreen : Routes("vacantes_colaborador")
 
     fun withId(id: String): String {
-        return "$route/$id"
+        return route.replace(Regex("\\{\\w+\\}"), id)
     }
 }

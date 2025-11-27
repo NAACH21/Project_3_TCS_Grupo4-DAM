@@ -38,4 +38,6 @@ object ApiClient {
     val colaboradorApiService: ColaboradorApiService by lazy { // Added this
         retrofit.create(ColaboradorApiService::class.java)
     }
+
+
 }
