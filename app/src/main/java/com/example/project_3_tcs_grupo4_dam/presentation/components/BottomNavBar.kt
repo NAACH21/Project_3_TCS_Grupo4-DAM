@@ -11,28 +11,26 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
-sealed class BottomNavItem(
+// Clase de datos simple en lugar de sealed class con objetos estáticos
+data class BottomNavItem(
     val route: String,
     val title: String,
     val icon: ImageVector
-) {
-    object Home : BottomNavItem(Routes.HOME, "Inicio", Icons.Default.Home)
-    object Colaboradores : BottomNavItem(Routes.COLABORADORES, "Colaboradores", Icons.Default.Person)
-    object Evaluaciones : BottomNavItem(Routes.EVALUACIONES, "Evaluaciones", Icons.Default.Assessment)
-    object Vacantes : BottomNavItem(Routes.VACANTES, "Vacantes", Icons.Default.Work)
-    object Dashboard : BottomNavItem(Routes.DASHBOARD, "Dashboard", Icons.Default.Dashboard)
-}
+)
 
 @Composable
 fun BottomNavBar(
-    navController: NavController
+    navController: NavController,
+    // Parámetro opcional para definir la ruta home según el rol.
+    // Por defecto intenta inferir o usar ADMIN, pero lo pasaremos explícitamente.
+    homeRoute: String = Routes.ADMIN_HOME 
 ) {
     val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Colaboradores,
-        BottomNavItem.Evaluaciones,
-        BottomNavItem.Vacantes,
-        BottomNavItem.Dashboard
+        BottomNavItem(homeRoute, "Inicio", Icons.Default.Home),
+        BottomNavItem(Routes.COLABORADORES, "Colaboradores", Icons.Default.Person),
+        BottomNavItem(Routes.EVALUACIONES, "Evaluaciones", Icons.Default.Assessment),
+        BottomNavItem(Routes.VACANTES, "Vacantes", Icons.Default.Work), // Admin Vacantes
+        BottomNavItem(Routes.DASHBOARD, "Dash board", Icons.Default.Dashboard)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -43,15 +41,17 @@ fun BottomNavBar(
         contentColor = Color(0xFF0A63C2)
     ) {
         items.forEach { item ->
+            val isSelected = currentRoute == item.route
+            
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 label = { Text(item.title) },
-                selected = currentRoute == item.route,
+                selected = isSelected,
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // Evitar acumular pantallas en el back stack
-                            popUpTo(Routes.HOME) {
+                            // Al pulsar Home, limpiamos hasta el inicio del grafo
+                            popUpTo(homeRoute) {
                                 saveState = true
                             }
                             launchSingleTop = true

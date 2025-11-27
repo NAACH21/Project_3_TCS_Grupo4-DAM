@@ -1,189 +1,158 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.matching
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.project_3_tcs_grupo4_dam.data.model.*
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.*
+import com.example.project_3_tcs_grupo4_dam.domain.MatchingEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import java.util.*
+import kotlinx.coroutines.withContext
+import com.example.project_3_tcs_grupo4_dam.data.model.CreateAlertaRequest
+import com.example.project_3_tcs_grupo4_dam.data.model.DetalleAlertaRequest
+import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepository
 
-// Datos del dominio mock
+class MatchingViewModel(application: Application) : AndroidViewModel(application) {
 
-data class SkillRequerido(
-    val nombre: String,
-    val nivel: String
-)
+    private val vacanteRepo = VacanteRepository(RetrofitClient.vacanteApi)
+    private val colaboradorRepo = ColaboradorRepositoryImpl()
+    private val procesosRepo = ProcesosMatchingRepository()
+    private val alertasApi = RetrofitClient.alertasApi
 
-data class SkillColaborador(
-    val nombre: String,
-    val nivel: String
-)
+    // Session + AuthRepository para obtener usuarioId
+    private val sessionManager: SessionManager = SessionManager(application)
+    private val authRepository: AuthRepository = AuthRepositoryImpl(RetrofitClient.authApi, sessionManager)
 
-data class Candidato(
-    val id: String,
-    val nombre: String,
-    val disponibilidadInmediata: Boolean,
-    val skills: List<SkillColaborador>
-)
+    private val _vacantes = MutableStateFlow<List<VacanteResponse>>(emptyList())
+    val vacantes: StateFlow<List<VacanteResponse>> = _vacantes
 
-data class ResultadoMatch(
-    val candidato: Candidato,
-    val porcentaje: Float
-)
+    private val _colaboradores = MutableStateFlow<List<ColaboradorReadDto>>(emptyList())
+    val colaboradores: StateFlow<List<ColaboradorReadDto>> = _colaboradores
 
-enum class SortBy { MATCH, DISPONIBILIDAD }
+    private val _resultados = MutableStateFlow<List<ResultadoMatchingItem>>(emptyList())
+    val resultados: StateFlow<List<ResultadoMatchingItem>> = _resultados
 
-class MatchingViewModel : ViewModel() {
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading
 
-    // Variables MOCK solicitadas
-    val vacantesMock = listOf(
-        "Vacante QA Tester",
-        "Vacante Desarrollador Backend",
-        "Vacante Data Engineer",
-        "Vacante Analista de Talento"
-    )
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message
 
-    val nivelesSkill = listOf("Básico", "Intermedio", "Avanzado", "Experto")
-
-    var selectedVacante by mutableStateOf("")
-    var umbralMatch by mutableFloatStateOf(60f)
-
-    var listaSkills = mutableStateListOf(
-        SkillRequerido(nombre = "", nivel = nivelesSkill.first()) // skill inicial de guía
-    )
-
-    // Estado auxiliar
-    var loading by mutableStateOf(false)
-    var mensajeSistema by mutableStateOf<String?>(null)
-    var resultados = mutableStateListOf<ResultadoMatch>()
-
-    // Criterio de ordenamiento (lógica lista; UI se implementará luego)
-    var sortBy by mutableStateOf(SortBy.MATCH)
-
-    fun agregarSkill() {
-        listaSkills.add(SkillRequerido(nombre = "", nivel = nivelesSkill.first()))
-    }
-
-    fun eliminarSkill(index: Int) {
-        if (index in listaSkills.indices) listaSkills.removeAt(index)
-    }
-
-    fun actualizarSkillNombre(index: Int, nombre: String) {
-        if (index in listaSkills.indices) {
-            val actual = listaSkills[index]
-            listaSkills[index] = actual.copy(nombre = nombre)
+    fun loadVacantes() = viewModelScope.launch {
+        try {
+            _loading.value = true
+            val all = vacanteRepo.getVacantes()
+            // Mostrar sólo vacantes con estadoVacante == "Activa" (insensible a mayúsculas)
+            _vacantes.value = all.filter { it.estadoVacante?.equals("Activa", true) == true }
+        } catch (e: Exception) {
+            _message.value = "Error cargando vacantes: ${e.message}"
+        } finally {
+            _loading.value = false
         }
     }
 
-    fun actualizarSkillNivel(index: Int, nivel: String) {
-        if (index in listaSkills.indices) {
-            val actual = listaSkills[index]
-            listaSkills[index] = actual.copy(nivel = nivel)
+    fun loadColaboradores() = viewModelScope.launch {
+        try {
+            _loading.value = true
+            val cols = colaboradorRepo.getAllColaboradores()
+            _colaboradores.value = cols
+        } catch (e: Exception) {
+            _message.value = "Error cargando colaboradores: ${e.message}"
+        } finally {
+            _loading.value = false
         }
     }
 
-    // Mapeo de nivel textual -> numérico (1..4)
-    private fun nivelNumerico(nivel: String): Int = when (nivel.trim()) {
-        "Básico" -> 1
-        "Intermedio" -> 2
-        "Avanzado" -> 3
-        "Experto" -> 4
-        else -> 0
-    }
+    fun ejecutarMatching(
+        vacante: VacanteResponse,
+        umbral: Int,
+        guardarProceso: Boolean = true
+    ) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
 
-    // STUB: calcular el match por colaborador respecto a los skills requeridos
-    fun calcularMatchColaborador(
-        skillsRequeridos: List<SkillRequerido>,
-        skillsColaborador: List<SkillColaborador>
-    ): Float {
-        // Filtrar skills sin nombre para no alterar el cálculo
-        val filtrados = skillsRequeridos.filter { it.nombre.isNotBlank() }
-        if (filtrados.isEmpty()) return 0f
-        val mapaColab = skillsColaborador.associateBy { it.nombre.trim().lowercase() }
+                val resultados = MatchingEngine.runMatching(
+                    colaboradores = _colaboradores.value,
+                    vacante = vacante,
+                    umbralMinimo = umbral
+                )
 
-        var suma = 0f
-        var count = 0
-        for (req in filtrados) {
-            val reqNivel = nivelNumerico(req.nivel)
-            val colab = mapaColab[req.nombre.trim().lowercase()]
-            val puntaje = if (colab == null) {
-                0f // No posee la habilidad
-            } else {
-                val colabNivel = nivelNumerico(colab.nivel)
-                when {
-                    colabNivel >= reqNivel -> 1.0f
-                    colabNivel == reqNivel - 1 -> 0.75f
-                    colabNivel < reqNivel - 1 -> 0.25f
-                    else -> 0f
+                _resultados.value = resultados
+
+                if (resultados.isEmpty()) {
+                    _message.value = "No se encontraron candidatos con puntaje >= $umbral%"
+                    // No guardar proceso si no hay resultados
+                    return@launch
                 }
+
+                if (guardarProceso) {
+                    val req = ProcesoMatchingRequest(
+                        vacanteId = vacante.getIdValue(),
+                        umbral = umbral,
+                        fechaEjecucion = Date(),
+                        resultados = resultados
+                    )
+                    try {
+                        procesosRepo.createProceso(req)
+                    } catch (e: Exception) {
+                        _message.value = "Matching ejecutado, pero error guardando proceso: ${e.message}"
+                    }
+                }
+
+                _message.value = "Matching ejecutado: ${resultados.size} candidato(s) encontrados"
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _message.value = "Error ejecutando matching: ${e.message}"
+            } finally {
+                _loading.value = false
             }
-            suma += puntaje
-            count++
         }
-        return (suma / count) * 100f
     }
 
-    // STUB: obtener candidatos (mock temporal)
-    fun obtenerCandidatos(): List<Candidato> {
-        return listOf(
-            Candidato(
-                id = "1",
-                nombre = "Ana Pérez",
-                disponibilidadInmediata = true,
-                skills = listOf(
-                    SkillColaborador("Testing", "Avanzado"),
-                    SkillColaborador("Automatización", "Intermedio"),
-                    SkillColaborador("Kotlin", "Intermedio"),
-                    SkillColaborador("SQL", "Básico")
-                )
-            ),
-            Candidato(
-                id = "2",
-                nombre = "Luis Gómez",
-                disponibilidadInmediata = false,
-                skills = listOf(
-                    SkillColaborador("Kotlin", "Experto"),
-                    SkillColaborador("Spring", "Avanzado"),
-                    SkillColaborador("Docker", "Intermedio"),
-                    SkillColaborador("SQL", "Intermedio")
-                )
-            ),
-            Candidato(
-                id = "3",
-                nombre = "María Rojas",
-                disponibilidadInmediata = true,
-                skills = listOf(
-                    SkillColaborador("Data Engineering", "Avanzado"),
-                    SkillColaborador("Python", "Experto"),
-                    SkillColaborador("Spark", "Intermedio"),
-                    SkillColaborador("SQL", "Avanzado")
-                )
+    // ======================================
+    // CREAR ALERTA (POST /api/alertas)
+    // ======================================
+    suspend fun crearAlerta(
+        tipo: String,
+        descripcion: String,
+        vacanteId: String?
+    ) {
+        try {
+            // Obtener usuarioId desde el SessionManager a través del AuthRepository
+            val usuarioId = authRepository.getSessionManager().getUsuarioId()
+
+            val body = CreateAlertaRequest(
+                tipo = tipo,
+                estado = "pendiente",
+                vacanteId = vacanteId,
+                detalle = DetalleAlertaRequest(descripcion = descripcion),
+                destinatarios = emptyList(),
+                usuarioResponsable = usuarioId
             )
-        )
-    }
 
-    // STUB: ejecutar matching usando la fórmula y el umbral
-    fun ejecutarMatchingMock(): List<String> {
+            // Llamada de red en IO
+            val response = withContext(Dispatchers.IO) {
+                alertasApi.createAlerta(body)
+            }
 
-        if (selectedVacante.isEmpty()) {
-            mensajeSistema = "Debe seleccionar una vacante."
-            return emptyList()
+            if (response.success) {
+                _message.value = "Alerta creada correctamente: ${response.data?.tipo ?: tipo}"
+            } else {
+                _message.value = "No se pudo crear la alerta: ${response.message ?: "Error desconocido"}"
+            }
+
+        } catch (e: Exception) {
+            _message.value = "Error al crear alerta: ${e.message}"
         }
-
-        if (listaSkills.isEmpty()) {
-            mensajeSistema = "Debe agregar al menos un skill técnico."
-            return emptyList()
-        }
-
-        // Resultados de prueba
-        val resultados = listOf(
-            "Carlos Ramírez – Backend – Match 92%",
-            "Valeria Soto – QA – Match 85%",
-            "Miguel Torres – Data Engineer – Match 70%"
-        )
-
-        mensajeSistema = "Matching ejecutado correctamente."
-        return resultados
     }
-
 }

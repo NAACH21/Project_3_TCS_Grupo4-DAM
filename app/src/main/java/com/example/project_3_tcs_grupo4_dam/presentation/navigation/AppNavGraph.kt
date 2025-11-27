@@ -16,6 +16,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
@@ -38,13 +39,47 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         composable(Routes.HOME) {
             HomeScreen(navController)
         }
+        composable(Routes.ADMIN_HOME) {
+            HomeScreen(navController)
+        }
 
+        composable(Routes.MANAGER_HOME) {
+            HomeScreen(navController)
+        }
+
+        composable(Routes.COLABORADOR_HOME) {
+            HomeScreen(navController)
+        }
         composable(Routes.LOGIN) {
-            LoginScreen(navController, viewModel) {
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
+            LoginScreen(
+                authViewModel = viewModel, // Error corregido
+                onLoginSuccess = { role ->
+                        val homeRoute = when (role.uppercase()) {
+                            "ADMIN" -> Routes.ADMIN_HOME
+                            "BUSINESS_MANAGER" -> Routes.MANAGER_HOME
+                            "COLABORADOR" -> Routes.COLABORADOR_HOME
+                            else -> Routes.HOME
+                        }
+                        navController.navigate(homeRoute) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        // TODO: Navegar a registro si existe
+                    }
+                    )
                 }
-            }
+
+        composable(Routes.COLABORADOR_HOME) {
+            ColaboradorHomeScreen(
+                navController = navController,
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.COLABORADOR_HOME) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Routes.COLABORADORES) {
@@ -109,14 +144,7 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             )
         }
 
-        composable(Routes.EVALUATIONS_HISTORY) {
-            EvaluationsHistoryScreen(
-                navController = navController,
-                onNavigateToDetail = { id ->
-                    navController.navigate("${Routes.EVALUATION_DETAIL}/$id")
-                }
-            )
-        }
+        // Bloque duplicado con ruta incorrecta eliminado
 
         composable(Routes.BULK_UPLOAD) {
             BulkUploadScreen(

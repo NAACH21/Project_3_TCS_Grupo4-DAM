@@ -2,73 +2,199 @@ package com.example.project_3_tcs_grupo4_dam.presentation.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos.LoginRequest
-import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos.RegisterRequest
+import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos
+import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepository
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
+/**
+ * Estados de la UI para autenticación
+ */
 data class AuthUiState(
-    val loading: Boolean = false,
-    val error: String? = null,
-    val success: Boolean = false
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isSuccess: Boolean = false,
+    val userRole: String? = null // Para navegación post-login
 )
 
-class AuthViewModel(private val repo: AuthRepository): ViewModel() {
-    private val _state = MutableStateFlow(AuthUiState())
-    val state: StateFlow<AuthUiState> = _state
+/**
+ * ViewModel para el módulo de autenticación
+ * Maneja la lógica de login y registro
+ */
+class AuthViewModel(
+    private val repository: AuthRepository
+) : ViewModel() {
+    private val _onToken = MutableStateFlow<String?>(null)
+    private val _onColaboradorId = MutableStateFlow<String?>(null)
+    private val _onUsuarioId = MutableStateFlow<String?>(null)
 
-    fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            _state.value = AuthUiState(error = "Email y contraseña no pueden estar vacíos")
+    fun getToken(): String? = _onToken.value
+    fun getColaboradorId(): String? = _onColaboradorId.value
+    fun getUsuarioId(): String? = _onUsuarioId.value
+
+
+    private val _uiState = MutableStateFlow(AuthUiState())
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    // Exponemos el username como StateFlow para que la UI pueda observar cambios
+    private val _username = MutableStateFlow<String?>(repository.getUsername())
+    val username: StateFlow<String?> = _username.asStateFlow()
+
+    /**
+     * Realiza el login del usuario
+     */
+
+    fun login(username: String, password: String) {
+        // Validación básica
+        if (username.isBlank() || password.isBlank()) {
+            _uiState.value = AuthUiState(
+                errorMessage = "Usuario y contraseña no pueden estar vacíos"
+            )
             return
         }
 
-        _state.value = AuthUiState(loading = true)
+        _uiState.value = AuthUiState(isLoading = true)
+
         viewModelScope.launch {
-            val loginRequest = LoginRequest(email, password)
-            when (val result = repo.login(loginRequest)) {
-                is Result.Success -> {
-                    if (result.data.success) {
-                        _state.value = AuthUiState(success = true)
+            val request = AuthDtos.LoginRequest(username, password)
+
+            repository.login(request).fold(
+                onSuccess = { apiResponse ->
+
+                    Log.d("AuthViewModel", "=== RESPUEsta JSON DEL BACKEND ===")
+                    Log.d("AuthViewModel", "JSON completo: $apiResponse")
+                    Log.d("AuthViewModel", "Success: ${apiResponse.success}")
+
+                    if (apiResponse.success && apiResponse.data != null) {
+
+                        // ⭐ El AuthRepository ya decodificó el JWT y guardó el usuarioId en SessionManager ⭐
+                        val token = apiResponse.data.token
+                        val colaboradorId = apiResponse.data.colaboradorId
+
+                        // ⭐ Leer el usuarioId que el Repository extrajo del JWT y guardó ⭐
+                        val usuarioId = repository.getSessionManager().getUsuarioId() ?: ""
+
+                        _onToken.value = token
+                        _onColaboradorId.value = colaboradorId
+                        _onUsuarioId.value = usuarioId
+
+                        Log.d("AuthViewModel", "=== VALORES CAPTURADOS ===")
+                        Log.d("AuthViewModel", "UsuarioId (del JWT/SessionManager): $usuarioId")
+                        Log.d("AuthViewModel", "ColaboradorId: $colaboradorId")
+                        Log.d("AuthViewModel", "Token: ${token.take(20)}...")
+
+                        // ⭐ VALIDACIÓN: Verificar que usuarioId NO esté vacío ⭐
+                        if (usuarioId.isBlank()) {
+                            Log.e("AuthViewModel", "❌ ERROR CRÍTICO: usuarioId está vacío después del login")
+                            _uiState.value = AuthUiState(
+                                errorMessage = "Error del servidor: No se pudo extraer el ID de usuario del token. Contacta al administrador."
+                            )
+                            return@fold
+                        }
+
+                        // CONFIGURAR TOKEN EN RETROFIT PARA PETICIONES FUTURAS
+                        RetrofitClient.setJwtToken(token)
+                        Log.d("AuthViewModel", "✅ Token JWT configurado en RetrofitClient")
+
+                        _uiState.value = AuthUiState(
+                            isSuccess = true,
+                            userRole = apiResponse.data.rolSistema
+                        )
+                        // Actualizar username reactivo
+                        _username.value = apiResponse.data.username
                     } else {
-                        _state.value = AuthUiState(error = result.data.message)
+                        _uiState.value = AuthUiState(
+                            errorMessage = apiResponse.message
+                        )
                     }
                 }
-                is Result.Error -> {
-                    _state.value = AuthUiState(error = result.exception.message ?: "Error desconocido")
+                ,
+                onFailure = { exception ->
+                    // Error de red o excepción
+                    Log.e("AuthViewModel", "Error en login", exception)
+                    _uiState.value = AuthUiState(
+                        errorMessage = exception.message ?: "Error desconocido"
+                    )
                 }
-            }
+            )
         }
     }
 
+    /**
+     * Registra un nuevo usuario
+     */
     fun register(nombreCompleto: String, email: String, password: String) {
+        // Validación básica
         if (nombreCompleto.isBlank() || email.isBlank() || password.isBlank()) {
-            _state.value = AuthUiState(error = "Todos los campos son obligatorios")
+            _uiState.value = AuthUiState(
+                errorMessage = "Todos los campos son obligatorios"
+            )
             return
         }
 
-        _state.value = AuthUiState(loading = true)
+        _uiState.value = AuthUiState(isLoading = true)
+
         viewModelScope.launch {
-            val registerRequest = RegisterRequest(nombreCompleto, email, password)
-            when (val result = repo.register(registerRequest)) {
-                is Result.Success -> {
-                    if (result.data.success) {
-                        _state.value = AuthUiState(success = true)
+            val request = AuthDtos.RegisterRequest(nombreCompleto, email, password)
+
+            repository.register(request).fold(
+                onSuccess = { apiResponse ->
+                    if (apiResponse.success) {
+                        // Registro exitoso
+                        _uiState.value = AuthUiState(
+                            isSuccess = true,
+                            errorMessage = "Registro exitoso. Ahora puedes iniciar sesión."
+                        )
                     } else {
-                        _state.value = AuthUiState(error = result.data.message)
+                        // Backend respondió pero con success=false
+                        _uiState.value = AuthUiState(
+                            errorMessage = apiResponse.message
+                        )
                     }
+                },
+                onFailure = { exception ->
+                    // Error de red o excepción
+                    _uiState.value = AuthUiState(
+                        errorMessage = exception.message ?: "Error desconocido"
+                    )
                 }
-                is Result.Error -> {
-                    _state.value = AuthUiState(error = result.exception.message ?: "Error desconocido")
-                }
-            }
+            )
         }
     }
 
-    fun token(): String? = repo.token()
+    /**
+     * Verifica si hay sesión activa
+     */
+    fun checkSession(): Boolean = repository.isLoggedIn()
 
+    /**
+
+     * Obtiene el rol del usuario actual
+     */
+    fun getUserRole(): String? = repository.getRol()
+
+    /**
+     * Obtiene el username del usuario actual (desde el session manager / repositorio)
+     */
+    fun getUsername(): String? = repository.getUsername()
+
+    /**
+     * Cierra sesión
+     */
+    fun logout() {
+        repository.logout()
+        RetrofitClient.clearToken() // Limpiar token de Retrofit también
+        resetState()
+    }
+
+    /**
+     * Resetea el estado de la UI
+     */
     fun resetState() {
-        _state.value = AuthUiState()
+        _uiState.value = AuthUiState()
     }
 }

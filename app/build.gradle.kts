@@ -21,7 +21,7 @@ android {
 
         // Campo para configurar fácilmente la URL del backend (usar comillas)
         // Por defecto apunta al emulador (10.0.2.2). Cambia esto para probar en dispositivo físico (p.ej. "http://192.168.1.10:8080/")
-        buildConfigField("String", "BACKEND_URL", "\"http://10.0.2.2:8080/\"")
+        buildConfigField("String", "BACKEND_URL", "\"http://192.168.1.8:5260/\"")
     }
 
     buildTypes {
@@ -64,6 +64,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
     // Permite usar el `viewModel()` composable function
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation(libs.androidx.compose.foundation)
 
     // Tests / tooling
     testImplementation(libs.junit)

@@ -7,4 +7,3 @@ interface SkillApiService {
     @GET("api/skills")
     suspend fun getAllSkills(): List<SkillDto>
 }
-

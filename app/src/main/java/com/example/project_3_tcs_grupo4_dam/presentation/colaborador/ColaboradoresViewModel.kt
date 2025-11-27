@@ -3,7 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,9 +57,9 @@ class ColaboradoresViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 repository.deleteColaborador(id)
-                // Actualizar la lista local eliminando el colaborador
-                _colaboradores.value = _colaboradores.value.filter { it.id != id }
-                Log.d("ColaboradoresVM", "Colaborador eliminado: $id")
+                // Refrescar la lista completa desde el API para obtener el estado actualizado (INACTIVO)
+                fetchColaboradores()
+                Log.d("ColaboradoresVM", "Colaborador eliminado y lista refrescada: $id")
             } catch (e: Exception) {
                 Log.e("ColaboradoresVM", "Error al eliminar colaborador", e)
                 _error.value = e.message ?: "Error al eliminar"
