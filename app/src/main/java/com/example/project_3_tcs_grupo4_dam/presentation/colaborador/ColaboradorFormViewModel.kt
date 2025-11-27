@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+@Suppress("unused")
 class ColaboradorFormViewModel(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -69,6 +70,7 @@ class ColaboradorFormViewModel(
 
     // Catálogo de skills para el diálogo de selección
     private val _skillCatalog = MutableStateFlow<List<SkillCatalogItemDto>>(emptyList())
+    @Suppress("unused")
     val skillCatalog = _skillCatalog.asStateFlow()
 
     // Estados del diálogo de selección de skill
@@ -163,7 +165,7 @@ class ColaboradorFormViewModel(
         _area.value = col.area
         _rolLaboral.value = col.rolLaboral
         _disponibleParaMovilidad.value = col.disponibleParaMovilidad
-        _estado.value = col.estado ?: "ACTIVO" // Valor por defecto en caso de que sea nulo
+        _estado.value = col.estado // col.estado es no-nullable según DTO
 
         // Mapear skills read -> create
         _skills.value = col.skills.map { s: SkillReadDto ->

@@ -35,4 +35,3 @@ interface SolicitudesApiService {
     @DELETE("api/Solicitudes/{id}")
     suspend fun deleteSolicitud(@Path("id") id: String): Response<DeleteSolicitudResponse>
 }
-

@@ -498,4 +498,3 @@ private fun InfoRow(label: String, value: String) {
         )
     }
 }
-

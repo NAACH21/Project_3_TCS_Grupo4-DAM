@@ -1,7 +1,6 @@
 package com.example.project_3_tcs_grupo4_dam.data.remote
 
 import com.example.project_3_tcs_grupo4_dam.BuildConfig
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -12,64 +11,69 @@ import java.util.concurrent.TimeUnit
 
 /**
  * RetrofitClient unificado:
- * - Interceptor JWT
- * - Logging de requests/responses
- * - Conversor Gson lenient + soporte ISO Date
- * - Servicios expuestos via getters
+ * - JWT Interceptor dinámico
+ * - Logging BODY en debug
+ * - BaseURL modificable en runtime
+ * - Servicios expuestos correctamente (incluyendo Evaluaciones)
  */
 object RetrofitClient {
-    // BASE_URL por defecto: usa 10.0.2.2 para el emulador Android que apunta al host
-    @Volatile
-    private var baseUrl: String = "http://10.0.2.2:5260/"
 
-    // Permitir cambiar la base URL en tiempo de ejecución
+    // --- BASE URL (priorizamos la del master: 10.0.2.2 para emulador) ---
+    @Volatile
+    private var baseUrl: String = "http://192.168.1.7:5260/"
+
     @Synchronized
     fun setBaseUrl(url: String) {
         baseUrl = if (url.endsWith("/")) url else "$url/"
-        // reconstrucción perezosa: se recreará retrofit al pedir servicios
         retrofit = createRetrofit()
     }
 
-    // JWT en memoria
+    // --- JWT TOKEN ---
     private var authToken: String? = null
 
     fun setJwtToken(token: String) {
         authToken = token
+        retrofit = createRetrofit() // Rebuild para adjuntar token en headers
     }
 
     fun clearToken() {
         authToken = null
+        retrofit = createRetrofit()
     }
 
-    // OKHTTP CLIENT (compartido)
-    private val okHttpClient: OkHttpClient by lazy {
-
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-            else HttpLoggingInterceptor.Level.NONE
-        }
-
-        val authInterceptor = Interceptor { chain ->
-            val original = chain.request()
-            val builder = original.newBuilder()
-
-            authToken?.let { token ->
-                builder.addHeader("Authorization", "Bearer $token")
+    // --- OKHTTP CLIENT ---
+    private val okHttpClient: OkHttpClient
+        get() {
+            val logging = HttpLoggingInterceptor().apply {
+                level = if (BuildConfig.DEBUG)
+                    HttpLoggingInterceptor.Level.BODY
+                else
+                    HttpLoggingInterceptor.Level.NONE
             }
 
-            chain.proceed(builder.build())
+            val authInterceptor = Interceptor { chain ->
+                val newRequest = chain.request()
+                    .newBuilder()
+                    .apply {
+                        authToken?.let {
+                            addHeader("Authorization", "Bearer $it")
+                        }
+                    }
+                    .build()
+
+                chain.proceed(newRequest)
+            }
+
+            return OkHttpClient.Builder()
+                .addInterceptor(authInterceptor)
+                .addInterceptor(logging)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
+                .build()
         }
 
-        OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
-
-    // Retrofit instance (recreable)
+    // --- RETROFIT INSTANCE ---
     @Volatile
     private var retrofit: Retrofit = createRetrofit()
 
@@ -85,14 +89,36 @@ object RetrofitClient {
             .build()
     }
 
-    // Exponer servicios como getters para usar la instancia actualizada de retrofit
-    val authApi: AuthApiService get() = retrofit.create(AuthApiService::class.java)
-    val colaboradorApi: ColaboradorApiService get() = retrofit.create(ColaboradorApiService::class.java)
-    val skillApi: SkillApiService get() = retrofit.create(SkillApiService::class.java)
-    val catalogoApi: CatalogoApiService get() = retrofit.create(CatalogoApiService::class.java)
-    val nivelSkillApi: NivelSkillApiService get() = retrofit.create(NivelSkillApiService::class.java)
-    val vacanteApi: VacanteApiService get() = retrofit.create(VacanteApiService::class.java)
-    val procesosMatchingApi: ProcesosMatchingApiService get() = retrofit.create(ProcesosMatchingApiService::class.java)
-    val alertasApi: AlertasApiService get() = retrofit.create(AlertasApiService::class.java)
-    val solicitudesApi: SolicitudesApiService get() = retrofit.create(SolicitudesApiService::class.java)
+    // --- API SERVICES UNIFICADOS ---
+
+    val authApi: AuthApiService
+        get() = retrofit.create(AuthApiService::class.java)
+
+    val colaboradorApi: ColaboradorApiService
+        get() = retrofit.create(ColaboradorApiService::class.java)
+
+    val skillApi: SkillApiService
+        get() = retrofit.create(SkillApiService::class.java)
+
+    val nivelSkillApi: NivelSkillApiService
+        get() = retrofit.create(NivelSkillApiService::class.java)
+
+    val catalogoApi: CatalogoApiService
+        get() = retrofit.create(CatalogoApiService::class.java)
+
+    val vacanteApi: VacanteApiService
+        get() = retrofit.create(VacanteApiService::class.java)
+
+    val procesosMatchingApi: ProcesosMatchingApiService
+        get() = retrofit.create(ProcesosMatchingApiService::class.java)
+
+    val alertasApi: AlertasApiService
+        get() = retrofit.create(AlertasApiService::class.java)
+
+    val solicitudesApi: SolicitudesApiService
+        get() = retrofit.create(SolicitudesApiService::class.java)
+
+    // ⭐ EXTRAÍDO DEL MERGE (y agregado correctamente)
+    val evaluacionApi: EvaluacionApiService
+        get() = retrofit.create(EvaluacionApiService::class.java)
 }

@@ -12,8 +12,6 @@ import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModelFactory
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.AppNavGraph
-import com.example.project_3_tcs_grupo4_dam.presentation.navigation.AppNavigation
-import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,12 +28,9 @@ class MainActivity : ComponentActivity() {
 
         // 4. Crear la factory para el ViewModel
         val authViewModelFactory = AuthViewModelFactory(authRepository)
-// 🔥 LIMPIAR SESIÓN AL INICIAR
-        sessionManager.clearSession()
 
         setContent {
             MaterialTheme {
-                // Usar wrapper composable para instanciar el ViewModel con la factory
                 RootApp(authViewModelFactory = authViewModelFactory)
             }
         }
@@ -45,6 +40,5 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun RootApp(authViewModelFactory: AuthViewModelFactory) {
     val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-    AppNavigation()
-
+    AppNavGraph(viewModel = authViewModel)
 }
