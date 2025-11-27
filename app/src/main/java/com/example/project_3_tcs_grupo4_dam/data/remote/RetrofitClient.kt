@@ -15,16 +15,22 @@ import java.util.concurrent.TimeUnit
  * - Interceptor JWT
  * - Logging de requests/responses
  * - Conversor Gson lenient + soporte ISO Date
- * - Todos los servicios expuestos
+ * - Servicios expuestos via getters
  */
 object RetrofitClient {
-    // RECUERDA: 10.0.2.2 para emulador, o tu IP real para teléfono
-    private const val BASE_URL = "http://10.0.2.2:5000/"
+    // BASE_URL por defecto: usa 10.0.2.2 para el emulador Android que apunta al host
+    @Volatile
+    private var baseUrl: String = "http://10.0.2.2:5260/"
 
+    // Permitir cambiar la base URL en tiempo de ejecución
+    @Synchronized
+    fun setBaseUrl(url: String) {
+        baseUrl = if (url.endsWith("/")) url else "$url/"
+        // reconstrucción perezosa: se recreará retrofit al pedir servicios
+        retrofit = createRetrofit()
+    }
 
-    // ============================
-    // TOKEN JWT en memoria
-    // ============================
+    // JWT en memoria
     private var authToken: String? = null
 
     fun setJwtToken(token: String) {
@@ -35,18 +41,14 @@ object RetrofitClient {
         authToken = null
     }
 
-    // ============================
-    // OKHTTP CLIENT
-    // ============================
+    // OKHTTP CLIENT (compartido)
     private val okHttpClient: OkHttpClient by lazy {
 
-        // Logging HTTP
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
             else HttpLoggingInterceptor.Level.NONE
         }
 
-        // Interceptor de autenticación
         val authInterceptor = Interceptor { chain ->
             val original = chain.request()
             val builder = original.newBuilder()
@@ -59,52 +61,38 @@ object RetrofitClient {
         }
 
         OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)     // primero auth
-            .addInterceptor(loggingInterceptor) // luego logging
+            .addInterceptor(authInterceptor)
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
-    // ============================
-    // RETROFIT INSTANCE
-    // ============================
-    private val retrofit: Retrofit by lazy {
-        // Definir y configurar Gson aquí
+    // Retrofit instance (recreable)
+    @Volatile
+    private var retrofit: Retrofit = createRetrofit()
+
+    private fun createRetrofit(): Retrofit {
         val gson = GsonBuilder()
-            .setLenient() // Permite un JSON más flexible
+            .setLenient()
             .create()
 
-        // Usar la instancia de gson que acabas de crear
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
-    val authApi: AuthApiService by lazy {
-        retrofit.create(AuthApiService::class.java)
-    }
-
-    val colaboradorApi: ColaboradorApiService by lazy { retrofit.create(ColaboradorApiService::class.java) }
-
-    val skillApi: SkillApiService by lazy { retrofit.create(SkillApiService::class.java) }
-
-    val catalogoApi: CatalogoApiService by lazy { retrofit.create(CatalogoApiService::class.java) }
-
-
-    val nivelSkillApi: NivelSkillApiService by lazy {
-        retrofit.create(NivelSkillApiService::class.java)
-    }
-
-    val vacanteApi: VacanteApiService by lazy {
-        retrofit.create(VacanteApiService::class.java)
-    }
-    val procesosMatchingApi: ProcesosMatchingApiService by lazy { retrofit.create(ProcesosMatchingApiService::class.java) }
-
-    val alertasApi: AlertasApiService by lazy { retrofit.create(AlertasApiService::class.java) }
-
-    val solicitudesApi: SolicitudesApiService by lazy { retrofit.create(SolicitudesApiService::class.java) }
+    // Exponer servicios como getters para usar la instancia actualizada de retrofit
+    val authApi: AuthApiService get() = retrofit.create(AuthApiService::class.java)
+    val colaboradorApi: ColaboradorApiService get() = retrofit.create(ColaboradorApiService::class.java)
+    val skillApi: SkillApiService get() = retrofit.create(SkillApiService::class.java)
+    val catalogoApi: CatalogoApiService get() = retrofit.create(CatalogoApiService::class.java)
+    val nivelSkillApi: NivelSkillApiService get() = retrofit.create(NivelSkillApiService::class.java)
+    val vacanteApi: VacanteApiService get() = retrofit.create(VacanteApiService::class.java)
+    val procesosMatchingApi: ProcesosMatchingApiService get() = retrofit.create(ProcesosMatchingApiService::class.java)
+    val alertasApi: AlertasApiService get() = retrofit.create(AlertasApiService::class.java)
+    val solicitudesApi: SolicitudesApiService get() = retrofit.create(SolicitudesApiService::class.java)
 }

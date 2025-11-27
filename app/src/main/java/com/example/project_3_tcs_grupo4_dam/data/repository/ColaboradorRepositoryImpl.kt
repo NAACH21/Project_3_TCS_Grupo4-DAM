@@ -103,7 +103,7 @@ class ColaboradorRepositoryImpl : ColaboradorRepository {
         resp: ColaboradorResponse
     ): ColaboradorReadDto {
 
-        val id = resp.id?.`$oid` ?: ""
+        val id = resp.getIdValue()
 
         // rol actual
         val rolActual = resp.rolLaboral ?: ""
