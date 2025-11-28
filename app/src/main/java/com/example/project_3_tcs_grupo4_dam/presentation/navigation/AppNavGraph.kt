@@ -1,7 +1,6 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -21,9 +20,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationDetailScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationHistoryScreen

@@ -19,12 +19,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
-import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 // ✔ Para evitar warnings por ExposedDropdownMenu
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewModel()) {
+fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? = null) {
+    // Resolver el ViewModel dentro del scope composable (llamada válida a viewModel())
+    val vm: MatchingViewModel = vmProvided ?: viewModel<MatchingViewModel>()
 
     val bg = Color(0xFFF6F7FB)
     val primaryBlue = Color(0xFF0A63C2)
@@ -237,7 +238,8 @@ fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewMod
                                         niveles = vm.nivelesSkill,
                                         onNombreChange = { vm.actualizarSkillNombre(index, it) },
                                         onNivelChange = { vm.actualizarSkillNivel(index, it) },
-                                        onRemove = { vm.eliminarSkill(index) }
+                                        onRemove = { vm.eliminarSkill(index) },
+                                        availableSkills = vm.availableSkills
                                     )
                                 }
                             }
@@ -285,7 +287,8 @@ fun SkillItem(
     niveles: List<String>,
     onNombreChange: (String) -> Unit,
     onNivelChange: (String) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    availableSkills: List<String> = emptyList()
 ) {
 
     Card(
@@ -297,12 +300,43 @@ fun SkillItem(
 
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = onNombreChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Nombre del skill técnico") }
-            )
+            // Nombre: seleccionar desde catálogo (dropdown)
+            var expandedName by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expandedName,
+                onExpandedChange = { expandedName = !expandedName }
+            ) {
+                TextField(
+                    value = nombre,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    placeholder = { Text("Seleccione un skill técnico") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedName) },
+                    colors = ExposedDropdownMenuDefaults.textFieldColors()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expandedName,
+                    onDismissRequest = { expandedName = false }
+                ) {
+                    if (availableSkills.isEmpty()) {
+                        DropdownMenuItem(text = { Text("No hay skills disponibles") }, onClick = { expandedName = false })
+                    } else {
+                        availableSkills.forEach { s ->
+                            DropdownMenuItem(
+                                text = { Text(s) },
+                                onClick = {
+                                    onNombreChange(s)
+                                    expandedName = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
 

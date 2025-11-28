@@ -30,7 +30,6 @@ import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.Colaborador
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.AdminEvaluacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen

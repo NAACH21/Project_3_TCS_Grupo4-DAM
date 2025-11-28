@@ -132,4 +132,6 @@ object RetrofitClient {
     val colaboradorApiService: ColaboradorApiService by lazy { // Added this
         retrofit.create(ColaboradorApiService::class.java)
     }
+    val procesosMatchingApi: ProcesosMatchingApiService
+        get() = retrofit.create(ProcesosMatchingApiService::class.java)
 }
