@@ -16,10 +16,10 @@ object Routes {
     const val DASHBOARD = "dashboard"
 
     // Rutas de evaluaciones
-    const val EVALUATION_SCREEN = "evaluation_screen"
-    const val EVALUATIONS_HISTORY = "evaluations_history"
+    const val EVALUATION_SCREEN = "evaluation"
+    const val EVALUATION_HISTORY = "evaluation_history"
+    const val EVALUATION_DETAIL = "evaluation_detail/{evaluationId}"
     const val BULK_UPLOAD = "bulk_upload"
-    const val EVALUATION_DETAIL = "evaluation_detail"
 
     // Ruta de notificaciones
     const val NOTIFICACIONES = "notificaciones"
@@ -27,5 +27,6 @@ object Routes {
     // Ruta de administración de skills
     const val NIVEL_SKILLS = "nivel_skills"
 
-    fun evaluationDetail(id: String) = "evaluation_detail/$id"
+    // Helper para navegar a detalle
+    fun evaluationDetail(evaluationId: String) = "evaluation_detail/$evaluationId"
 }

@@ -75,4 +75,12 @@ object RetrofitClient {
     val vacanteApi: VacanteApiService by lazy {
         retrofit.create(VacanteApiService::class.java)
     }
+
+    val evaluacionApiService: EvaluacionApiService by lazy {
+        retrofit.create(EvaluacionApiService::class.java)
+    }
+
+    val colaboradorApiService: ColaboradorApiService by lazy { // Added this
+        retrofit.create(ColaboradorApiService::class.java)
+    }
 }
