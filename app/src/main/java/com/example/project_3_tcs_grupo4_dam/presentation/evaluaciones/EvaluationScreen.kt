@@ -17,10 +17,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -48,7 +50,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,52 +62,99 @@ fun EvaluationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Show loading, success or error dialogs
+    HandleSaveStatus(uiState = uiState, viewModel = viewModel) { navController.popBackStack() }
+
     Scaffold(
         topBar = {
             EvaluationTopAppBar(
                 onBackClick = { navController.popBackStack() },
-                onHistoryClick = { navController.navigate("evaluations_history") },
-                onBulkLoadClick = { navController.navigate("bulk_upload") }
+                onHistoryClick = { navController.navigate(Routes.EVALUATION_HISTORY) },
+                onBulkLoadClick = { navController.navigate(Routes.BULK_UPLOAD) }
             )
         },
         bottomBar = {
             BottomNavBar(navController = navController)
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                EvaluationDataCard(uiState = uiState, viewModel = viewModel)
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    EvaluationDataCard(uiState = uiState, viewModel = viewModel)
+                }
 
-            item {
-                EvaluatedSkillsSection(viewModel = viewModel)
-            }
+                item {
+                    EvaluatedSkillsSection(viewModel = viewModel)
+                }
 
-            items(uiState.skills, key = { it.id }) { skill ->
-                SkillItemCard(
-                    skill = skill,
-                    uiState = uiState,
-                    viewModel = viewModel,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
+                items(uiState.skills, key = { it.id }) { skill ->
+                    SkillItemCard(
+                        skill = skill,
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
 
-            // Espacio para los botones de acción
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                BottomActionButtons(
-                    onCancel = viewModel::cancelEvaluation,
-                    onSave = viewModel::saveEvaluation
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                // Espacio para los botones de acción
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    BottomActionButtons(
+                        onCancel = viewModel::cancelEvaluation,
+                        onSave = viewModel::saveEvaluation,
+                        isSaving = uiState.isSaving
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun HandleSaveStatus(uiState: EvaluationUiState, viewModel: EvaluationViewModel, onSaveSuccess: () -> Unit) {
+    if (uiState.saveSuccess) {
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.onSaveStatusConsumed()
+                onSaveSuccess() // Navigate back on success
+            },
+            title = { Text("Éxito") },
+            text = { Text("La evaluación se ha guardado correctamente.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.onSaveStatusConsumed()
+                        onSaveSuccess()
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
+    uiState.saveError?.let {
+        AlertDialog(
+            onDismissRequest = { viewModel.onSaveStatusConsumed() },
+            title = { Text("Error") },
+            text = { Text("No se pudo guardar la evaluación: $it") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onSaveStatusConsumed() }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 }
 
@@ -123,14 +174,17 @@ fun EvaluationTopAppBar(
         },
         actions = {
             TextButton(onClick = onHistoryClick) {
-                Text("Historial")
+                Text("Historial", color = Color.White)
             }
             TextButton(onClick = onBulkLoadClick) {
-                Text("Carga masiva")
+                Text("Carga masiva", color = Color.White)
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = Color(0xFF0A63C2), // Azul oscuro
+            titleContentColor = Color.White,
+            navigationIconContentColor = Color.White,
+            actionIconContentColor = Color.White
         )
     )
 }
@@ -150,10 +204,10 @@ fun EvaluationDataCard(uiState: EvaluationUiState, viewModel: EvaluationViewMode
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            CustomDropdown(
+            CollaboratorDropdown(
                 label = "Colaborador *",
-                options = uiState.collaboratorOptions,
-                selectedValue = uiState.collaborator,
+                collaborators = uiState.collaboratorOptions,
+                selectedCollaboratorId = uiState.selectedCollaboratorId,
                 onValueChange = viewModel::onCollaboratorChange
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -179,7 +233,7 @@ fun EvaluationDataCard(uiState: EvaluationUiState, viewModel: EvaluationViewMode
             OutlinedTextField(
                 value = uiState.evaluationDate,
                 onValueChange = viewModel::onDateChange,
-                label = { Text("Fecha *") },
+                label = { Text("Fecha (YYYY-MM-DD) *") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
@@ -192,6 +246,17 @@ fun EvaluationDataCard(uiState: EvaluationUiState, viewModel: EvaluationViewMode
                 options = uiState.evaluationTypeOptions,
                 selectedValue = uiState.evaluationType,
                 onValueChange = viewModel::onEvaluationTypeChange
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.comments,
+                onValueChange = viewModel::onCommentsChange,
+                label = { Text("Comentarios") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                singleLine = false
             )
         }
     }
@@ -211,11 +276,11 @@ fun EvaluatedSkillsSection(viewModel: EvaluationViewModel) {
         )
         Button(
             onClick = viewModel::addSkill,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)) // Azul oscuro
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Agregar")
+            Text("Agregar", color = Color.White)
         }
     }
 }
@@ -300,6 +365,49 @@ fun SkillItemCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun CollaboratorDropdown(
+    label: String,
+    collaborators: List<ColaboradorDtos.ColaboradorReadDto>,
+    selectedCollaboratorId: String?,
+    onValueChange: (String) -> Unit
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val selectedCollaborator = collaborators.find { it.id == selectedCollaboratorId }
+    val selectedText = selectedCollaborator?.let { "${it.nombres} ${it.apellidos}" } ?: ""
+
+    ExposedDropdownMenuBox(
+        expanded = isExpanded,
+        onExpandedChange = { isExpanded = !isExpanded }
+    ) {
+        OutlinedTextField(
+            value = selectedText,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
+        )
+        ExposedDropdownMenu(
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false }
+        ) {
+            collaborators.forEach { collaborator ->
+                DropdownMenuItem(
+                    text = { Text("${collaborator.nombres} ${collaborator.apellidos}") },
+                    onClick = {
+                        onValueChange(collaborator.id)
+                        isExpanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun CustomDropdown(
     label: String,
     options: List<String>,
@@ -340,7 +448,7 @@ private fun CustomDropdown(
 }
 
 @Composable
-fun BottomActionButtons(onCancel: () -> Unit, onSave: () -> Unit) {
+fun BottomActionButtons(onCancel: () -> Unit, onSave: () -> Unit, isSaving: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -350,17 +458,21 @@ fun BottomActionButtons(onCancel: () -> Unit, onSave: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Button(
                 onClick = onCancel,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                modifier = Modifier.weight(1f)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                enabled = !isSaving
             ) {
-                Text("Cancelar", color = Color.White)
+                Text("Cancelar")
             }
             Button(
                 onClick = onSave,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.weight(1f)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)), // Azul oscuro
+                enabled = !isSaving
             ) {
-                Text("Guardar evaluación")
+                if (isSaving) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Guardar evaluación", color = Color.White)
+                }
             }
         }
     }

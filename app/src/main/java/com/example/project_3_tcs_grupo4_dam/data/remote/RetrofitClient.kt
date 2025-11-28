@@ -15,18 +15,21 @@ import java.util.concurrent.TimeUnit
  */
 object RetrofitClient {
 
+
     // IP Actualizada: Asegúrate de que esta sea la IP de tu PC en la red local
-    private const val BASE_URL = "http://192.168.18.94:5260/"
+  
 
     // Variable para almacenar el token JWT en memoria
     private var authToken: String? = null
 
-    /**
+    /*
      * Función para establecer el token JWT después del login
      */
     fun setJwtToken(token: String) {
         authToken = token
     }
+    // Base URL del backend .NET
+    private const val BASE_URL = "http://10.62.245.60:5260/"
 
     /**
      * Función para limpiar el token al cerrar sesión
@@ -100,15 +103,7 @@ object RetrofitClient {
         retrofit.create(ColaboradorApiService::class.java)
     }
     /**
-     * API Service de skills de colaborador
-     */
 
-    /**
-     * API Service de skills
-     */
-
-
-    /**
      * API Service de alertas
      */
     val alertasApi: AlertasApiService by lazy {
@@ -124,5 +119,17 @@ object RetrofitClient {
 
     val catalogoApi: CatalogoApiService by lazy {
         retrofit.create(CatalogoApiService::class.java)
+  
+    }
+    val vacanteApi: VacanteApiService by lazy {
+        retrofit.create(VacanteApiService::class.java)
+    }
+
+    val evaluacionApiService: EvaluacionApiService by lazy {
+        retrofit.create(EvaluacionApiService::class.java)
+    }
+
+    val colaboradorApiService: ColaboradorApiService by lazy { // Added this
+        retrofit.create(ColaboradorApiService::class.java)
     }
 }

@@ -51,6 +51,11 @@ object Routes {
     const val SOLICITUDES_COLABORADOR = "solicitudes_colaborador"
     const val SOLICITUD_CERTIFICACION_COLABORADOR = "solicitud_certificacion_colaborador"
     const val SOLICITUD_SKILLS_COLABORADOR = "solicitud_skills_colaborador"
+    // Rutas de evaluaciones
+    const val EVALUATION_SCREEN = "evaluation"
+    const val EVALUATION_HISTORY = "evaluation_history"
+    const val EVALUATION_DETAIL = "evaluation_detail/{evaluationId}"
+    const val BULK_UPLOAD = "bulk_upload"
 
     // --- SOLICITUDES ADMIN (ENTREVISTAS) ---
     const val SOLICITUDES_ADMIN = "solicitudes_admin" // Vista de entrevistas para admin
@@ -67,4 +72,6 @@ object Routes {
     fun actualizarSkill(colaboradorId: String, skillName: String): String {
         return "$ACTUALIZAR_SKILL_BASE/$colaboradorId/${Uri.encode(skillName)}"
     }
+    // Helper para navegar a detalle
+    fun evaluationDetail(evaluationId: String) = "evaluation_detail/$evaluationId"
 }

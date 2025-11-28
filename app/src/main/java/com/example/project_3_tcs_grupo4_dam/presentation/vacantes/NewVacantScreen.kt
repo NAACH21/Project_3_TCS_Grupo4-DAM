@@ -9,26 +9,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillRequerido
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NewVacantScreen(
     navController: NavController,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    newVacantViewModel: NewVacantViewModel = viewModel()
 ) {
-    // Estados simples del formulario
+    // Estados del formulario
     var nombrePerfil by remember { mutableStateOf("") }
     var area by remember { mutableStateOf("") }
     var rol by remember { mutableStateOf("") }
@@ -36,11 +42,47 @@ fun NewVacantScreen(
     var urgencia by remember { mutableStateOf("Media") }
     var estado by remember { mutableStateOf("Activa") }
 
+    // Estados para añadir skills
     var skillNombre by remember { mutableStateOf("") }
     var skillTipo by remember { mutableStateOf("Técnico") }
     var skillNivel by remember { mutableStateOf("Intermedio") }
+    var skillEsCritico by remember { mutableStateOf(false) }
+    val skillsRequeridos = remember { mutableStateListOf<SkillRequerido>() }
 
+    // Estados para añadir certificaciones
     var certNombre by remember { mutableStateOf("") }
+    val certificacionesRequeridas = remember { mutableStateListOf<String>() }
+
+    val saveStatus by newVacantViewModel.saveStatus.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    LaunchedEffect(saveStatus) {
+        when (val status = saveStatus) {
+            is SaveResult.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Vacante guardada con éxito",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                navController.popBackStack()
+                newVacantViewModel.resetSaveStatus()
+            }
+            is SaveResult.Error -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = status.message,
+                        duration = SnackbarDuration.Long
+                    )
+                }
+                newVacantViewModel.resetSaveStatus()
+            }
+            else -> {}
+        }
+    }
+
 
     val listaAreas = listOf("Tecnología", "Business Intelligence", "Diseño", "Proyectos")
     val listaUrgencia = listOf("Alta", "Media", "Baja")
@@ -49,6 +91,7 @@ fun NewVacantScreen(
     val listaNivelSkill = listOf("Básico", "Intermedio", "Avanzado")
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Nueva Vacante", color = Color.White) },
@@ -79,7 +122,6 @@ fun NewVacantScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
 
-            // Volver
             Row(
                 modifier = Modifier
                     .clickable { onBack() }
@@ -88,238 +130,176 @@ fun NewVacantScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Volver",
-                    tint = Color(0xFF4B5563)
+                    contentDescription = "Volver"
                 )
-                Text(
-                    text = "Volver",
-                    color = Color(0xFF4B5563),
-                    fontSize = 14.sp
-                )
+                Text("Volver")
             }
 
-            // ------------ Datos de la vacante -------------
+            // --- Formulario ---
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Datos de la vacante",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
-
-                    OutlinedTextField(
-                        value = nombrePerfil,
-                        onValueChange = { nombrePerfil = it },
-                        label = { Text("Nombre del perfil *") },
-                        placeholder = { Text("Ej: Desarrollador Full Stack Senior") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-
-                    // Área
-                    ExposedDropdown(
-                        label = "Área *",
-                        value = area,
-                        onValueChange = { area = it },
-                        options = listaAreas,
-                        placeholder = "Seleccione un área"
-                    )
-
-                    OutlinedTextField(
-                        value = rol,
-                        onValueChange = { rol = it },
-                        label = { Text("Rol *") },
-                        placeholder = { Text("Ej: Desarrollador") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = fechaInicio,
-                        onValueChange = { fechaInicio = it },
-                        label = { Text("Fecha de inicio") },
-                        placeholder = { Text("dd/mm/aaaa") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-
-                    // Urgencia
-                    ExposedDropdown(
-                        label = "Urgencia",
-                        value = urgencia,
-                        onValueChange = { urgencia = it },
-                        options = listaUrgencia,
-                        placeholder = "Seleccionar"
-                    )
-
-                    // Estado
-                    ExposedDropdown(
-                        label = "Estado",
-                        value = estado,
-                        onValueChange = { estado = it },
-                        options = listaEstado,
-                        placeholder = "Seleccionar"
-                    )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Datos de la vacante", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(value = nombrePerfil, onValueChange = { nombrePerfil = it }, label = { Text("Nombre del perfil *") }, modifier = Modifier.fillMaxWidth())
+                    ExposedDropdown("Área *", area, { area = it }, listaAreas, "Seleccione un área")
+                    OutlinedTextField(value = rol, onValueChange = { rol = it }, label = { Text("Rol *") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = fechaInicio, onValueChange = { fechaInicio = it }, label = { Text("Fecha de inicio") }, placeholder = { Text("dd/mm/aaaa") }, modifier = Modifier.fillMaxWidth())
+                    ExposedDropdown("Urgencia", urgencia, { urgencia = it }, listaUrgencia, "Seleccionar")
+                    ExposedDropdown("Estado", estado, { estado = it }, listaEstado, "Seleccionar")
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // ------------ Skills requeridos -------------
+            // --- Skills ---
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Skills requeridos",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
+                        Text("Skills requeridos", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         Button(
-                            onClick = { /* TODO agregar skill a la lista */ },
-                            shape = RoundedCornerShape(50),
-                            contentPadding = PaddingValues(
-                                horizontal = 10.dp,
-                                vertical = 4.dp
-                            )
+                            onClick = {
+                                if (skillNombre.isNotBlank()) {
+                                    val nivelInt = when (skillNivel) {
+                                        "Básico" -> 1
+                                        "Intermedio" -> 2
+                                        "Avanzado" -> 3
+                                        else -> 0
+                                    }
+                                    skillsRequeridos.add(SkillRequerido(skillNombre, skillTipo, nivelInt, skillEsCritico))
+                                    // Limpiar campos
+                                    skillNombre = ""
+                                    skillTipo = "Técnico"
+                                    skillNivel = "Intermedio"
+                                    skillEsCritico = false
+                                }
+                            },
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Agregar skill",
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Default.Add, contentDescription = "Agregar skill", modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Agregar", fontSize = 13.sp)
                         }
                     }
+                    OutlinedTextField(value = skillNombre, onValueChange = { skillNombre = it }, label = { Text("Nombre del skill") }, modifier = Modifier.fillMaxWidth())
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExposedDropdown("Tipo", skillTipo, { skillTipo = it }, listaTipoSkill, "Tipo", Modifier.weight(1f))
+                        ExposedDropdown("Nivel", skillNivel, { skillNivel = it }, listaNivelSkill, "Nivel", Modifier.weight(1f))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = skillEsCritico, onCheckedChange = { skillEsCritico = it })
+                        Text("Es crítico")
+                    }
 
-                    OutlinedTextField(
-                        value = skillNombre,
-                        onValueChange = { skillNombre = it },
-                        label = { Text("Nombre del skill") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Lista de skills agregados
+                    FlowRow(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ExposedDropdown(
-                            label = "",
-                            value = skillTipo,
-                            onValueChange = { skillTipo = it },
-                            options = listaTipoSkill,
-                            placeholder = "Tipo"
-                        )
-                        ExposedDropdown(
-                            label = "",
-                            value = skillNivel,
-                            onValueChange = { skillNivel = it },
-                            options = listaNivelSkill,
-                            placeholder = "Nivel"
-                        )
+                        skillsRequeridos.forEach { skill ->
+                            InputChip(
+                                selected = false,
+                                onClick = { },
+                                label = { Text("${skill.nombre} (${skill.tipo}) - Nivel: ${skill.nivelDeseado}") },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Eliminar skill",
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable { skillsRequeridos.remove(skill) }
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
-
             Spacer(Modifier.height(16.dp))
-
-            // ------------ Certificaciones -------------
+            // --- Certificaciones ---
             Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Certificaciones deseadas",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
+                        Text("Certificaciones deseadas", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         Button(
-                            onClick = { /* TODO agregar certificación */ },
-                            shape = RoundedCornerShape(50),
-                            contentPadding = PaddingValues(
-                                horizontal = 10.dp,
-                                vertical = 4.dp
-                            )
+                            onClick = {
+                                if (certNombre.isNotBlank()) {
+                                    certificacionesRequeridas.add(certNombre)
+                                    certNombre = ""
+                                }
+                            }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Agregar certificación",
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Default.Add, "Agregar", Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Agregar", fontSize = 13.sp)
                         }
                     }
+                    OutlinedTextField(value = certNombre, onValueChange = { certNombre = it }, label = { Text("Nombre de la certificación") }, modifier = Modifier.fillMaxWidth())
 
-                    OutlinedTextField(
-                        value = certNombre,
-                        onValueChange = { certNombre = it },
-                        label = { Text("Nombre de la certificación") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp)
-                    )
+                    FlowRow(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        certificacionesRequeridas.forEach { cert ->
+                            InputChip(
+                                selected = false,
+                                onClick = { },
+                                label = { Text(cert) },
+                                trailingIcon = {
+                                    Icon(Icons.Default.Close, "Eliminar", Modifier.size(18.dp).clickable { certificacionesRequeridas.remove(cert) })
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(Modifier.height(24.dp))
-
-            // Botón Guardar
             Button(
                 onClick = {
-                    // TODO: enviar datos al backend
+                    newVacantViewModel.saveVacante(
+                        nombrePerfil = nombrePerfil,
+                        area = area,
+                        rolLaboral = rol,
+                        skillsRequeridos = skillsRequeridos,
+                        certificacionesRequeridas = certificacionesRequeridas,
+                        fechaInicio = fechaInicio,
+                        urgencia = urgencia,
+                        estadoVacante = estado
+                    )
                 },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(50)
+                modifier = Modifier.fillMaxWidth(),
+                enabled = saveStatus != SaveResult.Loading
             ) {
-                Text("Guardar vacante")
+                if (saveStatus == SaveResult.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                } else {
+                    Text("Guardar vacante")
+                }
             }
-
             Spacer(Modifier.height(16.dp))
         }
     }
 }
 
-/**
- * Componente reutilizable para los combos estilo "dropdown" de Material 3.
- * */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExposedDropdown(
@@ -331,31 +311,18 @@ private fun ExposedDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
-    ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }, modifier = modifier) {
         OutlinedTextField(
             value = value,
-            onValueChange = { },
+            onValueChange = {},
             readOnly = true,
-            modifier = Modifier
-                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
-                .fillMaxWidth(),
-            label = if (label.isNotEmpty()) { { Text(label) } } else null,
+            modifier = Modifier.menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true).fillMaxWidth(),
+            label = { Text(label) },
             placeholder = { Text(placeholder) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             shape = RoundedCornerShape(10.dp)
         )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
