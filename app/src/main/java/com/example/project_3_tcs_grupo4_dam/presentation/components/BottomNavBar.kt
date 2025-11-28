@@ -28,9 +28,9 @@ fun BottomNavBar(
     val items = listOf(
         BottomNavItem(homeRoute, "Inicio", Icons.Default.Home),
         BottomNavItem(Routes.COLABORADORES, "Colaboradores", Icons.Default.Person),
-        BottomNavItem(Routes.EVALUACIONES, "Evaluaciones", Icons.Default.Assessment),
+        BottomNavItem(Routes.EVALUACIONES_ADMIN, "Evaluaciones", Icons.Default.Assessment),
         BottomNavItem(Routes.VACANTES, "Vacantes", Icons.Default.Work), // Admin Vacantes
-        BottomNavItem(Routes.DASHBOARD, "Dash board", Icons.Default.Dashboard)
+        BottomNavItem(Routes.DASHBOARD, "Dashboard", Icons.Default.Dashboard)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

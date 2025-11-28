@@ -2,9 +2,16 @@ package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 
@@ -54,11 +61,9 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             )
         }
         
-        // NOTA: Si este archivo se usa, se deberían copiar TODAS las definiciones de AppNavigation.kt
-        // Para evitar duplicidad y errores, recomiendo usar AppNavigation.kt en MainActivity
-                    // TODO: Navegar a registro si existe
-                }
-            )
+        composable(Routes.REGISTER) {
+            // TODO: Implementar pantalla de registro
+            SimplePlaceholderScreen(title = "Registro")
         }
 
         composable(Routes.COLABORADORES) {

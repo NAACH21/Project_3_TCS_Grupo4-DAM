@@ -29,7 +29,10 @@ private val LightGrayBg = Color(0xFFF5F7FA)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SolicitudAdminScreen(
-    navController: NavController
+    navController: NavController,
+    embedded: Boolean = false,
+    showTopBar: Boolean = true,
+    showBottomBar: Boolean = true
 ) {
     val context = LocalContext.current
     val sessionManager = SessionManager(context)
@@ -76,47 +79,116 @@ fun SolicitudAdminScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Solicitudes de Entrevista",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = TCSBlue,
-                    titleContentColor = Color.White
-                )
+    // Modo embebido: solo contenido interno sin Scaffold
+    if (embedded) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            SolicitudAdminContent(
+                solicitudes = solicitudes,
+                isLoading = isLoading,
+                errorMessage = errorMessage,
+                filtroEstado = filtroEstado,
+                navController = navController,
+                viewModel = viewModel,
+                solicitudSeleccionada = solicitudSeleccionada,
+                showDetalleDialog = showDetalleDialog,
+                showCambioEstadoDialog = showCambioEstadoDialog,
+                modifier = Modifier.fillMaxSize(),
+                showFab = false
             )
-        },
-        floatingActionButton = {
-            // Solo mostrar FAB si no hay error de rol
+            
+            // FAB flotante para modo embebido
             if (errorMessage != "Esta pantalla es solo para administradores") {
                 ExtendedFloatingActionButton(
                     onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
                     containerColor = TCSBlue,
-                    contentColor = Color.White
+                    contentColor = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Nueva Entrevista")
                 }
             }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = LightGrayBg
-    ) { paddingValues ->
+        }
+    } else {
+        // Modo standalone: Scaffold completo con TopBar + BottomNavBar
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Solicitudes de Entrevista",
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = TCSBlue,
+                        titleContentColor = Color.White
+                    )
+                )
+            },
+            bottomBar = {
+                com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar(
+                    navController = navController,
+                    homeRoute = Routes.ADMIN_HOME
+                )
+            },
+            floatingActionButton = {
+                // Solo mostrar FAB si no hay error de rol
+                if (errorMessage != "Esta pantalla es solo para administradores") {
+                    ExtendedFloatingActionButton(
+                        onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
+                        containerColor = TCSBlue,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Nueva Entrevista")
+                    }
+                }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = LightGrayBg
+        ) { paddingValues ->
+            SolicitudAdminContent(
+                solicitudes = solicitudes,
+                isLoading = isLoading,
+                errorMessage = errorMessage,
+                filtroEstado = filtroEstado,
+                navController = navController,
+                viewModel = viewModel,
+                solicitudSeleccionada = solicitudSeleccionada,
+                showDetalleDialog = showDetalleDialog,
+                showCambioEstadoDialog = showCambioEstadoDialog,
+                modifier = Modifier.padding(paddingValues)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SolicitudAdminContent(
+    solicitudes: List<SolicitudReadDto>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    filtroEstado: String,
+    navController: NavController,
+    viewModel: SolicitudAdminViewModel,
+    solicitudSeleccionada: SolicitudReadDto?,
+    showDetalleDialog: Boolean,
+    showCambioEstadoDialog: Boolean,
+    modifier: Modifier = Modifier,
+    showFab: Boolean = false
+) {
+    Box(modifier = modifier) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
             // Verificar si hay error de rol
             if (errorMessage == "Esta pantalla es solo para administradores") {
-                Box(
+                    Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
@@ -199,12 +271,28 @@ fun SolicitudAdminScreen(
                 }
             }
         }
+        
+        // FAB flotante para modo embebido
+        if (showFab) {
+            ExtendedFloatingActionButton(
+                onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
+                containerColor = TCSBlue,
+                contentColor = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Nueva Entrevista")
+            }
+        }
     }
 
     // Diálogo de detalle de solicitud
     if (showDetalleDialog && solicitudSeleccionada != null) {
         DetalleSolicitudEntrevistaDialog(
-            solicitud = solicitudSeleccionada!!,
+            solicitud = solicitudSeleccionada,
             onDismiss = { viewModel.cerrarDetalleSolicitud() }
         )
     }
@@ -212,11 +300,11 @@ fun SolicitudAdminScreen(
     // Diálogo de cambio de estado
     if (showCambioEstadoDialog && solicitudSeleccionada != null) {
         CambioEstadoDialog(
-            solicitud = solicitudSeleccionada!!,
+            solicitud = solicitudSeleccionada,
             onDismiss = { viewModel.cerrarCambioEstadoDialog() },
             onConfirmar = { nuevoEstado, observacion ->
                 viewModel.actualizarEstadoSolicitud(
-                    solicitudSeleccionada!!.id,
+                    solicitudSeleccionada.id,
                     nuevoEstado,
                     observacion
                 )

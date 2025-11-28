@@ -48,71 +48,104 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluationsHistoryScreen(
     navController: NavController,
+    embedded: Boolean = false,
     onNavigateToDetail: (String) -> Unit,
     viewModel: EvaluationsHistoryViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("TCS HR Manager") },
-                    actions = {
-                        IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
+    if (embedded) {
+        // Modo embebido: solo contenido interno
+        EvaluationsHistoryContent(
+            uiState = uiState,
+            viewModel = viewModel,
+            navController = navController,
+            onNavigateToDetail = onNavigateToDetail,
+            modifier = Modifier.fillMaxSize()
+        )
+    } else {
+        // Modo standalone: con Scaffold completo
+        Scaffold(
+            topBar = {
+                Column {
+                    TopAppBar(
+                        title = { Text("TCS HR Manager") },
+                        actions = {
+                            IconButton(onClick = { /* TODO */ }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
+                            }
+                            IconButton(onClick = { /* TODO */ }) {
+                                Icon(Icons.Default.Person, contentDescription = "Perfil")
+                            }
                         }
-                        IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Default.Person, contentDescription = "Perfil")
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Volver")
                         }
-                    }
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Volver")
-                    }
-                    Button(onClick = { /* TODO: Export PDF */ }) {
-                        Text("Exportar PDF")
+                        Button(onClick = { /* TODO: Export PDF */ }) {
+                            Text("Exportar PDF")
+                        }
                     }
                 }
-            }
-        },
-        bottomBar = {
-            BottomNavBar(navController = navController)
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item { DescriptionCard() }
-            item { FilterCard(uiState = uiState, viewModel = viewModel) }
-            item { 
-                Text(
-                    text = "Evaluaciones registradas (${uiState.filteredEvaluations.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            },
+            bottomBar = {
+                BottomNavBar(
+                    navController = navController,
+                    homeRoute = Routes.ADMIN_HOME
                 )
             }
-            items(uiState.filteredEvaluations) { item ->
-                EvaluationHistoryItemCard(item = item, onNavigateToDetail = onNavigateToDetail)
-            }
+        ) { padding ->
+            EvaluationsHistoryContent(
+                uiState = uiState,
+                viewModel = viewModel,
+                navController = navController,
+                onNavigateToDetail = onNavigateToDetail,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EvaluationsHistoryContent(
+    uiState: EvaluationsHistoryUiState,
+    viewModel: EvaluationsHistoryViewModel,
+    navController: NavController,
+    onNavigateToDetail: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item { DescriptionCard() }
+        item { FilterCard(uiState = uiState, viewModel = viewModel) }
+        item { 
+            Text(
+                text = "Evaluaciones registradas (${uiState.filteredEvaluations.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        items(uiState.filteredEvaluations) { item ->
+            EvaluationHistoryItemCard(item = item, onNavigateToDetail = onNavigateToDetail)
         }
     }
 }

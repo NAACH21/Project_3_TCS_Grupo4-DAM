@@ -27,6 +27,7 @@ import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.AdminEvaluacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationsHistoryScreen
@@ -132,8 +133,8 @@ fun AppNavigation(
         // --- VACANTES ---
         composable(Routes.VACANTES_ADMIN) { VacantScreen(navController = navController) }
         composable(Routes.VACANTES_COLABORADOR) { VacantesColaboradorScreen(navController = navController) }
-        composable(Routes.NEW_VACANT) { NewVacantScreen(navController = navController) { navController.popBackStack() } }
-        composable("newVacancy") { NewVacantScreen(navController = navController) { navController.popBackStack() } }
+        composable(Routes.NEW_VACANT) { NewVacantScreen(navController = navController, onBack = { navController.popBackStack() }) }
+        composable("newVacancy") { NewVacantScreen(navController = navController, onBack = { navController.popBackStack() }) }
 
         // --- GESTIÓN ADMIN ---
         composable(Routes.COLABORADORES) { ColaboradoresScreen(navController = navController) }
@@ -152,10 +153,7 @@ fun AppNavigation(
         }
         
         composable(Routes.EVALUACIONES_ADMIN) { 
-            EvaluationsHistoryScreen(navController = navController, onNavigateToDetail = { id -> navController.navigate(Routes.evaluationDetail(id)) }) 
-        }
-        composable("evaluaciones") { 
-            EvaluationsHistoryScreen(navController = navController, onNavigateToDetail = { id -> navController.navigate(Routes.evaluationDetail(id)) }) 
+            AdminEvaluacionesScreen(navController = navController)
         }
         composable(Routes.NUEVA_EVALUACION) { EvaluationScreen(navController = navController) }
         composable(Routes.EVALUATION_SCREEN) { EvaluationScreen(navController = navController) }
@@ -218,7 +216,10 @@ fun AppNavigation(
 
         // --- SOLICITUDES ADMIN (Entrevistas de Desempeño) ---
         composable(Routes.SOLICITUDES_ADMIN) {
-            SolicitudAdminScreen(navController = navController)
+            SolicitudAdminScreen(
+                navController = navController,
+                embedded = false
+            )
         }
 
         composable(Routes.NUEVA_ENTREVISTA_ADMIN) {
