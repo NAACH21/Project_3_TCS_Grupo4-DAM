@@ -75,22 +75,70 @@ fun LoginScreen(
 
     // Efecto para manejar el resultado del login
     LaunchedEffect(uiState) {
-        when {
-            uiState.isSuccess && uiState.userRole != null -> {
-                // Login exitoso, navegar según el rol
-                onLoginSuccess(uiState.userRole!!)
+        if (uiState.isSuccess && uiState.userRole != null) {
+
+            val sessionManager = SessionManager(context)
+            val userRole = uiState.userRole!!
+
+            // ⭐ GUARDA SESIÓN COMPLETA CON USUARIO ID ⭐
+            val usuarioId = viewModel.getUsuarioId() ?: ""
+            val colaboradorId = viewModel.getColaboradorId()
+            val token = viewModel.getToken() ?: ""
+
+            android.util.Log.d("LoginScreen", "=== GUARDANDO SESIÓN ===")
+            android.util.Log.d("LoginScreen", "UsuarioId a guardar: '$usuarioId'")
+            android.util.Log.d("LoginScreen", "ColaboradorId a guardar: '$colaboradorId'")
+            android.util.Log.d("LoginScreen", "Rol a guardar: '$userRole'")
+            android.util.Log.d("LoginScreen", "Username a guardar: '$username'")
+            android.util.Log.d("LoginScreen", "Token a guardar: '${token.take(20)}...'")
+
+            // ⭐ VALIDACIÓN FINAL: No permitir guardar sesión sin usuarioId ⭐
+            if (usuarioId.isBlank()) {
+                android.util.Log.e("LoginScreen", "❌ ERROR CRÍTICO: Intentando guardar sesión con usuarioId vacío")
+                snackbarHostState.showSnackbar("Error: No se pudo obtener el ID de usuario del servidor")
                 viewModel.resetState()
+                return@LaunchedEffect
             }
-            uiState.errorMessage != null -> {
-                // Mostrar error
-                snackbarHostState.showSnackbar(
-                    message = uiState.errorMessage!!,
-                    duration = SnackbarDuration.Short
-                )
+
+            sessionManager.saveSession(
+                token = token,
+                rolSistema = userRole,
+                colaboradorId = colaboradorId,
+                username = username,
+                usuarioId = usuarioId
+            )
+
+            // ⭐ VERIFICACIÓN: Leer inmediatamente para confirmar que se guardó ⭐
+            val usuarioIdGuardado = sessionManager.getUsuarioId()
+            val colaboradorIdGuardado = sessionManager.getColaboradorId()
+            val rolGuardado = sessionManager.getRol()
+
+            android.util.Log.d("LoginScreen", "=== VERIFICACIÓN POST-GUARDADO ===")
+            android.util.Log.d("LoginScreen", "UsuarioId leído de SessionManager: '$usuarioIdGuardado'")
+            android.util.Log.d("LoginScreen", "ColaboradorId leído de SessionManager: '$colaboradorIdGuardado'")
+            android.util.Log.d("LoginScreen", "Rol leído de SessionManager: '$rolGuardado'")
+
+            if (usuarioIdGuardado.isNullOrBlank()) {
+                android.util.Log.e("LoginScreen", "❌ ERROR: El usuarioId NO se guardó correctamente en SessionManager")
+                snackbarHostState.showSnackbar("Error al guardar la sesión. Intenta nuevamente.")
                 viewModel.resetState()
+                return@LaunchedEffect
             }
+
+            android.util.Log.d("LoginScreen", "✅ Sesión guardada y verificada correctamente")
+
+            // Navegar según el rol
+            onLoginSuccess(userRole)
+            viewModel.resetState()
+        }
+
+        if (uiState.errorMessage != null) {
+            snackbarHostState.showSnackbar(uiState.errorMessage!!)
+            viewModel.resetState()
         }
     }
+
+
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }

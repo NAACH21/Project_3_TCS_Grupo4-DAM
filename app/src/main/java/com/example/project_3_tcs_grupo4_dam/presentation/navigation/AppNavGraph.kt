@@ -1,18 +1,16 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavType
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Alignment
-import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.AuthViewModel
+import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
+
+// ESTE ARCHIVO PARECE SER REDUNDANTE CON AppNavigation.kt
+// Se recomienda usar AppNavigation.kt como entrada principal.
+// Si MainActivity llama a este AppNavGraph, debería migrarse.
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
@@ -37,18 +35,27 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         navController = navController,
         startDestination = startDestination
     ) {
-        composable(Routes.HOME) {
-            HomeScreen(navController)
-        }
-
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    navController.navigate(Routes.HOME) {
+                    val destination = when(role.uppercase()) {
+                         "COLABORADOR" -> Routes.COLABORADOR_HOME
+                         "ADMIN" -> Routes.ADMIN_HOME
+                         "MANAGER" -> Routes.MANAGER_HOME
+                         else -> Routes.LOGIN
+                    }
+                    navController.navigate(destination) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            )
+        }
+        
+        // NOTA: Si este archivo se usa, se deberían copiar TODAS las definiciones de AppNavigation.kt
+        // Para evitar duplicidad y errores, recomiendo usar AppNavigation.kt en MainActivity
                     // TODO: Navegar a registro si existe
                 }
             )

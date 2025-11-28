@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.model.AuthDtos
 import com.example.project_3_tcs_grupo4_dam.data.repository.AuthRepository
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 
 /**
  * Estados de la UI para autenticación
@@ -26,6 +28,14 @@ data class AuthUiState(
 class AuthViewModel(
     private val repository: AuthRepository
 ) : ViewModel() {
+    private val _onToken = MutableStateFlow<String?>(null)
+    private val _onColaboradorId = MutableStateFlow<String?>(null)
+    private val _onUsuarioId = MutableStateFlow<String?>(null)
+
+    fun getToken(): String? = _onToken.value
+    fun getColaboradorId(): String? = _onColaboradorId.value
+    fun getUsuarioId(): String? = _onUsuarioId.value
+
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
@@ -33,6 +43,7 @@ class AuthViewModel(
     /**
      * Realiza el login del usuario
      */
+
     fun login(username: String, password: String) {
         // Validación básica
         if (username.isBlank() || password.isBlank()) {
@@ -49,21 +60,56 @@ class AuthViewModel(
 
             repository.login(request).fold(
                 onSuccess = { apiResponse ->
+
+                    Log.d("AuthViewModel", "=== RESPUESTA JSON DEL BACKEND ===")
+                    Log.d("AuthViewModel", "JSON completo: $apiResponse")
+                    Log.d("AuthViewModel", "Success: ${apiResponse.success}")
+
                     if (apiResponse.success && apiResponse.data != null) {
-                        // Login exitoso
+
+                        // ⭐ El AuthRepository ya decodificó el JWT y guardó el usuarioId en SessionManager ⭐
+                        val token = apiResponse.data.token
+                        val colaboradorId = apiResponse.data.colaboradorId
+
+                        // ⭐ Leer el usuarioId que el Repository extrajo del JWT y guardó ⭐
+                        val usuarioId = repository.getSessionManager().getUsuarioId() ?: ""
+
+                        _onToken.value = token
+                        _onColaboradorId.value = colaboradorId
+                        _onUsuarioId.value = usuarioId
+
+                        Log.d("AuthViewModel", "=== VALORES CAPTURADOS ===")
+                        Log.d("AuthViewModel", "UsuarioId (del JWT/SessionManager): $usuarioId")
+                        Log.d("AuthViewModel", "ColaboradorId: $colaboradorId")
+                        Log.d("AuthViewModel", "Token: ${token.take(20)}...")
+
+                        // ⭐ VALIDACIÓN: Verificar que usuarioId NO esté vacío ⭐
+                        if (usuarioId.isBlank()) {
+                            Log.e("AuthViewModel", "❌ ERROR CRÍTICO: usuarioId está vacío después del login")
+                            _uiState.value = AuthUiState(
+                                errorMessage = "Error del servidor: No se pudo extraer el ID de usuario del token. Contacta al administrador."
+                            )
+                            return@fold
+                        }
+
+                        // CONFIGURAR TOKEN EN RETROFIT PARA PETICIONES FUTURAS
+                        RetrofitClient.setJwtToken(token)
+                        Log.d("AuthViewModel", "✅ Token JWT configurado en RetrofitClient")
+
                         _uiState.value = AuthUiState(
                             isSuccess = true,
                             userRole = apiResponse.data.rolSistema
                         )
                     } else {
-                        // Backend respondió pero con success=false
                         _uiState.value = AuthUiState(
                             errorMessage = apiResponse.message
                         )
                     }
-                },
+                }
+                ,
                 onFailure = { exception ->
                     // Error de red o excepción
+                    Log.e("AuthViewModel", "Error en login", exception)
                     _uiState.value = AuthUiState(
                         errorMessage = exception.message ?: "Error desconocido"
                     )
@@ -129,6 +175,7 @@ class AuthViewModel(
      */
     fun logout() {
         repository.logout()
+        RetrofitClient.clearToken() // Limpiar token de Retrofit también
         resetState()
     }
 
@@ -139,4 +186,3 @@ class AuthViewModel(
         _uiState.value = AuthUiState()
     }
 }
-
