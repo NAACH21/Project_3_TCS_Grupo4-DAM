@@ -9,7 +9,7 @@ class App : Application() {
 
         // Ajusta aquí la base URL del backend local
         // Si tu backend está en http://192.168.1.8:5260 úsalo tal cual
-        RetrofitClient.setBaseUrl("http://192.168.1.7:5260")
+        RetrofitClient.setBaseUrl("http://10.95.101.79:5260")
 
         // Si necesitas inyectar un JWT conocido al arrancar (por ejemplo desde SharedPreferences):
         // val token = getSharedPreferences("auth", MODE_PRIVATE).getString("jwt", null)

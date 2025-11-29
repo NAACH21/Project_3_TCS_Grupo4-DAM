@@ -20,7 +20,7 @@ object RetrofitClient {
 
     // --- BASE URL (priorizamos la del master: 10.0.2.2 para emulador) ---
     @Volatile
-    private var baseUrl: String = "http://192.168.1.7:5260/"
+    private var baseUrl: String = "http://10.95.101.79:5260/"
 
     @Synchronized
     fun setBaseUrl(url: String) {
