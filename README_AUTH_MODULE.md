@@ -47,12 +47,12 @@ class MainActivity : ComponentActivity() {
 
 El archivo `RetrofitClient.kt` está configurado con:
 ```kotlin
-private const val BASE_URL = "http://10.0.2.2:5260/"
+private const val BASE_URL = "http://192.168.1.3:5260/"
 ```
 
 **Importante:**
 - `10.0.2.2` apunta a `localhost` del host cuando usas el **emulador de Android**
-- Si usas un **dispositivo físico**, cambia a tu IP local (ej: `http://192.168.1.10:5260/`)
+- Si usas un **dispositivo físico**, cambia a tu IP local (ej: `http://192.168.1.3:5260/`)
 
 ### 3. Endpoints del Backend
 

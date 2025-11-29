@@ -1,34 +1,64 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.matching
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.model.VacanteResponse
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import kotlinx.coroutines.launch
+import androidx.compose.material3.MenuAnchorType
 
-// ✔ Para evitar warnings por ExposedDropdownMenu
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? = null) {
-    // Resolver el ViewModel dentro del scope composable (llamada válida a viewModel())
-    val vm: MatchingViewModel = vmProvided ?: viewModel<MatchingViewModel>()
+fun MatchingScreen(navController: NavController, vm: MatchingViewModel = viewModel()) {
 
     val bg = Color(0xFFF6F7FB)
     val primaryBlue = Color(0xFF0A63C2)
+
+    val vacantes by vm.vacantes.collectAsState()
+    val resultados by vm.resultados.collectAsState()
+    val colaboradores by vm.colaboradores.collectAsState()
+    val loading by vm.loading.collectAsState()
+    val message by vm.message.collectAsState()
+
+    // Dropdown state: guardamos solo el id para persistir con rememberSaveable
+    var expanded by remember { mutableStateOf(false) }
+    var selectedVacanteId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Derivar el objeto seleccionado a partir del id y la lista de vacantes
+    val selectedVacante: VacanteResponse? = selectedVacanteId?.let { id -> vacantes.firstOrNull { it.getIdValue() == id } }
+
+    // Cuando se carguen vacantes y no exista selección, seleccionar la primera por defecto
+    LaunchedEffect(Unit) {
+        vm.loadVacantes()
+        vm.loadColaboradores()
+    }
+
+    LaunchedEffect(vacantes) {
+        if (vacantes.isNotEmpty() && selectedVacanteId == null) {
+            selectedVacanteId = vacantes.firstOrNull()?.getIdValue()
+        }
+    }
+
+    var umbral by remember { mutableStateOf(60f) }
+    var showDetailFor by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    // Snackbar para simular la creación de alertas (no-op real)
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
 
     Scaffold(
         topBar = {
@@ -46,11 +76,8 @@ fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? 
                 )
             )
         },
-        bottomBar = {
-            BottomNavBar(
-                navController = navController
-            )
-        },
+        bottomBar = { BottomNavBar(navController = navController) },
+        snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) },
         containerColor = bg
     ) { padding ->
 
@@ -62,9 +89,9 @@ fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? 
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-            //  CARD CONFIGURAR MATCHING
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+            // ==========================
+            // CARD DE CONFIGURACIÓN
+            // ==========================
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -73,174 +100,116 @@ fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? 
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
 
-                    Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
+                    Column(Modifier.padding(16.dp)) {
 
                         Text(
                             "Configurar matching",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
 
-                        // ----------------------
-                        // Seleccionar vacante
-                        // ----------------------
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Spacer(Modifier.height(12.dp))
 
-                            Text(
-                                "Seleccionar vacante *",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
+                        Text("Seleccionar vacante *", color = Color.Gray)
 
-                            var expanded by remember { mutableStateOf(false) }
-
+                        // ==========================
+                        // DROPDOWN CORRECTO
+                        // ==========================
+                        // Reemplazo por Spinner estilo Android usando ExposedDropdownMenuBox (Material3)
+                        Column {
                             ExposedDropdownMenuBox(
                                 expanded = expanded,
-                                onExpandedChange = { expanded = !expanded },
-                                modifier = Modifier.fillMaxWidth()
+                                onExpandedChange = { expanded = !expanded }
                             ) {
-                                TextField(
-                                    value = vm.selectedVacante,
+                                OutlinedTextField(
+                                    value = selectedVacante?.nombrePerfil ?: "Seleccione una vacante",
                                     onValueChange = {},
                                     readOnly = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("Seleccione una vacante") },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-                                    },
-                                    colors = ExposedDropdownMenuDefaults.textFieldColors()
+                                    label = { Text("Vacante") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                                 )
 
                                 ExposedDropdownMenu(
                                     expanded = expanded,
                                     onDismissRequest = { expanded = false }
                                 ) {
-                                    vm.vacantesMock.forEach { v ->
+                                    vacantes.forEach { item ->
                                         DropdownMenuItem(
-                                            text = { Text(v) },
+                                            text = { Text(item.nombrePerfil) },
                                             onClick = {
-                                                vm.selectedVacante = v
+                                                selectedVacanteId = item.getIdValue()
                                                 expanded = false
-                                            }
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
                                 }
                             }
                         }
 
-                        // --------------------------
-                        // Slider umbral de matching
-                        // --------------------------
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Spacer(Modifier.height(12.dp))
 
-                            Text(
-                                "Umbral de match mínimo (%)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
+                        // Mostrar información completa de la vacante seleccionada
+                        selectedVacante?.let { vac ->
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Text("Área: ${vac.area}")
+                            Text("Urgencia: ${vac.urgencia ?: "-"}")
+                            Spacer(Modifier.height(8.dp))
+
+                            Text("Skills requeridos (Críticas)", fontWeight = FontWeight.SemiBold)
+                            val criticas = vac.skillsRequeridos.filter { it.esCritico }
+                            if (criticas.isEmpty()) Text("- Ninguna") else {
+                                criticas.forEach { s ->
+                                    Text("• ${s.nombre} — Nivel: ${s.nivelDeseado}")
+                                }
+                            }
+
+                            Spacer(Modifier.height(6.dp))
+                            Text("Skills requeridos (No críticas)", fontWeight = FontWeight.SemiBold)
+                            val noCrit = vac.skillsRequeridos.filter { !it.esCritico }
+                            if (noCrit.isEmpty()) Text("- Ninguna") else {
+                                noCrit.forEach { s ->
+                                    Text("• ${s.nombre} — Nivel: ${s.nivelDeseado}")
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+                            Text("Certificaciones requeridas:")
+                            if (vac.certificacionesRequeridas.isEmpty()) Text("- Ninguna") else
+                                vac.certificacionesRequeridas.forEach { c -> Text("• $c") }
+
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // ==========================
+                        // SLIDER UMBRAL 10-100
+                        // ==========================
+                        Text("Umbral mínimo (%)", color = Color.Gray)
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            Slider(
+                                value = umbral,
+                                onValueChange = { umbral = it.coerceIn(10f, 100f) },
+                                valueRange = 10f..100f,
+                                steps = 9,
+                                modifier = Modifier.weight(1f)
                             )
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                Slider(
-                                    value = vm.umbralMatch,
-                                    onValueChange = { vm.umbralMatch = it },
-                                    valueRange = 0f..100f,
-                                    steps = 99,
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                Spacer(Modifier.width(10.dp))
-
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF0F2F6)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFF0F2F6)
+                            ) {
+                                Box(
+                                    Modifier
+                                        .width(56.dp)
+                                        .height(36.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        Modifier
-                                            .width(56.dp)
-                                            .height(36.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(vm.umbralMatch.toInt().toString())
-                                    }
-                                }
-                            }
-
-                            Text(
-                                "Por defecto: 60%. Solo se mostrarán candidatos con match igual o superior al umbral.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-            //  CARD SKILLS REQUERIDOS
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                "Skills técnicos requeridos",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-
-                            Button(
-                                onClick = { vm.agregarSkill() },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF0A63C2),
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("+ Agregar", fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-
-                        Text(
-                            "El matching se realiza únicamente en base a skills técnicos.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-
-                        // Lista de skills
-                        if (vm.listaSkills.isEmpty()) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .background(Color(0xFFF6F7FB), RoundedCornerShape(12.dp))
-                                    .padding(16.dp)
-                            ) {
-                                Text("Añade los skills técnicos requeridos para la vacante.", color = Color.Gray)
-                            }
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                vm.listaSkills.forEachIndexed { index, skill ->
-                                    SkillItem(
-                                        nombre = skill.nombre,
-                                        nivel = skill.nivel,
-                                        niveles = vm.nivelesSkill,
-                                        onNombreChange = { vm.actualizarSkillNombre(index, it) },
-                                        onNivelChange = { vm.actualizarSkillNivel(index, it) },
-                                        onRemove = { vm.eliminarSkill(index) },
-                                        availableSkills = vm.availableSkills
-                                    )
+                                    Text("${umbral.toInt()}%")
                                 }
                             }
                         }
@@ -248,15 +217,21 @@ fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? 
                 }
             }
 
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-            //   BOTÓN EJECUTAR MATCHING + MENSAJE
-            // ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+            // ==========================
+            // BOTÓN EJECUTAR MATCHING
+            // ==========================
             item {
                 Button(
                     onClick = {
-                        val resultados = vm.ejecutarMatchingMock()   // ✔ EXISTE
-
-                        println(resultados)
+                        selectedVacante?.let { vac ->
+                            scope.launch {
+                                vm.ejecutarMatching(
+                                    vacante = vac,
+                                    umbral = umbral.toInt(),
+                                    guardarProceso = true
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -270,124 +245,127 @@ fun MatchingScreen(navController: NavController, vmProvided: MatchingViewModel? 
                     Text("Ejecutar Matching", fontWeight = FontWeight.SemiBold)
                 }
 
-                vm.mensajeSistema?.let {
+                if (loading) {
                     Spacer(Modifier.height(8.dp))
-                    Text(it, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    CircularProgressIndicator()
+                }
+
+                message?.let { msg ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(msg, color = Color(0xFF8A2F2F))
                 }
             }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SkillItem(
-    nombre: String,
-    nivel: String,
-    niveles: List<String>,
-    onNombreChange: (String) -> Unit,
-    onNivelChange: (String) -> Unit,
-    onRemove: () -> Unit,
-    availableSkills: List<String> = emptyList()
-) {
+            // ==========================
+            // RESULTADOS
+            // ==========================
+            if (resultados.isEmpty()) {
 
-    Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
+                item {
+                    Column(Modifier.fillMaxWidth()) {
+                        Text("No hay candidatos para mostrar", color = Color.Gray)
 
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Spacer(Modifier.height(8.dp))
 
-            // Nombre: seleccionar desde catálogo (dropdown)
-            var expandedName by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expandedName,
-                onExpandedChange = { expandedName = !expandedName }
-            ) {
-                TextField(
-                    value = nombre,
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    placeholder = { Text("Seleccione un skill técnico") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedName) },
-                    colors = ExposedDropdownMenuDefaults.textFieldColors()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = expandedName,
-                    onDismissRequest = { expandedName = false }
-                ) {
-                    if (availableSkills.isEmpty()) {
-                        DropdownMenuItem(text = { Text("No hay skills disponibles") }, onClick = { expandedName = false })
-                    } else {
-                        availableSkills.forEach { s ->
-                            DropdownMenuItem(
-                                text = { Text(s) },
-                                onClick = {
-                                    onNombreChange(s)
-                                    expandedName = false
-                                }
+                        Button(
+                            onClick = {
+                                // Simulación: no se crea alerta en backend, solo mostramos snackbar
+                                // TODO: implementar creación de alerta en MatchingViewModel y llamar aquí
+                                scope.launch { snackbarHostState.showSnackbar("Simulación: alerta no creada (TODO)") }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
                             )
+                        ) {
+                            Text("Crear alerta de brecha de skills")
                         }
                     }
                 }
-            }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            } else {
 
-                var expanded by remember { mutableStateOf(false) }
-
-                Column(Modifier.weight(1f)) {
-
-                    Text("Nivel requerido", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
+                itemsIndexed(resultados) { _, result ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDetailFor = result.colaboradorId },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-
-                        TextField(
-                            value = nivel,
-                            onValueChange = {},
-                            readOnly = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-                            },
-                            colors = ExposedDropdownMenuDefaults.textFieldColors()
-                        )
-
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            niveles.forEach { n ->
-                                DropdownMenuItem(
-                                    text = { Text(n) },
-                                    onClick = {
-                                        onNivelChange(n)
-                                        expanded = false
-                                    }
-                                )
+                        Row(
+                            Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("${result.nombres} ${result.apellidos}", fontWeight = FontWeight.SemiBold)
+                                Text("Match: ${"%.2f".format(result.puntaje)}%")
+                            }
+                            if (result.disponibleParaMovilidad) {
+                                Text("Disponible", color = Color(0xFF0C8E32))
                             }
                         }
                     }
                 }
-
-                Spacer(Modifier.width(10.dp))
-
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFFFEBEE))
-                ) {
-                    Icon(Icons.Filled.Delete, "Eliminar", tint = Color(0xFFD32F2F))
-                }
             }
+        }
+    }
+
+    // ==========================
+    // DETALLE DEL COLABORADOR
+    // ==========================
+    showDetailFor?.let { id ->
+        val col = colaboradores.firstOrNull { it.id == id }
+
+        if (col != null) {
+            AlertDialog(
+                onDismissRequest = { showDetailFor = null },
+                confirmButton = {
+                    TextButton(onClick = { showDetailFor = null }) {
+                        Text("Cerrar")
+                    }
+                },
+                title = { Text("${col.nombres} ${col.apellidos}") },
+                text = {
+                    Column {
+                        Text("Área: ${col.area}")
+                        Text("Rol: ${col.rolLaboral}")
+                        Text("Correo: ${col.correo}")
+                        Text("Estado: ${col.estado}")
+                        Spacer(Modifier.height(8.dp))
+
+                        Text("Skills técnicas:")
+                        val tecnicas = col.skills.filter { it.tipo.equals("TECNICO", true) }
+                        if (tecnicas.isEmpty()) Text("- Ninguna") else tecnicas.forEach { s ->
+                            Text("- ${s.nombre} (Nivel ${s.nivel})")
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+                        Text("Skills blandas:")
+                        val blandas = col.skills.filter { it.tipo.equals("BLANDO", true) }
+                        if (blandas.isEmpty()) Text("- Ninguna") else blandas.forEach { s ->
+                            Text("- ${s.nombre} (Nivel ${s.nivel})")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Certificaciones:")
+                        if (col.certificaciones.isEmpty()) Text("- Ninguna") else col.certificaciones.forEach { c ->
+                            Text("- ${c.nombre} — Vencimiento: ${c.fechaVencimiento ?: "-"}")
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Disponible para movilidad: ${if (col.disponibleParaMovilidad) "Sí" else "No"}")
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Fecha registro: ${col.fechaRegistro ?: "-"}")
+                    }
+                }
+            )
         }
     }
 }
