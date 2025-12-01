@@ -53,28 +53,32 @@ import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
+import androidx.compose.material3.Surface
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluationScreen(
     navController: NavController,
-    viewModel: EvaluationViewModel = viewModel()
+    viewModel: EvaluationViewModel = viewModel(),
+    isStandalone: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Show loading, success or error dialogs
     HandleSaveStatus(uiState = uiState, viewModel = viewModel) { navController.popBackStack() }
 
     Scaffold(
         topBar = {
             EvaluationTopAppBar(
+                showBackButton = isStandalone,
                 onBackClick = { navController.popBackStack() },
                 onHistoryClick = { navController.navigate(Routes.EVALUATION_HISTORY) },
                 onBulkLoadClick = { navController.navigate(Routes.BULK_UPLOAD) }
             )
         },
         bottomBar = {
-            BottomNavBar(navController = navController)
+            if (isStandalone) {
+                BottomNavBar(navController = navController)
+            }
         }
     ) { paddingValues ->
         if (uiState.isLoading) {
@@ -106,7 +110,6 @@ fun EvaluationScreen(
                     )
                 }
 
-                // Espacio para los botones de acción
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     BottomActionButtons(
@@ -127,7 +130,7 @@ private fun HandleSaveStatus(uiState: EvaluationUiState, viewModel: EvaluationVi
         AlertDialog(
             onDismissRequest = {
                 viewModel.onSaveStatusConsumed()
-                onSaveSuccess() // Navigate back on success
+                onSaveSuccess()
             },
             title = { Text("Éxito") },
             text = { Text("La evaluación se ha guardado correctamente.") },
@@ -158,35 +161,38 @@ private fun HandleSaveStatus(uiState: EvaluationUiState, viewModel: EvaluationVi
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvaluationTopAppBar(
+    showBackButton: Boolean,
     onBackClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onBulkLoadClick: () -> Unit
 ) {
-    TopAppBar(
-        title = { Text("Evaluaciones", fontWeight = FontWeight.Bold) },
-        navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retroceder")
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        color = Color(0xFF0A63C2),
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (showBackButton) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retroceder", tint = Color.White)
+                }
             }
-        },
-        actions = {
+            Spacer(modifier = Modifier.weight(1f))
             TextButton(onClick = onHistoryClick) {
                 Text("Historial", color = Color.White)
             }
             TextButton(onClick = onBulkLoadClick) {
                 Text("Carga masiva", color = Color.White)
             }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF0A63C2), // Azul oscuro
-            titleContentColor = Color.White,
-            navigationIconContentColor = Color.White,
-            actionIconContentColor = Color.White
-        )
-    )
+        }
+    }
 }
 
 @Composable
@@ -229,7 +235,6 @@ fun EvaluationDataCard(uiState: EvaluationUiState, viewModel: EvaluationViewMode
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Fake Date Picker
             OutlinedTextField(
                 value = uiState.evaluationDate,
                 onValueChange = viewModel::onDateChange,
@@ -276,7 +281,7 @@ fun EvaluatedSkillsSection(viewModel: EvaluationViewModel) {
         )
         Button(
             onClick = viewModel::addSkill,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)) // Azul oscuro
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2))
         ) {
             Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(4.dp))
@@ -465,7 +470,7 @@ fun BottomActionButtons(onCancel: () -> Unit, onSave: () -> Unit, isSaving: Bool
             }
             Button(
                 onClick = onSave,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)), // Azul oscuro
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0A63C2)),
                 enabled = !isSaving
             ) {
                 if (isSaving) {

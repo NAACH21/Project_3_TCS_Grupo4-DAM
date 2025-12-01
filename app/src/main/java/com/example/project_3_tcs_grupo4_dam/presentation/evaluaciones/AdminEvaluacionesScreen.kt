@@ -81,10 +81,9 @@ private fun AdminEvaluacionesContent(
                     showTopBar = false,
                     showBottomBar = false
                 )
-                1 -> EvaluationsHistoryScreen(
+                1 -> EvaluationScreen(
                     navController = navController,
-                    embedded = true,
-                    onNavigateToDetail = { /* Navegación a detalle */ }
+                    isStandalone = false
                 )
             }
         }

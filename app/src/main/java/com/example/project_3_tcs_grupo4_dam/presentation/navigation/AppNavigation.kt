@@ -29,6 +29,8 @@ import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.Colaborador
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.AdminEvaluacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationDetailScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationHistoryScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
@@ -156,6 +158,7 @@ fun AppNavigation(
         }
         composable(Routes.NUEVA_EVALUACION) { EvaluationScreen(navController = navController) }
         composable(Routes.EVALUATION_SCREEN) { EvaluationScreen(navController = navController) }
+        composable(Routes.EVALUATION_HISTORY) { EvaluationHistoryScreen(navController = navController) }
         composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
         
         composable(Routes.NOTIFICACIONES) { NotificacionesScreen(navController = navController) }
@@ -235,7 +238,16 @@ fun AppNavigation(
         }
 
         // --- OTROS ---
-        composable("${Routes.EVALUATION_DETAIL}/{id}") { PlaceholderScreen("Detalle Evaluación") { navController.popBackStack() } }
+        composable(
+            route = "${Routes.EVALUATION_DETAIL}/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val evaluationId = backStackEntry.arguments?.getString("id") ?: ""
+            EvaluationDetailScreen(
+                evaluationId = evaluationId,
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(Routes.NIVEL_SKILLS) { PlaceholderScreen("Niveles de Skills") { navController.popBackStack() } }
         composable(Routes.SKILLS_ADMIN) { PlaceholderScreen("Brechas de Skills") { navController.popBackStack() } }
         composable("skills") { PlaceholderScreen("Brechas de Skills") { navController.popBackStack() } }
