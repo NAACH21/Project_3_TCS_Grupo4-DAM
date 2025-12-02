@@ -36,6 +36,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorHomeScr
 import com.example.project_3_tcs_grupo4_dam.presentation.home.HomeScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.matching.MatchingScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesDashboardScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ActualizarSkillScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ColaboradorSkillsScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudActualizacionSkillsScreen
@@ -161,10 +162,11 @@ fun AppNavigation(
         composable(Routes.EVALUATION_HISTORY) { EvaluationHistoryScreen(navController = navController) }
         composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
         
-        composable(Routes.NOTIFICACIONES) { NotificacionesScreen(navController = navController) }
-        
-        composable(Routes.ALERTAS_ADMIN) { NotificacionesScreen(navController = navController) }
-        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesScreen(navController = navController) }
+        // --- NOTIFICACIONES DASHBOARD (Usa API: api/alertas/dashboard/admin) ---
+        composable(Routes.NOTIFICACIONES) { NotificacionesDashboardScreen(navController = navController) }
+
+        composable(Routes.ALERTAS_ADMIN) { NotificacionesDashboardScreen(navController = navController) }
+        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesDashboardScreen(navController = navController) }
         composable(Routes.DASHBOARD_ADMIN) { PlaceholderScreen("Dashboard General") { navController.popBackStack() } }
         
         composable(Routes.MATCHING) { 

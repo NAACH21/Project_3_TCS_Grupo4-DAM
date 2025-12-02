@@ -54,20 +54,25 @@ fun NewVacantScreen(
     val certificacionesRequeridas = remember { mutableStateListOf<String>() }
 
     val saveStatus by newVacantViewModel.saveStatus.collectAsState()
+    val anuncioStatus by newVacantViewModel.anuncioStatus.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    // NUEVO: Estado para mostrar diálogo de anuncio
+    var showAnuncioDialog by remember { mutableStateOf(false) }
+    var vacanteIdCreada by remember { mutableStateOf("") }
+
+    // NUEVO: Manejar estado de guardado con captura de ID
     LaunchedEffect(saveStatus) {
         when (val status = saveStatus) {
             is SaveResult.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Vacante guardada con éxito",
-                        duration = SnackbarDuration.Short
-                    )
-                }
-                navController.popBackStack()
+                // Capturar el ID de la vacante creada
+                vacanteIdCreada = status.vacanteId
+
+                // Mostrar diálogo preguntando si desea notificar
+                showAnuncioDialog = true
+
                 newVacantViewModel.resetSaveStatus()
             }
             is SaveResult.Error -> {
@@ -78,6 +83,34 @@ fun NewVacantScreen(
                     )
                 }
                 newVacantViewModel.resetSaveStatus()
+            }
+            else -> {}
+        }
+    }
+
+    // NUEVO: Manejar estado de anuncio
+    LaunchedEffect(anuncioStatus) {
+        when (val status = anuncioStatus) {
+            is AnuncioResult.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Notificación enviada exitosamente",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                // Cerrar diálogo y volver
+                showAnuncioDialog = false
+                navController.popBackStack()
+                newVacantViewModel.resetAnuncioStatus()
+            }
+            is AnuncioResult.Error -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = status.message,
+                        duration = SnackbarDuration.Long
+                    )
+                }
+                newVacantViewModel.resetAnuncioStatus()
             }
             else -> {}
         }
@@ -296,7 +329,88 @@ fun NewVacantScreen(
             }
             Spacer(Modifier.height(16.dp))
         }
+
+        // NUEVO: Diálogo de confirmación de anuncio
+        if (showAnuncioDialog) {
+            AnuncioVacanteDialog(
+                onConfirm = {
+                    // Enviar notificación inmediatamente
+                    newVacantViewModel.notificarAhora(vacanteIdCreada)
+                },
+                onDismiss = {
+                    // Solo cerrar y volver sin enviar notificación
+                    showAnuncioDialog = false
+                    navController.popBackStack()
+                },
+                isLoading = anuncioStatus == AnuncioResult.Loading
+            )
+        }
     }
+}
+
+/**
+ * NUEVO: Diálogo para preguntar si desea notificar la vacante
+ */
+@Composable
+fun AnuncioVacanteDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    isLoading: Boolean = false
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = Color(0xFF1959B8)
+                )
+                Text(
+                    text = "¿Notificar Vacante?",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "La vacante ha sido creada exitosamente. ¿Deseas enviar una notificación por correo a los colaboradores elegibles ahora?",
+                fontSize = 14.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1959B8)
+                )
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Sí, notificar ahora")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("No, notificar después", color = Color.Gray)
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 

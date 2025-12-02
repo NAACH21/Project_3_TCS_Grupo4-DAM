@@ -58,7 +58,10 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-extended")
 
-
+    // NUEVO: Dependencias para XML Layouts
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.3")

@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.local.LocalAlertManager
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.AlertaDto
+import com.example.project_3_tcs_grupo4_dam.data.model.AlertaDashboard
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.NotificacionesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -19,15 +21,23 @@ data class AlertaUiState(
 
 class NotificacionesViewModel(
     private val sessionManager: SessionManager,
+    @Suppress("StaticFieldLeak") // El contexto es Application context, seguro de usar
     private val context: android.content.Context // Necesitamos el contexto para LocalAlertManager
 ) : ViewModel() {
 
     private val apiService = RetrofitClient.alertasApi
     private val localManager = LocalAlertManager(context) // Manager para persistencia local
 
+    // ==================== NUEVO: Dashboard Repository ====================
+    private val notificacionesRepository = NotificacionesRepository(apiService)
+
     // Estado con la lista enriquecida (DTO + Visto)
     private val _alertasUi = MutableStateFlow<List<AlertaUiState>>(emptyList())
     val alertasUi = _alertasUi.asStateFlow()
+
+    // ==================== NUEVO: Dashboard State ====================
+    private val _alertasDashboard = MutableStateFlow<List<AlertaDashboard>>(emptyList())
+    val alertasDashboard = _alertasDashboard.asStateFlow()
 
     // Badge real calculado
     private val _unreadCount = MutableStateFlow(0)
@@ -35,6 +45,10 @@ class NotificacionesViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+    // ==================== NUEVO: Error State ====================
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
 
     init {
         cargarAlertas()
@@ -54,6 +68,38 @@ class NotificacionesViewModel(
         } catch (e: Exception) {
             Log.e("NotificacionesVM", "Error extrayendo ID: $valor", e)
             null
+        }
+    }
+
+    // ==================== NUEVO: Cargar Dashboard de Notificaciones ====================
+    /**
+     * Carga las notificaciones del dashboard según el rol del usuario
+     * @param esAdmin Si es true, carga dashboard de admin, si false carga del colaborador
+     * @param userId ID del colaborador (obligatorio si esAdmin = false)
+     */
+    fun cargarNotificaciones(esAdmin: Boolean, userId: String? = null) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            try {
+                val result = notificacionesRepository.obtenerDashboard(esAdmin, userId)
+
+                result.onSuccess { alertas ->
+                    _alertasDashboard.value = alertas
+                    // Actualizar contador de no leídas (activas)
+                    _unreadCount.value = alertas.count { it.activa }
+                    Log.d("NotificacionesVM", "Dashboard cargado: ${alertas.size} notificaciones")
+                }.onFailure { error ->
+                    _errorMessage.value = error.message ?: "Error desconocido"
+                    Log.e("NotificacionesVM", "Error cargando dashboard", error)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error de conexión: ${e.message}"
+                Log.e("NotificacionesVM", "Excepción en cargarNotificaciones", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -97,7 +143,7 @@ class NotificacionesViewModel(
                     }
                 }
 
-                // 4. CRUCE DE DATOS: API vs LOCAL (Nuevo)
+                // 4. CRUCE DE DATOS: API vs LOCAL
                 val readIds = localManager.getReadIds()
                 
                 val uiList = alertasFiltradas.map { alerta ->

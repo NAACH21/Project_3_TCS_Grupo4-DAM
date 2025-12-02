@@ -29,6 +29,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.VacantesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesDashboardScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.SkillsScreen
 
 @Composable
@@ -107,8 +108,9 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
             SkillsScreen(navController = navController)
         }
 
+        // --- NOTIFICACIONES DASHBOARD (Usa API: api/alertas/dashboard/admin) ---
         composable(Routes.NOTIFICACIONES) {
-            NotificacionesScreen(navController = navController)
+            NotificacionesDashboardScreen(navController = navController)
         }
 
         // RUTAS DE EVALUACIONES
