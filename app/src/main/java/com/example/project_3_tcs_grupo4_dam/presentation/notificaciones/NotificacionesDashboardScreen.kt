@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,6 +53,7 @@ fun NotificacionesDashboardScreen(navController: NavController) {
     // Instanciar ViewModel
     val viewModel: NotificacionesViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return NotificacionesViewModel(sessionManager, context) as T
             }
@@ -140,7 +141,13 @@ fun NotificacionesDashboardScreen(navController: NavController) {
                         items(alertasDashboard) { alerta ->
                             AlertaDashboardCard(
                                 alerta = alerta,
-                                onClick = { selectedAlerta = alerta }
+                                onClick = {
+                                    selectedAlerta = alerta
+                                    // Marcar como leída cuando se abre el detalle
+                                    if (alerta.activa) {
+                                        viewModel.marcarDashboardComoLeida(alerta.idReferencia)
+                                    }
+                                }
                             )
                         }
                     }
@@ -175,7 +182,7 @@ fun AlertaDashboardCard(
 
     // Obtener icono según tipo
     val (icono, iconColor) = when (alerta.tipoOrigen) {
-        TipoOrigenAlerta.SKILL_GAP -> Icons.Rounded.TrendingUp to Color(0xFFEF6C00)
+        TipoOrigenAlerta.SKILL_GAP -> Icons.AutoMirrored.Rounded.TrendingUp to Color(0xFFEF6C00)
         TipoOrigenAlerta.CERTIFICACION -> Icons.Rounded.School to Color(0xFF1976D2)
         TipoOrigenAlerta.VACANTE_DISPONIBLE -> Icons.Rounded.Work to Color(0xFF388E3C)
         TipoOrigenAlerta.GENERICA -> Icons.Rounded.Notifications to Color(0xFF757575)
@@ -345,7 +352,7 @@ fun AlertaDetalleDialog(
             Column {
                 Text(text = alerta.mensaje)
                 Spacer(modifier = Modifier.height(8.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Fecha: ${alerta.fecha}",
@@ -366,4 +373,3 @@ fun AlertaDetalleDialog(
         }
     )
 }
-

@@ -63,6 +63,13 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // CRÍTICO: Fragment y AppCompat para XML Views
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
+    // CRÍTICO: LiveData para observar estados en Fragment
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.3")
     // Permite usar el `viewModel()` composable function
@@ -92,4 +99,6 @@ dependencies {
 
     // Activity KTX extra (no es duplicado)
     implementation("androidx.activity:activity-ktx:1.9.0")
+    // MPAndroidChart para gráficos profesionales
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

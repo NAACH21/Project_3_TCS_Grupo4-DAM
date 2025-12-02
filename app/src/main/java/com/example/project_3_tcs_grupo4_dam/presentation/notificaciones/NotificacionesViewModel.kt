@@ -50,6 +50,10 @@ class NotificacionesViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
+    // ==================== NUEVO: Success Message State ====================
+    private val _successMessage = MutableStateFlow<String?>(null)
+    val successMessage = _successMessage.asStateFlow()
+
     init {
         cargarAlertas()
     }
@@ -89,9 +93,9 @@ class NotificacionesViewModel(
                     _alertasDashboard.value = alertas
                     // Actualizar contador de no leídas (activas)
                     _unreadCount.value = alertas.count { it.activa }
-                    Log.d("NotificacionesVM", "Dashboard cargado: ${alertas.size} notificaciones")
+                    Log.d("NotificacionesVM", "Dashboard cargado: ${alertas.size} notificaciones, ${_unreadCount.value} no leídas")
                 }.onFailure { error ->
-                    _errorMessage.value = error.message ?: "Error desconocido"
+                    _errorMessage.value = error.message ?: "Error desconocido al cargar notificaciones"
                     Log.e("NotificacionesVM", "Error cargando dashboard", error)
                 }
             } catch (e: Exception) {
@@ -99,6 +103,32 @@ class NotificacionesViewModel(
                 Log.e("NotificacionesVM", "Excepción en cargarNotificaciones", e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Marca una notificación del dashboard como leída (actualiza solo estado local)
+     * En un sistema real, esto debería sincronizar con el backend
+     */
+    fun marcarDashboardComoLeida(idReferencia: String) {
+        viewModelScope.launch {
+            try {
+                // Actualizar el estado local
+                val updatedList = _alertasDashboard.value.map { alerta ->
+                    if (alerta.idReferencia == idReferencia) {
+                        alerta.copy(activa = false)
+                    } else {
+                        alerta
+                    }
+                }
+
+                _alertasDashboard.value = updatedList
+                _unreadCount.value = updatedList.count { it.activa }
+
+                Log.d("NotificacionesVM", "Notificación $idReferencia marcada como leída")
+            } catch (e: Exception) {
+                Log.e("NotificacionesVM", "Error marcando notificación como leída", e)
             }
         }
     }
@@ -186,5 +216,19 @@ class NotificacionesViewModel(
         
         _alertasUi.value = currentList
         _unreadCount.value = currentList.count { !it.isVisto }
+    }
+
+    /**
+     * Limpia el mensaje de error
+     */
+    fun clearErrorMessage() {
+        _errorMessage.value = null
+    }
+
+    /**
+     * Limpia el mensaje de éxito
+     */
+    fun clearSuccessMessage() {
+        _successMessage.value = null
     }
 }

@@ -27,6 +27,7 @@ import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.dashboard.DashboardAdminScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.AdminEvaluacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.EvaluationDetailScreen
@@ -167,8 +168,8 @@ fun AppNavigation(
 
         composable(Routes.ALERTAS_ADMIN) { NotificacionesDashboardScreen(navController = navController) }
         composable(Routes.ALERTAS_COLABORADOR) { NotificacionesDashboardScreen(navController = navController) }
-        composable(Routes.DASHBOARD_ADMIN) { PlaceholderScreen("Dashboard General") { navController.popBackStack() } }
-        
+        composable(Routes.DASHBOARD_ADMIN) { DashboardAdminScreen(navController = navController) }
+
         composable(Routes.MATCHING) { 
             MatchingScreen(navController = navController) 
         }

@@ -134,4 +134,9 @@ object RetrofitClient {
     }
     val procesosMatchingApi: ProcesosMatchingApiService
         get() = retrofit.create(ProcesosMatchingApiService::class.java)
+
+    // En data/remote/RetrofitClient.kt agrega:
+    val dashboardApiService: DashboardApiService by lazy {
+        retrofit.create(DashboardApiService::class.java)
+    }
 }
