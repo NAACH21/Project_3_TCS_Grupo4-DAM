@@ -1,12 +1,14 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.solicitud
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
-import com.example.project_3_tcs_grupo4_dam.data.model.DatosEntrevistaPropuestaCreateDto
-import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudCreateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudUpdateEstadoDto
+import com.example.project_3_tcs_grupo4_dam.data.repository.CertificadosRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,11 +16,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel exclusivo para el flujo de Solicitudes de Entrevista del ADMINISTRADOR
- * Maneja SOLO solicitudes de tipo ENTREVISTA_DESEMPENO
+ * ViewModel exclusivo para Solicitudes de Skills (ACTUALIZACION_SKILLS) del ADMINISTRADOR
+ * Maneja actualización de skills existentes y creación de skills nuevas
+ * Incluye gestión de certificaciones asociadas
  */
 class SolicitudAdminViewModel(
     private val solicitudesRepository: SolicitudesRepository,
+    private val colaboradorRepository: ColaboradorRepository,
+    private val certificadosRepository: CertificadosRepository,
     sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -44,10 +49,6 @@ class SolicitudAdminViewModel(
     private val _busquedaColaborador = MutableStateFlow("")
     val busquedaColaborador: StateFlow<String> = _busquedaColaborador.asStateFlow()
 
-    // Diálogo de nueva entrevista
-    private val _isDialogNuevaEntrevistaOpen = MutableStateFlow(false)
-    val isDialogNuevaEntrevistaOpen: StateFlow<Boolean> = _isDialogNuevaEntrevistaOpen.asStateFlow()
-
     // Solicitud seleccionada para detalle/edición
     private val _solicitudSeleccionada = MutableStateFlow<SolicitudReadDto?>(null)
     val solicitudSeleccionada: StateFlow<SolicitudReadDto?> = _solicitudSeleccionada.asStateFlow()
@@ -60,18 +61,18 @@ class SolicitudAdminViewModel(
     val showCambioEstadoDialog: StateFlow<Boolean> = _showCambioEstadoDialog.asStateFlow()
 
     init {
-        android.util.Log.d("SolicitudAdminVM", "=== INICIALIZACIÓN ===")
-        android.util.Log.d("SolicitudAdminVM", "Rol usuario: $rolUsuario")
-        android.util.Log.d("SolicitudAdminVM", "UsuarioId: $usuarioId")
+        Log.d(TAG, "=== INICIALIZACIÓN ===")
+        Log.d(TAG, "Rol usuario: $rolUsuario")
+        Log.d(TAG, "UsuarioId: $usuarioId")
 
         if (!esRolAdministrador()) {
-            android.util.Log.e("SolicitudAdminVM", "Error: Usuario no es administrador. Rol: $rolUsuario")
+            Log.e(TAG, "Error: Usuario no es administrador. Rol: $rolUsuario")
             _errorMessage.value = "Esta pantalla es solo para administradores"
         } else if (usuarioId.isBlank()) {
-            android.util.Log.e("SolicitudAdminVM", "ERROR CRÍTICO: usuarioId está vacío")
+            Log.e(TAG, "ERROR CRÍTICO: usuarioId está vacío")
             _errorMessage.value = "Error de sesión: No se pudo obtener el ID de usuario"
         } else {
-            android.util.Log.d("SolicitudAdminVM", "✅ Inicialización correcta, cargando datos...")
+            Log.d(TAG, "✅ Inicialización correcta, cargando datos...")
             cargarSolicitudes()
         }
     }
@@ -84,11 +85,11 @@ class SolicitudAdminViewModel(
     }
 
     /**
-     * Carga todas las solicitudes de tipo ENTREVISTA_DESEMPENO
+     * Carga todas las solicitudes de tipo ACTUALIZACION_SKILLS
      */
     fun cargarSolicitudes() {
         if (!esRolAdministrador()) {
-            android.util.Log.w("SolicitudAdminVM", "Intento de carga con rol no válido: $rolUsuario")
+            Log.w(TAG, "Intento de carga con rol no válido: $rolUsuario")
             return
         }
 
@@ -96,28 +97,28 @@ class SolicitudAdminViewModel(
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                android.util.Log.d("SolicitudAdminVM", "=== CARGANDO SOLICITUDES DE ENTREVISTA ===")
+                Log.d(TAG, "=== CARGANDO SOLICITUDES DE SKILLS ===")
 
                 // Obtener todas las solicitudes
                 val todasLasSolicitudes = solicitudesRepository.getSolicitudes()
 
-                android.util.Log.d("SolicitudAdminVM", "Solicitudes totales recibidas: ${todasLasSolicitudes.size}")
+                Log.d(TAG, "Solicitudes totales recibidas: ${todasLasSolicitudes.size}")
 
-                // Filtrar SOLO entrevistas de desempeño
-                val solicitudesEntrevista = todasLasSolicitudes.filter {
-                    it.tipoSolicitudGeneral == "ENTREVISTA_DESEMPENO"
+                // Filtrar SOLO ACTUALIZACION_SKILLS
+                val solicitudesSkills = todasLasSolicitudes.filter {
+                    it.tipoSolicitudGeneral == "ACTUALIZACION_SKILLS"
                 }
 
-                android.util.Log.d("SolicitudAdminVM", "Solicitudes de entrevista filtradas: ${solicitudesEntrevista.size}")
+                Log.d(TAG, "Solicitudes de skills filtradas: ${solicitudesSkills.size}")
 
                 // Ordenar por fecha de creación descendente (más reciente primero)
-                _todasSolicitudes.value = solicitudesEntrevista.sortedByDescending { it.fechaCreacion }
+                _todasSolicitudes.value = solicitudesSkills.sortedByDescending { it.fechaCreacion }
 
                 aplicarFiltros()
 
-                android.util.Log.d("SolicitudAdminVM", "=== CARGA COMPLETADA EXITOSAMENTE ===")
+                Log.d(TAG, "=== CARGA COMPLETADA EXITOSAMENTE ===")
             } catch (e: Exception) {
-                android.util.Log.e("SolicitudAdminVM", "=== ERROR AL CARGAR SOLICITUDES ===", e)
+                Log.e(TAG, "=== ERROR AL CARGAR SOLICITUDES ===", e)
                 _errorMessage.value = "Error al cargar solicitudes: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -154,90 +155,14 @@ class SolicitudAdminViewModel(
     }
 
     fun aplicarBusquedaColaborador(busqueda: String) {
-        android.util.Log.d("SolicitudAdminVM", "Aplicando búsqueda: $busqueda")
+        Log.d(TAG, "Aplicando búsqueda: $busqueda")
         _busquedaColaborador.value = busqueda
         aplicarFiltros()
     }
 
     /**
-     * Crea una nueva solicitud de entrevista de desempeño
-     */
-    fun crearSolicitudEntrevista(
-        colaboradorId: String,
-        motivo: String,
-        periodo: String,
-        fechaSugerida: String?
-    ) {
-        if (!esRolAdministrador()) {
-            _errorMessage.value = "Solo los administradores pueden crear entrevistas"
-            return
-        }
-
-        if (usuarioId.isBlank()) {
-            android.util.Log.e("SolicitudAdminVM", "ERROR CRÍTICO: usuarioId está vacío")
-            _errorMessage.value = "Error: No se pudo obtener el ID de usuario"
-            return
-        }
-
-        if (colaboradorId.isBlank()) {
-            _errorMessage.value = "Debe seleccionar un colaborador"
-            return
-        }
-
-        if (motivo.isBlank() || periodo.isBlank()) {
-            _errorMessage.value = "Motivo y periodo son obligatorios"
-            return
-        }
-
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
-            try {
-                android.util.Log.d("SolicitudAdminVM", "=== CREANDO SOLICITUD DE ENTREVISTA ===")
-                android.util.Log.d("SolicitudAdminVM", "ColaboradorId: $colaboradorId")
-                android.util.Log.d("SolicitudAdminVM", "Motivo: $motivo")
-                android.util.Log.d("SolicitudAdminVM", "Periodo: $periodo")
-                android.util.Log.d("SolicitudAdminVM", "Fecha sugerida: $fechaSugerida")
-                android.util.Log.d("SolicitudAdminVM", "CreadoPorUsuarioId: $usuarioId")
-
-                val datosEntrevista = DatosEntrevistaPropuestaCreateDto(
-                    motivo = motivo,
-                    periodo = periodo,
-                    fechaSugerida = fechaSugerida,
-                    propuestoPorUsuarioId = usuarioId
-                )
-
-                val solicitud = SolicitudCreateDto(
-                    tipoSolicitudGeneral = "ENTREVISTA_DESEMPENO",
-                    tipoSolicitud = "PERIODICA",
-                    colaboradorId = colaboradorId,
-                    certificacionIdAnterior = null,
-                    certificacionPropuesta = null,
-                    datosEntrevistaPropuesta = datosEntrevista,
-                    cambiosSkillsPropuestos = null,
-                    creadoPorUsuarioId = usuarioId
-                )
-
-                android.util.Log.d("SolicitudAdminVM", "DTO a enviar: $solicitud")
-
-                val solicitudCreada = solicitudesRepository.createSolicitud(solicitud)
-
-                android.util.Log.d("SolicitudAdminVM", "✅ Solicitud de entrevista creada exitosamente. ID: ${solicitudCreada.id}")
-
-                cerrarNuevaEntrevista()
-                cargarSolicitudes() // Recargar lista
-            } catch (e: Exception) {
-                android.util.Log.e("SolicitudAdminVM", "❌ Error al crear solicitud de entrevista", e)
-                _errorMessage.value = "Error al crear solicitud: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /**
-     * Actualiza el estado de una solicitud
+     * Actualiza el estado de una solicitud de skill
+     * Si el estado es APROBADA, actualiza el colaborador y registra la certificación
      */
     fun actualizarEstadoSolicitud(
         solicitudId: String,
@@ -250,8 +175,15 @@ class SolicitudAdminViewModel(
         }
 
         if (usuarioId.isBlank()) {
-            android.util.Log.e("SolicitudAdminVM", "ERROR CRÍTICO: usuarioId está vacío")
+            Log.e(TAG, "ERROR CRÍTICO: usuarioId está vacío")
             _errorMessage.value = "Error: No se pudo obtener el ID de usuario"
+            return
+        }
+
+        // Validación: estados válidos
+        val estadosValidos = listOf("PENDIENTE", "EN_REVISION", "OBSERVADO", "APROBADA", "RECHAZADA")
+        if (nuevoEstado !in estadosValidos) {
+            _errorMessage.value = "Estado no válido: $nuevoEstado"
             return
         }
 
@@ -266,12 +198,13 @@ class SolicitudAdminViewModel(
             _errorMessage.value = null
 
             try {
-                android.util.Log.d("SolicitudAdminVM", "=== ACTUALIZANDO ESTADO DE SOLICITUD ===")
-                android.util.Log.d("SolicitudAdminVM", "SolicitudId: $solicitudId")
-                android.util.Log.d("SolicitudAdminVM", "Nuevo estado: $nuevoEstado")
-                android.util.Log.d("SolicitudAdminVM", "Observación: $observacion")
-                android.util.Log.d("SolicitudAdminVM", "RevisadoPorUsuarioId: $usuarioId")
+                Log.d(TAG, "=== ACTUALIZANDO ESTADO DE SOLICITUD ===")
+                Log.d(TAG, "SolicitudId: $solicitudId")
+                Log.d(TAG, "Nuevo estado: $nuevoEstado")
+                Log.d(TAG, "Observación: $observacion")
+                Log.d(TAG, "RevisadoPorUsuarioId: $usuarioId")
 
+                // 1. Actualizar estado en backend
                 val request = SolicitudUpdateEstadoDto(
                     estadoSolicitud = nuevoEstado,
                     observacionAdmin = observacion,
@@ -280,9 +213,14 @@ class SolicitudAdminViewModel(
 
                 val solicitudActualizada = solicitudesRepository.updateEstadoSolicitud(solicitudId, request)
 
-                android.util.Log.d("SolicitudAdminVM", "✅ Estado actualizado exitosamente. Nuevo estado: ${solicitudActualizada.estadoSolicitud}")
+                Log.d(TAG, "✅ Estado actualizado exitosamente. Nuevo estado: ${solicitudActualizada.estadoSolicitud}")
 
-                // Actualizar la lista local
+                // 2. Si el estado es APROBADA y es de tipo ACTUALIZACION_SKILLS, procesar
+                if (nuevoEstado == "APROBADA" && solicitudActualizada.tipoSolicitudGeneral == "ACTUALIZACION_SKILLS") {
+                    procesarAprobacionSkill(solicitudActualizada)
+                }
+
+                // 3. Actualizar la lista local
                 _todasSolicitudes.value = _todasSolicitudes.value.map { solicitud ->
                     if (solicitud.id == solicitudId) {
                         solicitudActualizada
@@ -294,10 +232,10 @@ class SolicitudAdminViewModel(
                 aplicarFiltros()
                 cerrarCambioEstadoDialog()
 
-                android.util.Log.d("SolicitudAdminVM", "Lista actualizada")
+                Log.d(TAG, "✅ Proceso completado exitosamente")
 
             } catch (e: Exception) {
-                android.util.Log.e("SolicitudAdminVM", "❌ Error al actualizar estado", e)
+                Log.e(TAG, "❌ Error al actualizar estado", e)
                 _errorMessage.value = "Error al actualizar estado: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -305,16 +243,263 @@ class SolicitudAdminViewModel(
         }
     }
 
-    fun abrirNuevaEntrevista() {
-        _isDialogNuevaEntrevistaOpen.value = true
+    /**
+     * Procesa la aprobación de una solicitud de skill:
+     * 1. Actualiza/Agrega la skill al colaborador
+     * 2. Registra la certificación
+     *
+     * TODO: En el futuro, mover esta lógica a un caso de uso en la capa domain
+     */
+    private suspend fun procesarAprobacionSkill(solicitud: SolicitudReadDto) {
+        try {
+            Log.d(TAG, "=== PROCESANDO APROBACIÓN DE SKILL ===")
+
+            // Validar que existe cambio de skill
+            val cambio = solicitud.cambiosSkillsPropuestos?.firstOrNull()
+            if (cambio == null) {
+                Log.e(TAG, "❌ No hay cambio de skill en la solicitud")
+                throw Exception("Solicitud sin cambio de skill")
+            }
+
+            Log.d(TAG, "Cambio de skill: ${cambio.nombre}, tipo: ${cambio.tipo}")
+            Log.d(TAG, "Nivel: ${cambio.nivelActual} → ${cambio.nivelPropuesto}")
+            Log.d(TAG, "Crítico: ${cambio.esCriticoActual} → ${cambio.esCriticoPropuesto}")
+
+            val colaboradorId = solicitud.colaboradorId
+
+            // Actualizar o agregar skill
+            if (cambio.nivelActual != null) {
+                // Skill existente: actualizar
+                Log.d(TAG, "Actualizando skill existente...")
+                actualizarSkillColaborador(
+                    colaboradorId = colaboradorId,
+                    nombreSkill = cambio.nombre,
+                    tipoSkill = cambio.tipo,
+                    nuevoNivel = cambio.nivelPropuesto,
+                    esCritico = cambio.esCriticoPropuesto
+                )
+            } else {
+                // Skill nueva: agregar
+                Log.d(TAG, "Agregando skill nueva...")
+                agregarSkillColaborador(
+                    colaboradorId = colaboradorId,
+                    nombreSkill = cambio.nombre,
+                    tipoSkill = cambio.tipo,
+                    nivel = cambio.nivelPropuesto,
+                    esCritico = cambio.esCriticoPropuesto
+                )
+            }
+
+            // Registrar certificación
+            val cert = solicitud.certificacionPropuesta
+            if (cert != null && !cert.archivoPdfUrl.isNullOrBlank()) {
+                Log.d(TAG, "Registrando certificación: ${cert.nombre}")
+                registrarCertificacion(
+                    colaboradorId = colaboradorId,
+                    cert = cert
+                )
+            } else {
+                Log.w(TAG, "⚠️ No hay certificación para registrar")
+            }
+
+            Log.d(TAG, "✅ Skill y certificación procesadas exitosamente")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error al procesar aprobación de skill", e)
+            // No lanzar la excepción para no revertir el cambio de estado
+            // pero informar al usuario
+            _errorMessage.value = "Solicitud aprobada, pero error al actualizar colaborador: ${e.message}"
+        }
     }
 
-    fun cerrarNuevaEntrevista() {
-        _isDialogNuevaEntrevistaOpen.value = false
+    /**
+     * Actualiza una skill existente del colaborador
+     * TODO: Implementar método updateSkill en ColaboradorRepository si no existe
+     */
+    private suspend fun actualizarSkillColaborador(
+        colaboradorId: String,
+        nombreSkill: String,
+        tipoSkill: String,
+        nuevoNivel: Int,
+        esCritico: Boolean
+    ) {
+        try {
+            // Obtener colaborador actual
+            val colaborador = colaboradorRepository.getColaboradorById(colaboradorId)
+
+            // Actualizar skills
+            val skillsActualizadas = colaborador.skills.map { skill ->
+                if (skill.nombre.equals(nombreSkill, ignoreCase = true) && skill.tipo.equals(tipoSkill, ignoreCase = true)) {
+                    // Crear DTO actualizado
+                    ColaboradorDtos.SkillCreateDto(
+                        nombre = skill.nombre,
+                        tipo = skill.tipo,
+                        nivel = nuevoNivel,
+                        esCritico = esCritico
+                    )
+                } else {
+                    // Mantener skill sin cambios
+                    ColaboradorDtos.SkillCreateDto(
+                        nombre = skill.nombre,
+                        tipo = skill.tipo,
+                        nivel = skill.nivel,
+                        esCritico = skill.esCritico
+                    )
+                }
+            }
+
+            // Actualizar colaborador con PUT
+            val updateDto = ColaboradorDtos.ColaboradorUpdateDto(
+                nombres = colaborador.nombres,
+                apellidos = colaborador.apellidos,
+                correo = colaborador.correo,
+                area = colaborador.area,
+                rolLaboral = colaborador.rolLaboral,
+                estado = colaborador.estado,
+                disponibleParaMovilidad = colaborador.disponibleParaMovilidad,
+                skills = skillsActualizadas,
+                certificaciones = colaborador.certificaciones.map {
+                    ColaboradorDtos.CertificacionCreateDto(
+                        nombre = it.nombre,
+                        institucion = it.institucion,
+                        fechaObtencion = it.fechaObtencion,
+                        fechaVencimiento = it.fechaVencimiento,
+                        archivoPdfUrl = it.archivoPdfUrl
+                    )
+                }
+            )
+
+            colaboradorRepository.updateColaborador(colaboradorId, updateDto)
+            Log.d(TAG, "✅ Skill actualizada en colaborador")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error al actualizar skill del colaborador", e)
+            throw e
+        }
+    }
+
+    /**
+     * Agrega una skill nueva al colaborador
+     */
+    private suspend fun agregarSkillColaborador(
+        colaboradorId: String,
+        nombreSkill: String,
+        tipoSkill: String,
+        nivel: Int,
+        esCritico: Boolean
+    ) {
+        try {
+            // Obtener colaborador actual
+            val colaborador = colaboradorRepository.getColaboradorById(colaboradorId)
+
+            // Agregar nueva skill
+            val skillsActualizadas = colaborador.skills.map {
+                ColaboradorDtos.SkillCreateDto(
+                    nombre = it.nombre,
+                    tipo = it.tipo,
+                    nivel = it.nivel,
+                    esCritico = it.esCritico
+                )
+            }.toMutableList().apply {
+                add(ColaboradorDtos.SkillCreateDto(
+                    nombre = nombreSkill,
+                    tipo = tipoSkill,
+                    nivel = nivel,
+                    esCritico = esCritico
+                ))
+            }
+
+            // Actualizar colaborador con PUT
+            val updateDto = ColaboradorDtos.ColaboradorUpdateDto(
+                nombres = colaborador.nombres,
+                apellidos = colaborador.apellidos,
+                correo = colaborador.correo,
+                area = colaborador.area,
+                rolLaboral = colaborador.rolLaboral,
+                estado = colaborador.estado,
+                disponibleParaMovilidad = colaborador.disponibleParaMovilidad,
+                skills = skillsActualizadas,
+                certificaciones = colaborador.certificaciones.map {
+                    ColaboradorDtos.CertificacionCreateDto(
+                        nombre = it.nombre,
+                        institucion = it.institucion,
+                        fechaObtencion = it.fechaObtencion,
+                        fechaVencimiento = it.fechaVencimiento,
+                        archivoPdfUrl = it.archivoPdfUrl
+                    )
+                }
+            )
+
+            colaboradorRepository.updateColaborador(colaboradorId, updateDto)
+            Log.d(TAG, "✅ Skill nueva agregada al colaborador")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error al agregar skill nueva al colaborador", e)
+            throw e
+        }
+    }
+
+    /**
+     * Registra la certificación en el sistema usando el PDF ya subido
+     */
+    private suspend fun registrarCertificacion(
+        colaboradorId: String,
+        cert: com.example.project_3_tcs_grupo4_dam.data.model.CertificacionPropuestaReadDto
+    ) {
+        try {
+            // Obtener colaborador actual
+            val colaborador = colaboradorRepository.getColaboradorById(colaboradorId)
+
+            // Agregar nueva certificación
+            val certificacionesActualizadas = colaborador.certificaciones.map {
+                ColaboradorDtos.CertificacionCreateDto(
+                    nombre = it.nombre,
+                    institucion = it.institucion,
+                    fechaObtencion = it.fechaObtencion,
+                    fechaVencimiento = it.fechaVencimiento,
+                    archivoPdfUrl = it.archivoPdfUrl
+                )
+            }.toMutableList().apply {
+                add(ColaboradorDtos.CertificacionCreateDto(
+                    nombre = cert.nombre,
+                    institucion = cert.institucion,
+                    fechaObtencion = cert.fechaObtencion,
+                    fechaVencimiento = cert.fechaVencimiento,
+                    archivoPdfUrl = cert.archivoPdfUrl
+                ))
+            }
+
+            // Actualizar colaborador con PUT
+            val updateDto = ColaboradorDtos.ColaboradorUpdateDto(
+                nombres = colaborador.nombres,
+                apellidos = colaborador.apellidos,
+                correo = colaborador.correo,
+                area = colaborador.area,
+                rolLaboral = colaborador.rolLaboral,
+                estado = colaborador.estado,
+                disponibleParaMovilidad = colaborador.disponibleParaMovilidad,
+                skills = colaborador.skills.map {
+                    ColaboradorDtos.SkillCreateDto(
+                        nombre = it.nombre,
+                        tipo = it.tipo,
+                        nivel = it.nivel,
+                        esCritico = it.esCritico
+                    )
+                },
+                certificaciones = certificacionesActualizadas
+            )
+
+            colaboradorRepository.updateColaborador(colaboradorId, updateDto)
+            Log.d(TAG, "✅ Certificación registrada en colaborador")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error al registrar certificación", e)
+            throw e
+        }
     }
 
     fun mostrarDetalleSolicitud(solicitud: SolicitudReadDto) {
-        android.util.Log.d("SolicitudAdminVM", "Mostrando detalle de solicitud: ${solicitud.id}")
+        Log.d(TAG, "Mostrando detalle de solicitud: ${solicitud.id}")
         _solicitudSeleccionada.value = solicitud
         _showDetalleDialog.value = true
     }
@@ -325,7 +510,7 @@ class SolicitudAdminViewModel(
     }
 
     fun abrirCambioEstadoDialog(solicitud: SolicitudReadDto) {
-        android.util.Log.d("SolicitudAdminVM", "Abriendo diálogo de cambio de estado para: ${solicitud.id}")
+        Log.d(TAG, "Abriendo diálogo de cambio de estado para: ${solicitud.id}")
         _solicitudSeleccionada.value = solicitud
         _showCambioEstadoDialog.value = true
     }
@@ -337,5 +522,9 @@ class SolicitudAdminViewModel(
 
     fun limpiarError() {
         _errorMessage.value = null
+    }
+
+    companion object {
+        private const val TAG = "SolicitudAdminVM"
     }
 }

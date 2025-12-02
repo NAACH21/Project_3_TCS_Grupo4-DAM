@@ -234,15 +234,17 @@ fun SolicitudColaboradorScreen(
         }
     }
 
-    // Bottom Sheet para SELECCIONAR tipo de solicitud (sin formularios)
+    // Bottom Sheet para SELECCIONAR tipo de solicitud
     if (isDialogOpen) {
         NuevaSolicitudBottomSheet(
             onDismiss = { viewModel.cerrarNuevaSolicitud() },
-            onSeleccionarCertificacion = {
-                navController.navigate(Routes.SOLICITUD_CERTIFICACION_COLABORADOR)
+            onSeleccionarNuevaSkill = {
+                // Navegar a pantalla de NUEVA SKILL con certificado
+                navController.navigate(Routes.SOLICITUD_SKILLS_COLABORADOR + "?esNueva=true")
             },
-            onSeleccionarActualizacionSkills = {
-                navController.navigate(Routes.SOLICITUD_SKILLS_COLABORADOR)
+            onSeleccionarActualizarSkill = {
+                // Navegar a pantalla de ACTUALIZAR SKILL existente con certificado
+                navController.navigate(Routes.SOLICITUD_SKILLS_COLABORADOR + "?esNueva=false")
             }
         )
     }

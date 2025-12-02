@@ -41,12 +41,10 @@ import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.Notifica
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ActualizarSkillScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.skills.ColaboradorSkillsScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudActualizacionSkillsScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudCertificacionScreen
+// REMOVED: SolicitudCertificacionScreen - ya no se usa
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudColaboradorViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.SolicitudAdminScreen
-import com.example.project_3_tcs_grupo4_dam.presentation.solicitud.NuevaEntrevistaScreen
-import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.vacantes.NewVacantScreen
@@ -201,43 +199,23 @@ fun AppNavigation(
         }
 
         // --- SOLICITUDES COLABORADOR (Pantallas completas) ---
-        composable(Routes.SOLICITUD_CERTIFICACION_COLABORADOR) {
-            val viewModel: SolicitudColaboradorViewModel = viewModel(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return SolicitudColaboradorViewModel(
-                            solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
-                            catalogoRepository = CatalogoRepositoryImpl(),
-                            sessionManager = sessionManager
-                        ) as T
-                    }
-                }
-            )
-            SolicitudCertificacionScreen(
-                navController = navController,
-                viewModel = viewModel
-            )
-        }
+        // DEPRECATED: SOLICITUD_CERTIFICACION_COLABORADOR eliminada - certificados solo como respaldo de skills
 
-        composable(Routes.SOLICITUD_SKILLS_COLABORADOR) {
-            val viewModel: SolicitudColaboradorViewModel = viewModel(
-                factory = object : androidx.lifecycle.ViewModelProvider.Factory {
-                    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                        return SolicitudColaboradorViewModel(
-                            solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
-                            catalogoRepository = CatalogoRepositoryImpl(),
-                            sessionManager = sessionManager
-                        ) as T
-                    }
+        composable(
+            route = "${Routes.SOLICITUD_SKILLS_COLABORADOR}?esNueva={esNueva}",
+            arguments = listOf(
+                navArgument("esNueva") {
+                    type = NavType.BoolType
+                    defaultValue = true
                 }
             )
+        ) {
             SolicitudActualizacionSkillsScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
 
-        // --- SOLICITUDES ADMIN (Entrevistas de Desempeño) ---
+        // --- SOLICITUDES ADMIN (Solicitudes de Skills) ---
         composable(Routes.SOLICITUDES_ADMIN) {
             SolicitudAdminScreen(
                 navController = navController,
@@ -245,9 +223,7 @@ fun AppNavigation(
             )
         }
 
-        composable(Routes.NUEVA_ENTREVISTA_ADMIN) {
-            NuevaEntrevistaScreen(navController = navController)
-        }
+        // DEPRECATED: NUEVA_ENTREVISTA_ADMIN eliminada - admin solo gestiona solicitudes de skills
 
         composable(
             route = "${Routes.ACTUALIZAR_SKILL_BASE}/{id}/{skill}",
