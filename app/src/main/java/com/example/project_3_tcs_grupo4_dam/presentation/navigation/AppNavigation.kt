@@ -26,6 +26,7 @@ import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.presentation.auth.LoginScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorDetalleScreen
+import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradorFormScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.colaborador.ColaboradoresScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.AdminEvaluacionesScreen
 import com.example.project_3_tcs_grupo4_dam.presentation.evaluaciones.BulkUploadScreen
@@ -153,7 +154,25 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() }
             )
         }
-        
+
+        // Ruta para crear nuevo colaborador (sin ID)
+        composable(Routes.COLABORADOR_FORM) {
+            ColaboradorFormScreen(navController = navController)
+        }
+
+        // Ruta para editar colaborador existente (con ID)
+        composable(
+            route = "${Routes.COLABORADOR_FORM}/{colaboradorId}",
+            arguments = listOf(
+                navArgument("colaboradorId") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) {
+            ColaboradorFormScreen(navController = navController)
+        }
+
         composable(Routes.EVALUACIONES_ADMIN) { 
             AdminEvaluacionesScreen(navController = navController)
         }

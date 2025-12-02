@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        Configuración de FileProvider para compartir archivos del cacheDir
+        Usado para abrir PDFs descargados temporalmente con Intent ACTION_VIEW
+    -->
+    <cache-path
+        name="pdf_cache"
+        path="." />
+</paths>
+

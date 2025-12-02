@@ -17,9 +17,12 @@ import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositor
 import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepository
 import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.CertificadosRepository
+import com.example.project_3_tcs_grupo4_dam.data.repository.CertificadosRepositoryImpl
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 
 class ColaboradorFormViewModel(
     savedStateHandle: SavedStateHandle
@@ -27,6 +30,7 @@ class ColaboradorFormViewModel(
 
     private val repository: ColaboradorRepository = ColaboradorRepositoryImpl()
     private val catalogoRepository: CatalogoRepository = CatalogoRepositoryImpl()
+    private val certificadosRepository: CertificadosRepository = CertificadosRepositoryImpl()
 
     // ID del colaborador (null si es modo crear, con valor si es modo editar)
     private val colaboradorId: String? = savedStateHandle.get<String>("colaboradorId")
@@ -104,6 +108,10 @@ class ColaboradorFormViewModel(
 
     private val _saveSuccess = MutableStateFlow(false)
     val saveSuccess = _saveSuccess.asStateFlow()
+
+    // Estado de upload de PDFs por certificación (índice)
+    private val _isUploadingCertificaciones = MutableStateFlow<List<Boolean>>(emptyList())
+    val isUploadingCertificaciones = _isUploadingCertificaciones.asStateFlow()
 
     // Determinar si es modo edición
     val isEditMode: Boolean = colaboradorId != null
@@ -198,6 +206,12 @@ class ColaboradorFormViewModel(
 
     // Skills management
     fun addSkill() {
+        // Regla de negocio: no permitir agregar skills si no existe al menos una certificación
+        if (_certificaciones.value.isEmpty()) {
+            _errorMessage.value = "Debe agregar al menos una certificación (nombre del PDF) antes de registrar skills"
+            return
+        }
+
         val current = _skills.value.toMutableList()
         current.add(SkillCreateDto(nombre = "", tipo = "TECNICO", nivel = 1, esCritico = false))
         _skills.value = current
@@ -248,6 +262,23 @@ class ColaboradorFormViewModel(
         val current = _certificaciones.value.toMutableList()
         current.add(CertificacionCreateDto(nombre = "", institucion = "", fechaObtencion = null, fechaVencimiento = null, archivoPdfUrl = null))
         _certificaciones.value = current
+
+        // Sincronizar flags de upload: agregar false para la nueva certificación
+        val uploadFlags = _isUploadingCertificaciones.value.toMutableList()
+        uploadFlags.add(false)
+        _isUploadingCertificaciones.value = uploadFlags
+    }
+
+    // Helper: agregar certificación indicando solo el nombre del PDF (uploader no implementado aún)
+    fun addCertificacionConNombre(nombrePdf: String) {
+        val current = _certificaciones.value.toMutableList()
+        current.add(CertificacionCreateDto(nombre = "", institucion = "", fechaObtencion = null, fechaVencimiento = null, archivoPdfUrl = nombrePdf))
+        _certificaciones.value = current
+
+        // Sincronizar flags de upload: agregar false para la nueva certificación
+        val uploadFlags = _isUploadingCertificaciones.value.toMutableList()
+        uploadFlags.add(false)
+        _isUploadingCertificaciones.value = uploadFlags
     }
 
     fun updateCertificacionNombre(index: Int, nombre: String) {
@@ -295,10 +326,82 @@ class ColaboradorFormViewModel(
         if (index in current.indices) {
             current.removeAt(index)
             _certificaciones.value = current
+
+            // Sincronizar flags: remover el flag en la posición eliminada
+            val uploadFlags = _isUploadingCertificaciones.value.toMutableList()
+            if (index in uploadFlags.indices) {
+                uploadFlags.removeAt(index)
+                _isUploadingCertificaciones.value = uploadFlags
+            }
         }
     }
 
     fun clearErrorMessage() { _errorMessage.value = null }
+
+    /**
+     * Sube un archivo PDF de certificación a Backblaze B2 mediante el backend
+     * Flujo: File -> MultipartBody -> Backend -> B2 -> archivoPdfUrl en Mongo
+     *
+     * @param index Índice de la certificación en la lista
+     * @param file Archivo PDF seleccionado por el usuario
+     */
+    fun uploadCertificacionPdf(index: Int, file: File) {
+        if (index !in _certificaciones.value.indices) {
+            _errorMessage.value = "Certificación no encontrada"
+            return
+        }
+
+        viewModelScope.launch {
+            // Marcar como subiendo
+            val uploadFlags = _isUploadingCertificaciones.value.toMutableList()
+            if (index in uploadFlags.indices) {
+                uploadFlags[index] = true
+                _isUploadingCertificaciones.value = uploadFlags
+            }
+
+            try {
+                val nombreCert = _certificaciones.value[index].nombre
+                val idColaborador = if (isEditMode) colaboradorId else null
+
+                Log.i("ColaboradorFormVM", "📤 Iniciando upload de certificado (índice $index)")
+
+                // Llamar al repositorio de certificados
+                val result = certificadosRepository.uploadCertificado(
+                    file = file,
+                    colaboradorId = idColaborador,
+                    nombreCertificacion = nombreCert.ifBlank { null }
+                )
+
+                result.onSuccess { uploadResponse ->
+                    // Actualizar la URL del PDF en el DTO
+                    val cert = _certificaciones.value[index]
+                    val updated = cert.copy(archivoPdfUrl = uploadResponse.archivoPdfUrl)
+
+                    val certsList = _certificaciones.value.toMutableList()
+                    certsList[index] = updated
+                    _certificaciones.value = certsList
+
+                    Log.i("ColaboradorFormVM", "✅ PDF subido: ${uploadResponse.archivoPdfUrl}")
+                    // Mensaje de éxito temporal (se mostrará en Snackbar)
+                    _errorMessage.value = "✓ PDF subido exitosamente"
+                }
+
+                result.onFailure { exception ->
+                    Log.e("ColaboradorFormVM", "❌ Error al subir PDF", exception)
+                    // Usar el mensaje específico del repositorio (ya diferencia 4xx vs 5xx)
+                    _errorMessage.value = exception.message ?: "Error desconocido al subir PDF"
+                }
+
+            } finally {
+                // Marcar como NO subiendo
+                val uploadFlags = _isUploadingCertificaciones.value.toMutableList()
+                if (index in uploadFlags.indices) {
+                    uploadFlags[index] = false
+                    _isUploadingCertificaciones.value = uploadFlags
+                }
+            }
+        }
+    }
 
     // ========== Funciones para el diálogo de selección de skills ==========
 
@@ -327,6 +430,12 @@ class ColaboradorFormViewModel(
      * Abre el diálogo de selección de skill
      */
     fun openSkillPicker() {
+        // No permitir abrir selector de skills si no hay certificaciones registradas
+        if (_certificaciones.value.isEmpty()) {
+            _errorMessage.value = "Debe agregar al menos una certificación antes de seleccionar skills"
+            return
+        }
+
         _skillSearchText.value = ""
         _showSkillPickerDialog.value = true
         // Cargar catálogo si aún no está cargado
@@ -433,6 +542,46 @@ class ColaboradorFormViewModel(
                     _errorMessage.value = "El correo es obligatorio"
                     _isSaving.value = false
                     return@launch
+                }
+
+                // Validar area y rol laboral obligatorios
+                if (_area.value.isBlank()) {
+                    _errorMessage.value = "El área es obligatoria"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                if (_rolLaboral.value.isBlank()) {
+                    _errorMessage.value = "El rol laboral es obligatorio"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                // Regla de negocio: si hay skills pero no hay certificaciones -> error
+                if (_skills.value.isNotEmpty() && _certificaciones.value.isEmpty()) {
+                    _errorMessage.value = "Si agrega skills, debe agregar al menos una certificación"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                // Validación: si hay skills, debe haber AL MENOS UNA certificación con PDF subido
+                if (_skills.value.isNotEmpty()) {
+                    val tieneCertConPdf = _certificaciones.value.any { !it.archivoPdfUrl.isNullOrBlank() }
+                    if (!tieneCertConPdf) {
+                        _errorMessage.value = "Debes subir al menos un certificado en PDF para poder registrar skills"
+                        _isSaving.value = false
+                        return@launch
+                    }
+                }
+
+                // Validar que cada certificación tenga archivoPdfUrl (nombre del PDF)
+                _certificaciones.value.forEachIndexed { idx, cert ->
+                    val nombrePdf = cert.archivoPdfUrl
+                    if (nombrePdf.isNullOrBlank()) {
+                        _errorMessage.value = "La certificación ${idx + 1} debe incluir el nombre del archivo PDF"
+                        _isSaving.value = false
+                        return@launch
+                    }
                 }
 
                 // Construir DTO

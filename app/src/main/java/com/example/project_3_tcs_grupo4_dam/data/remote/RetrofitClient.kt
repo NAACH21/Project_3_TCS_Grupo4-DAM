@@ -29,7 +29,7 @@ object RetrofitClient {
         authToken = token
     }
     // Base URL del backend .NET
-    private const val BASE_URL = "http://10.242.111.84:5260/"
+    private const val BASE_URL = "http://10.203.180.60:5260/"
 
     /**
      * Función para limpiar el token al cerrar sesión
@@ -134,4 +134,11 @@ object RetrofitClient {
     }
     val procesosMatchingApi: ProcesosMatchingApiService
         get() = retrofit.create(ProcesosMatchingApiService::class.java)
+
+    /**
+     * API Service para gestión de certificados (upload a B2, descarga desde B2)
+     */
+    val certificadosApi: CertificadosApiService by lazy {
+        retrofit.create(CertificadosApiService::class.java)
+    }
 }
