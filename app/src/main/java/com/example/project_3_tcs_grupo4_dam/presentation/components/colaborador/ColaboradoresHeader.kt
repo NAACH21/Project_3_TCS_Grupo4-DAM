@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ColaboradoresHeader(
     modifier: Modifier = Modifier,
+    searchText: String = "",
+    onSearchTextChange: (String) -> Unit = {},
     onNuevoColaborador: () -> Unit = {},
     onCargaMasiva: () -> Unit = {},
     onFiltros: () -> Unit = {}
@@ -23,14 +25,14 @@ fun ColaboradoresHeader(
     ) {
         // Barra de búsqueda
         OutlinedTextField(
-            value = "",
-            onValueChange = { /* TODO búsqueda */ },
+            value = searchText,
+            onValueChange = onSearchTextChange,
             modifier = Modifier
                 .fillMaxWidth(),
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
-            placeholder = { Text("Buscar por nombre, apellidos, rol o área...") },
+            placeholder = { Text("Buscar por nombre o skill...") },
             singleLine = true
         )
 
