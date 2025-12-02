@@ -2,7 +2,7 @@ package com.example.project_3_tcs_grupo4_dam.presentation.components.solicitud
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,8 +18,8 @@ private val TCSBlue = Color(0xFF00549F)
 @Composable
 fun NuevaSolicitudBottomSheet(
     onDismiss: () -> Unit,
-    onSeleccionarCertificacion: () -> Unit,
-    onSeleccionarActualizacionSkills: () -> Unit,
+    onSeleccionarNuevaSkill: () -> Unit,
+    onSeleccionarActualizarSkill: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ModalBottomSheet(
@@ -49,11 +49,11 @@ fun NuevaSolicitudBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             TipoSolicitudCard(
-                titulo = "Certificación",
-                descripcion = "Solicitar nueva certificación o renovación",
-                icon = Icons.Default.School,
+                titulo = "Nueva Skill",
+                descripcion = "Agregar una nueva skill con certificado de respaldo",
+                icon = Icons.Default.AddCircle,
                 onClick = {
-                    onSeleccionarCertificacion()
+                    onSeleccionarNuevaSkill()
                     onDismiss()
                 }
             )
@@ -61,11 +61,11 @@ fun NuevaSolicitudBottomSheet(
             Spacer(modifier = Modifier.height(12.dp))
 
             TipoSolicitudCard(
-                titulo = "Actualización de Skills",
-                descripcion = "Actualizar skills existentes o agregar nuevas",
+                titulo = "Actualizar Skill",
+                descripcion = "Actualizar nivel de skill existente con nuevo certificado",
                 icon = Icons.Default.TrendingUp,
                 onClick = {
-                    onSeleccionarActualizacionSkills()
+                    onSeleccionarActualizarSkill()
                     onDismiss()
                 }
             )

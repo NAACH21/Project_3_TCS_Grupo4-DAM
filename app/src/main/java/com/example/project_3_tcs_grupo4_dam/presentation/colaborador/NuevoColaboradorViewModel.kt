@@ -62,6 +62,12 @@ class NuevoColaboradorViewModel : ViewModel() {
 
     // Skills management
     fun addSkill() {
+        // Regla de negocio: no permitir agregar skills si no existe al menos una certificación
+        if (_certificaciones.value.isEmpty()) {
+            _errorMessage.value = "Debe agregar al menos una certificación (nombre del PDF) antes de registrar skills"
+            return
+        }
+
         val current = _skills.value.toMutableList()
         current.add(SkillCreateDto(nombre = "", tipo = "TECNICO", nivel = 1, esCritico = false))
         _skills.value = current
@@ -114,6 +120,14 @@ class NuevoColaboradorViewModel : ViewModel() {
         _certificaciones.value = current
     }
 
+    // Nuevo helper: permite agregar una certificación indicando solo el nombre del PDF (por ahora no hay uploader)
+    fun addCertificacionConNombre(nombrePdf: String) {
+        val current = _certificaciones.value.toMutableList()
+        // Guardamos el "nombre del PDF" en el campo archivoPdfUrl para compatibilidad con el DTO y backend
+        current.add(CertificacionCreateDto(nombre = "", institucion = "", fechaObtencion = null, fechaVencimiento = null, archivoPdfUrl = nombrePdf))
+        _certificaciones.value = current
+    }
+
     fun updateCertificacionNombre(index: Int, nombre: String) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
@@ -146,6 +160,7 @@ class NuevoColaboradorViewModel : ViewModel() {
         }
     }
 
+    // Nota: este método ahora se usa también para guardar el nombre del PDF (si el uploader no está implementado)
     fun updateCertificacionArchivoUrl(index: Int, url: String?) {
         val current = _certificaciones.value.toMutableList()
         if (index in current.indices) {
@@ -180,6 +195,36 @@ class NuevoColaboradorViewModel : ViewModel() {
                     _errorMessage.value = "Los apellidos son obligatorios"
                     _isSaving.value = false
                     return@launch
+                }
+
+                // Validaciones solicitadas: area y rol laboral obligatorios
+                if (_area.value.isBlank()) {
+                    _errorMessage.value = "El área es obligatoria"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                if (_rolLaboral.value.isBlank()) {
+                    _errorMessage.value = "El rol laboral es obligatorio"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                // Regla de negocio: si hay skills pero no hay certificaciones -> error
+                if (_skills.value.isNotEmpty() && _certificaciones.value.isEmpty()) {
+                    _errorMessage.value = "Si agrega skills, debe agregar al menos una certificación"
+                    _isSaving.value = false
+                    return@launch
+                }
+
+                // Validar que cada certificación tenga nombre de PDF (archivoPdfUrl) no vacío
+                _certificaciones.value.forEachIndexed { idx, cert ->
+                    val nombrePdf = cert.archivoPdfUrl
+                    if (nombrePdf.isNullOrBlank()) {
+                        _errorMessage.value = "La certificación ${idx + 1} debe incluir el nombre del archivo PDF"
+                        _isSaving.value = false
+                        return@launch
+                    }
                 }
 
                 val dto = ColaboradorCreateDto(

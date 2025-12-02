@@ -5,19 +5,37 @@ import com.google.gson.annotations.SerializedName
 // ========== DTOs para Certificaciones Propuestas ==========
 
 data class CertificacionPropuestaCreateDto(
-    @SerializedName("nombre") val nombre: String,
-    @SerializedName("institucion") val institucion: String,
-    @SerializedName("fechaObtencion") val fechaObtencion: String?,
-    @SerializedName("fechaVencimiento") val fechaVencimiento: String?,
-    @SerializedName("archivoPdfUrl") val archivoPdfUrl: String?
+    @SerializedName("nombre")
+    val nombre: String,
+
+    @SerializedName("institucion")
+    val institucion: String,
+
+    @SerializedName("fechaObtencion")
+    val fechaObtencion: String?,
+
+    @SerializedName("fechaVencimiento")
+    val fechaVencimiento: String?,
+
+    @SerializedName("archivoPdfUrl")
+    val archivoPdfUrl: String?
 )
 
 data class CertificacionPropuestaReadDto(
-    @SerializedName("nombre") val nombre: String,
-    @SerializedName("institucion") val institucion: String,
-    @SerializedName("fechaObtencion") val fechaObtencion: String?,
-    @SerializedName("fechaVencimiento") val fechaVencimiento: String?,
-    @SerializedName("archivoPdfUrl") val archivoPdfUrl: String?
+    @SerializedName("nombre")
+    val nombre: String,
+
+    @SerializedName("institucion")
+    val institucion: String,
+
+    @SerializedName("fechaObtencion")
+    val fechaObtencion: String?,
+
+    @SerializedName("fechaVencimiento")
+    val fechaVencimiento: String?,
+
+    @SerializedName("archivoPdfUrl")
+    val archivoPdfUrl: String?
 )
 
 // ========== DTOs para Entrevistas de Desempeño ==========

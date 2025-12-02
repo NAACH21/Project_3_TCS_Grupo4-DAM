@@ -1,51 +1,143 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.solicitud
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
-import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
+import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
+import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.CatalogoRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.CertificadosRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepositoryImpl
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val TCSBlue = Color(0xFF00549F)
 
+/**
+ * Pantalla para crear solicitudes de ACTUALIZACION_SKILLS
+ * Permite actualizar skill existente o crear skill nueva, SIEMPRE con certificado PDF
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SolicitudActualizacionSkillsScreen(
-    navController: NavController,
-    viewModel: SolicitudColaboradorViewModel
+    navController: NavController
 ) {
-    var cambiosSkills by remember { mutableStateOf(listOf<CambioSkillItemUI>()) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showTipoSeleccion by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val sessionManager = SessionManager(context)
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    // Obtener parámetro de navegación para saber si es nueva skill o actualización
+    val navBackStackEntry = navController.currentBackStackEntry
+    val esNueva = navBackStackEntry?.arguments?.getBoolean("esNueva") ?: true
+
+    val viewModel: SolicitudActualizacionSkillsViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return SolicitudActualizacionSkillsViewModel(
+                    solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
+                    certificadosRepository = CertificadosRepositoryImpl(context.applicationContext),
+                    colaboradorRepository = ColaboradorRepositoryImpl(),
+                    catalogoRepository = CatalogoRepositoryImpl(),
+                    sessionManager = sessionManager
+                ) as T
+            }
+        }
+    )
+
+    // Configurar el modo inicial según el parámetro de navegación
+    LaunchedEffect(esNueva) {
+        viewModel.onTipoSkillChange(esNueva)
+    }
+
     val isLoading by viewModel.isLoading.collectAsState()
-    val misSkillsActuales by viewModel.misSkillsActuales.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+    val misSkills by viewModel.misSkillsActuales.collectAsState()
     val skillsCatalogo by viewModel.skillsCatalogo.collectAsState()
     val nivelesSkill by viewModel.nivelesSkill.collectAsState()
 
-    // Observar errores del ViewModel
-    val vmErrorMessage by viewModel.errorMessage.collectAsState()
-    LaunchedEffect(vmErrorMessage) {
-        vmErrorMessage?.let {
-            snackbarHostState.showSnackbar(
-                message = it,
-                duration = SnackbarDuration.Long
-            )
-            viewModel.limpiarError()
+    val esSkillNueva by viewModel.esSkillNueva.collectAsState()
+    val skillSeleccionada by viewModel.skillSeleccionada.collectAsState()
+    val nombreSkillNueva by viewModel.nombreSkillNueva.collectAsState()
+    val tipoSkillNueva by viewModel.tipoSkillNueva.collectAsState()
+    val nivelPropuesto by viewModel.nivelPropuesto.collectAsState()
+    val esCriticoPropuesto by viewModel.esCriticoPropuesto.collectAsState()
+    val motivo by viewModel.motivo.collectAsState()
+
+    val nombreCertificacion by viewModel.nombreCertificacion.collectAsState()
+    val institucionCertificacion by viewModel.institucionCertificacion.collectAsState()
+    val fechaObtencion by viewModel.fechaObtencion.collectAsState()
+    val fechaVencimiento by viewModel.fechaVencimiento.collectAsState()
+    val pdfSeleccionado by viewModel.pdfSeleccionado.collectAsState()
+    val pdfSubiendo by viewModel.pdfSubiendo.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Estados para dropdowns
+    var expandedSkillExistente by remember { mutableStateOf(false) }
+    var expandedSkillCatalogo by remember { mutableStateOf(false) }
+    var expandedTipoSkill by remember { mutableStateOf(false) }
+    var expandedNivel by remember { mutableStateOf(false) }
+
+    // Estados para DatePickers
+    var showDatePickerObtencion by remember { mutableStateOf(false) }
+    var showDatePickerVencimiento by remember { mutableStateOf(false) }
+
+    // File picker para PDF
+    val pdfPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    val tempFile = File(context.cacheDir, "cert_${System.currentTimeMillis()}.pdf")
+                    inputStream?.use { input ->
+                        tempFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    viewModel.onPdfSeleccionado(tempFile)
+                } catch (e: Exception) {
+                    viewModel.onError("Error al procesar archivo: ${e.message}")
+                }
+            }
+        }
+    )
+
+    // Mostrar mensajes
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(successMessage) {
+        successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSuccess()
+            navController.popBackStack()
         }
     }
 
@@ -53,17 +145,11 @@ fun SolicitudActualizacionSkillsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Actualizar Skills",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(if (esSkillNueva) "Nueva Skill" else "Actualizar Skill")
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -73,484 +159,390 @@ fun SolicitudActualizacionSkillsScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showTipoSeleccion = true },
-                containerColor = TCSBlue,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Agregar Cambio")
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
         ) {
-            Text(
-                text = "Cambios de Skills",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF333333)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Agrega los cambios que deseas solicitar en tus skills",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF666666)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (cambiosSkills.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Banner informativo del tipo de solicitud
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F7FA))
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (esSkillNueva) Color(0xFFE3F2FD) else Color(0xFFE8F5E9)
+                    )
                 ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (esSkillNueva) Icons.Default.AddCircle else Icons.Default.TrendingUp,
+                            contentDescription = null,
+                            tint = if (esSkillNueva) TCSBlue else Color(0xFF4CAF50),
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = if (esSkillNueva) "Nueva Skill" else "Actualizar Skill",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (esSkillNueva)
+                                    "Agrega una nueva skill con certificado de respaldo"
+                                else
+                                    "Actualiza el nivel de una skill existente",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF666666)
+                            )
+                        }
+                    }
+                }
+
+                // Sección: Skill
+                Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "No hay cambios agregados",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF666666)
+                            "Datos de Skill",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Usa el botón + para agregar un cambio de skill",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF999999)
-                        )
-                    }
-                }
-            } else {
-                cambiosSkills.forEachIndexed { index, item ->
-                    CambioSkillCard(
-                        item = item,
-                        misSkillsActuales = misSkillsActuales,
-                        skillsCatalogo = skillsCatalogo,
-                        nivelesSkill = nivelesSkill,
-                        onUpdate = { updated ->
-                            cambiosSkills = cambiosSkills.toMutableList().apply {
-                                set(index, updated)
+
+                        if (!esSkillNueva) {
+                            // Actualizar existente: Dropdown de mis skills
+                            ExposedDropdownMenuBox(
+                                expanded = expandedSkillExistente,
+                                onExpandedChange = { expandedSkillExistente = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = skillSeleccionada?.nombre ?: "Selecciona una skill",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Skill actual") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSkillExistente) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedSkillExistente,
+                                    onDismissRequest = { expandedSkillExistente = false }
+                                ) {
+                                    misSkills.forEach { skill ->
+                                        DropdownMenuItem(
+                                            text = { Text("${skill.nombre} (Nivel ${skill.nivel})") },
+                                            onClick = {
+                                                viewModel.onSkillExistenteSeleccionada(skill)
+                                                expandedSkillExistente = false
+                                            }
+                                        )
+                                    }
+                                }
                             }
-                        },
-                        onRemove = {
-                            cambiosSkills = cambiosSkills.filterIndexed { i, _ -> i != index }
-                        }
-                    )
 
-                    if (index < cambiosSkills.lastIndex) {
-                        Spacer(modifier = Modifier.height(12.dp))
+                            skillSeleccionada?.let { skill ->
+                                Text(
+                                    "Nivel actual: ${skill.nivel}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    "Crítico actual: ${if (skill.esCritico) "Sí" else "No"}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        } else {
+                            // Skill nueva: Buscar en catálogo
+                            ExposedDropdownMenuBox(
+                                expanded = expandedSkillCatalogo,
+                                onExpandedChange = { expandedSkillCatalogo = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = nombreSkillNueva,
+                                    onValueChange = { viewModel.onNombreSkillNuevaChange(it) },
+                                    label = { Text("Nombre de la skill nueva") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSkillCatalogo) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
+                                )
+                                if (nombreSkillNueva.length >= 2) {
+                                    val filtradas = skillsCatalogo.filter {
+                                        it.nombre.contains(nombreSkillNueva, ignoreCase = true)
+                                    }
+                                    if (filtradas.isNotEmpty()) {
+                                        ExposedDropdownMenu(
+                                            expanded = true,
+                                            onDismissRequest = { expandedSkillCatalogo = false }
+                                        ) {
+                                            filtradas.forEach { skillCatalog ->
+                                                DropdownMenuItem(
+                                                    text = { Text("${skillCatalog.nombre} (${skillCatalog.tipo})") },
+                                                    onClick = {
+                                                        viewModel.onSkillCatalogoSeleccionada(skillCatalog)
+                                                        expandedSkillCatalogo = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Tipo de skill (Técnica/Blanda)
+                            ExposedDropdownMenuBox(
+                                expanded = expandedTipoSkill,
+                                onExpandedChange = { expandedTipoSkill = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = tipoSkillNueva,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Tipo de skill") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipoSkill) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedTipoSkill,
+                                    onDismissRequest = { expandedTipoSkill = false }
+                                ) {
+                                    listOf("Técnica", "Blanda").forEach { tipo ->
+                                        DropdownMenuItem(
+                                            text = { Text(tipo) },
+                                            onClick = {
+                                                viewModel.onTipoSkillNuevaChange(tipo)
+                                                expandedTipoSkill = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Nivel propuesto
+                        ExposedDropdownMenuBox(
+                            expanded = expandedNivel,
+                            onExpandedChange = { expandedNivel = it }
+                        ) {
+                            OutlinedTextField(
+                                value = "Nivel $nivelPropuesto",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Nivel propuesto") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNivel) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedNivel,
+                                onDismissRequest = { expandedNivel = false }
+                            ) {
+                                (1..5).forEach { nivel ->
+                                    DropdownMenuItem(
+                                        text = { Text("Nivel $nivel") },
+                                        onClick = {
+                                            viewModel.onNivelPropuestoChange(nivel)
+                                            expandedNivel = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Es crítico propuesto
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("¿Es skill crítica?")
+                            Switch(
+                                checked = esCriticoPropuesto,
+                                onCheckedChange = { viewModel.onEsCriticoChange(it) }
+                            )
+                        }
+
+                        // Motivo
+                        OutlinedTextField(
+                            value = motivo,
+                            onValueChange = { viewModel.onMotivoChange(it) },
+                            label = { Text("Motivo (opcional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3
+                        )
                     }
                 }
-            }
 
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
-                ) {
-                    Text(
-                        text = errorMessage!!,
-                        modifier = Modifier.padding(12.dp),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
+                // Sección: Certificado
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "Certificado de Respaldo (Obligatorio)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD32F2F)
+                        )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                        OutlinedTextField(
+                            value = nombreCertificacion,
+                            onValueChange = { viewModel.onNombreCertificacionChange(it) },
+                            label = { Text("Nombre del certificado") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isLoading
-                ) {
-                    Text("Cancelar")
-                }
+                        OutlinedTextField(
+                            value = institucionCertificacion,
+                            onValueChange = { viewModel.onInstitucionCertificacionChange(it) },
+                            label = { Text("Institución") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                Button(
-                    onClick = {
-                        errorMessage = null
-                        if (cambiosSkills.isEmpty()) {
-                            errorMessage = "Agrega al menos un cambio de skill"
-                        } else if (cambiosSkills.any {
-                            (it.skillExistenteSeleccionada == null && it.skillNuevaSeleccionada == null) ||
-                            it.nivelPropuesto == null
-                        }) {
-                            errorMessage = "Completa todos los campos requeridos"
-                        } else {
-                            android.util.Log.d("SolicitudSkills", "Creando solicitud de skills con ${cambiosSkills.size} cambios")
-                            val modelos = cambiosSkills.map { it.toUiModel() }
-                            viewModel.crearSolicitudActualizacionSkills(modelos)
-                            android.util.Log.d("SolicitudSkills", "Navegando de vuelta")
-                            navController.popBackStack()
+                        // Fecha obtención
+                        OutlinedTextField(
+                            value = fechaObtencion ?: "",
+                            onValueChange = {},
+                            label = { Text("Fecha de obtención (opcional)") },
+                            readOnly = true,
+                            trailingIcon = {
+                                IconButton(onClick = { showDatePickerObtencion = true }) {
+                                    Icon(Icons.Default.DateRange, "Seleccionar fecha")
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Fecha vencimiento
+                        OutlinedTextField(
+                            value = fechaVencimiento ?: "",
+                            onValueChange = {},
+                            label = { Text("Fecha de vencimiento (opcional)") },
+                            readOnly = true,
+                            trailingIcon = {
+                                IconButton(onClick = { showDatePickerVencimiento = true }) {
+                                    Icon(Icons.Default.DateRange, "Seleccionar fecha")
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Botón subir PDF
+                        Button(
+                            onClick = { pdfPickerLauncher.launch("application/pdf") },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !pdfSubiendo
+                        ) {
+                            if (pdfSubiendo) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Subiendo...")
+                            } else {
+                                Icon(Icons.Default.AttachFile, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (pdfSeleccionado == null) "Seleccionar PDF" else "Cambiar PDF")
+                            }
                         }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = TCSBlue),
-                    enabled = !isLoading
+
+                        pdfSeleccionado?.let {
+                            Text(
+                                "✓ PDF subido: ${it.name}",
+                                color = Color(0xFF4CAF50),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
+                // Botón enviar
+                Button(
+                    onClick = { viewModel.enviarSolicitud() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading && !pdfSubiendo
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
+                            color = Color.White
                         )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Creando solicitud...")
                     } else {
                         Text("Enviar Solicitud")
                     }
                 }
-            }
 
-            // Espacio para el FAB
-            Spacer(modifier = Modifier.height(80.dp))
+                Spacer(Modifier.height(32.dp))
+            }
         }
     }
 
-    // Bottom sheet para seleccionar tipo de cambio
-    if (showTipoSeleccion) {
-        ModalBottomSheet(
-            onDismissRequest = { showTipoSeleccion = false }
+    // DatePickers
+    if (showDatePickerObtencion) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerObtencion = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        viewModel.onFechaObtencionChange(formatter.format(Date(millis)))
+                    }
+                    showDatePickerObtencion = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePickerObtencion = false }) {
+                    Text("Cancelar")
+                }
+            }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "¿Qué deseas hacer?",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF333333)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    onClick = {
-                        cambiosSkills = cambiosSkills + CambioSkillItemUI(esNueva = false)
-                        showTipoSeleccion = false
-                    },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = TCSBlue,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Actualizar skill existente",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Modificar nivel o criticidad de tus skills actuales",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF666666)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Card(
-                    onClick = {
-                        cambiosSkills = cambiosSkills + CambioSkillItemUI(esNueva = true)
-                        showTipoSeleccion = false
-                    },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = TCSBlue,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Agregar nueva skill",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Solicitar agregar una skill que aún no tienes",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF666666)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+            DatePicker(state = datePickerState)
         }
     }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CambioSkillCard(
-    item: CambioSkillItemUI,
-    misSkillsActuales: List<SkillReadDto>,
-    skillsCatalogo: List<CatalogoDtos.SkillCatalogItemDto>,
-    nivelesSkill: List<CatalogoDtos.NivelSkillDto>,
-    onUpdate: (CambioSkillItemUI) -> Unit,
-    onRemove: () -> Unit
-) {
-    var expandedSkill by remember { mutableStateOf(false) }
-    var expandedNivel by remember { mutableStateOf(false) }
-
-    val skillsDisponibles = skillsCatalogo.filter { catalogoSkill ->
-        misSkillsActuales.none { it.nombre.equals(catalogoSkill.nombre, ignoreCase = true) }
-    }
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (item.esNueva) Color(0xFFE8F5E9) else Color(0xFFE3F2FD)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+    if (showDatePickerVencimiento) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerVencimiento = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        viewModel.onFechaVencimientoChange(formatter.format(Date(millis)))
+                    }
+                    showDatePickerVencimiento = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePickerVencimiento = false }) {
+                    Text("Cancelar")
+                }
+            }
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (item.esNueva) "Agregar Nueva Skill" else "Actualizar Skill Existente",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (item.esNueva) Color(0xFF2E7D32) else Color(0xFF1976D2)
-                )
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Selector de skill
-            ExposedDropdownMenuBox(
-                expanded = expandedSkill,
-                onExpandedChange = { expandedSkill = it }
-            ) {
-                OutlinedTextField(
-                    value = if (item.esNueva) {
-                        item.skillNuevaSeleccionada?.nombre ?: ""
-                    } else {
-                        item.skillExistenteSeleccionada?.nombre ?: ""
-                    },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(if (item.esNueva) "Skill del catálogo *" else "Tu skill *") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSkill) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = expandedSkill,
-                    onDismissRequest = { expandedSkill = false }
-                ) {
-                    if (item.esNueva) {
-                        if (skillsDisponibles.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text("Ya tienes todas las skills del catálogo") },
-                                onClick = { expandedSkill = false },
-                                enabled = false
-                            )
-                        } else {
-                            skillsDisponibles.forEach { skill ->
-                                DropdownMenuItem(
-                                    text = { Text("${skill.nombre} (${skill.tipo})") },
-                                    onClick = {
-                                        onUpdate(item.copy(skillNuevaSeleccionada = skill))
-                                        expandedSkill = false
-                                    }
-                                )
-                            }
-                        }
-                    } else {
-                        misSkillsActuales.forEach { skill ->
-                            DropdownMenuItem(
-                                text = { Text("${skill.nombre} - Nivel ${skill.nivel}") },
-                                onClick = {
-                                    onUpdate(item.copy(skillExistenteSeleccionada = skill))
-                                    expandedSkill = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Mostrar info actual si es actualización
-            if (!item.esNueva && item.skillExistenteSeleccionada != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(
-                            text = "Valores Actuales",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        Text("Tipo: ${item.skillExistenteSeleccionada.tipo}", style = MaterialTheme.typography.bodySmall)
-                        Text("Nivel actual: ${item.skillExistenteSeleccionada.nivel}", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            } else if (item.esNueva && item.skillNuevaSeleccionada != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Text(
-                        text = "Tipo: ${item.skillNuevaSeleccionada.tipo}",
-                        modifier = Modifier.padding(8.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Nivel propuesto
-            ExposedDropdownMenuBox(
-                expanded = expandedNivel,
-                onExpandedChange = { expandedNivel = it }
-            ) {
-                OutlinedTextField(
-                    value = item.nivelPropuesto?.let { "${it.codigo} - ${it.descripcion}" } ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Nivel propuesto *") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedNivel) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-
-                ExposedDropdownMenu(
-                    expanded = expandedNivel,
-                    onDismissRequest = { expandedNivel = false }
-                ) {
-                    nivelesSkill.forEach { nivel ->
-                        DropdownMenuItem(
-                            text = { Text("${nivel.codigo} - ${nivel.descripcion}") },
-                            onClick = {
-                                onUpdate(item.copy(nivelPropuesto = nivel))
-                                expandedNivel = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Switch crítico
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("¿Marcar como crítico?", style = MaterialTheme.typography.bodyMedium)
-                Switch(
-                    checked = item.esCriticoPropuesto,
-                    onCheckedChange = { onUpdate(item.copy(esCriticoPropuesto = it)) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Motivo
-            OutlinedTextField(
-                value = item.motivo,
-                onValueChange = { onUpdate(item.copy(motivo = it)) },
-                label = { Text("Motivo (opcional)") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
-            )
+            DatePicker(state = datePickerState)
         }
     }
 }
 
-// Modelo UI interno para la pantalla
-private data class CambioSkillItemUI(
-    val skillExistenteSeleccionada: SkillReadDto? = null,
-    val skillNuevaSeleccionada: CatalogoDtos.SkillCatalogItemDto? = null,
-    val nivelPropuesto: CatalogoDtos.NivelSkillDto? = null,
-    val esCriticoPropuesto: Boolean = false,
-    val motivo: String = "",
-    val esNueva: Boolean = false
-) {
-    fun toUiModel(): CambioSkillUiModel {
-        return if (esNueva) {
-            CambioSkillUiModel(
-                nombre = skillNuevaSeleccionada!!.nombre,
-                tipo = skillNuevaSeleccionada.tipo,
-                nivelActual = null,
-                nivelPropuesto = nivelPropuesto!!.codigo,
-                esCriticoActual = null,
-                esCriticoPropuesto = esCriticoPropuesto,
-                motivo = motivo,
-                esNueva = true
-            )
-        } else {
-            CambioSkillUiModel(
-                nombre = skillExistenteSeleccionada!!.nombre,
-                tipo = skillExistenteSeleccionada.tipo,
-                nivelActual = skillExistenteSeleccionada.nivel,
-                nivelPropuesto = nivelPropuesto!!.codigo,
-                esCriticoActual = skillExistenteSeleccionada.esCritico,
-                esCriticoPropuesto = esCriticoPropuesto,
-                motivo = motivo,
-                esNueva = false
-            )
-        }
-    }
-}

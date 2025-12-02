@@ -16,9 +16,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import android.content.Intent
+import android.net.Uri
 import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.data.model.SolicitudReadDto
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
+import com.example.project_3_tcs_grupo4_dam.data.repository.CertificadosRepositoryImpl
+import com.example.project_3_tcs_grupo4_dam.data.repository.ColaboradorRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.data.repository.SolicitudesRepositoryImpl
 import com.example.project_3_tcs_grupo4_dam.presentation.components.solicitud.*
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
@@ -43,6 +47,8 @@ fun SolicitudAdminScreen(
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 return SolicitudAdminViewModel(
                     solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
+                    colaboradorRepository = ColaboradorRepositoryImpl(),
+                    certificadosRepository = CertificadosRepositoryImpl(context.applicationContext),
                     sessionManager = sessionManager
                 ) as T
             }
@@ -54,7 +60,6 @@ fun SolicitudAdminScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val filtroEstado by viewModel.filtroEstado.collectAsState()
-    val isDialogOpen by viewModel.isDialogNuevaEntrevistaOpen.collectAsState()
     val showDetalleDialog by viewModel.showDetalleDialog.collectAsState()
     val showCambioEstadoDialog by viewModel.showCambioEstadoDialog.collectAsState()
     val solicitudSeleccionada by viewModel.solicitudSeleccionada.collectAsState()
@@ -81,37 +86,20 @@ fun SolicitudAdminScreen(
 
     // Modo embebido: solo contenido interno sin Scaffold
     if (embedded) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            SolicitudAdminContent(
-                solicitudes = solicitudes,
-                isLoading = isLoading,
-                errorMessage = errorMessage,
-                filtroEstado = filtroEstado,
-                navController = navController,
-                viewModel = viewModel,
-                solicitudSeleccionada = solicitudSeleccionada,
-                showDetalleDialog = showDetalleDialog,
-                showCambioEstadoDialog = showCambioEstadoDialog,
-                modifier = Modifier.fillMaxSize(),
-                showFab = false
-            )
-            
-            // FAB flotante para modo embebido
-            if (errorMessage != "Esta pantalla es solo para administradores") {
-                ExtendedFloatingActionButton(
-                    onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
-                    containerColor = TCSBlue,
-                    contentColor = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Nueva Entrevista")
-                }
-            }
-        }
+        SolicitudAdminContent(
+            solicitudes = solicitudes,
+            isLoading = isLoading,
+            errorMessage = errorMessage,
+            filtroEstado = filtroEstado,
+            navController = navController,
+            solicitudSeleccionada = solicitudSeleccionada,
+            showDetalleDialog = showDetalleDialog,
+            showCambioEstadoDialog = showCambioEstadoDialog,
+            onEstadoChange = { viewModel.aplicarFiltroEstado(it) },
+            onMostrarDetalle = { viewModel.mostrarDetalleSolicitud(it) },
+            onAbrirCambioEstado = { viewModel.abrirCambioEstadoDialog(it) },
+            modifier = Modifier.fillMaxSize()
+        )
     } else {
         // Modo standalone: Scaffold completo con TopBar + BottomNavBar
         Scaffold(
@@ -119,7 +107,7 @@ fun SolicitudAdminScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Solicitudes de Entrevista",
+                            text = "Solicitudes de Skills",
                             fontWeight = FontWeight.Bold
                         )
                     },
@@ -135,20 +123,6 @@ fun SolicitudAdminScreen(
                     homeRoute = Routes.ADMIN_HOME
                 )
             },
-            floatingActionButton = {
-                // Solo mostrar FAB si no hay error de rol
-                if (errorMessage != "Esta pantalla es solo para administradores") {
-                    ExtendedFloatingActionButton(
-                        onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
-                        containerColor = TCSBlue,
-                        contentColor = Color.White
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Nueva Entrevista")
-                    }
-                }
-            },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = LightGrayBg
         ) { paddingValues ->
@@ -158,140 +132,20 @@ fun SolicitudAdminScreen(
                 errorMessage = errorMessage,
                 filtroEstado = filtroEstado,
                 navController = navController,
-                viewModel = viewModel,
                 solicitudSeleccionada = solicitudSeleccionada,
                 showDetalleDialog = showDetalleDialog,
                 showCambioEstadoDialog = showCambioEstadoDialog,
+                onEstadoChange = { viewModel.aplicarFiltroEstado(it) },
+                onMostrarDetalle = { viewModel.mostrarDetalleSolicitud(it) },
+                onAbrirCambioEstado = { viewModel.abrirCambioEstadoDialog(it) },
                 modifier = Modifier.padding(paddingValues)
             )
-        }
-    }
-}
-
-@Composable
-private fun SolicitudAdminContent(
-    solicitudes: List<SolicitudReadDto>,
-    isLoading: Boolean,
-    errorMessage: String?,
-    filtroEstado: String,
-    navController: NavController,
-    viewModel: SolicitudAdminViewModel,
-    solicitudSeleccionada: SolicitudReadDto?,
-    showDetalleDialog: Boolean,
-    showCambioEstadoDialog: Boolean,
-    modifier: Modifier = Modifier,
-    showFab: Boolean = false
-) {
-    Box(modifier = modifier) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Verificar si hay error de rol
-            if (errorMessage == "Esta pantalla es solo para administradores") {
-                    Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = Color(0xFFFF9800)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Acceso Restringido",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF333333)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Esta pantalla es solo para administradores",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF666666),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-            } else {
-                // Filtro de estados
-                SolicitudAdminFilterBar(
-                    selectedEstado = filtroEstado,
-                    onEstadoChange = { viewModel.aplicarFiltroEstado(it) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Contenido principal
-                when {
-                    isLoading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = TCSBlue)
-                        }
-                    }
-
-                    solicitudes.isEmpty() -> {
-                        SolicitudEmptyState(
-                            modifier = Modifier.fillMaxSize(),
-                            mensaje = "No hay solicitudes de entrevista",
-                            submensaje = "Crea la primera solicitud de entrevista de desempeño"
-                        )
-                    }
-
-                    else -> {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(solicitudes) { solicitud ->
-                                SolicitudListItem(
-                                    solicitud = solicitud,
-                                    onClick = { viewModel.mostrarDetalleSolicitud(solicitud) },
-                                    onCambiarEstadoClick = { solicitudId ->
-                                        // Buscar la solicitud completa y abrir diálogo
-                                        val sol = solicitudes.find { it.id == solicitudId }
-                                        sol?.let { viewModel.abrirCambioEstadoDialog(it) }
-                                    }
-                                )
-                            }
-
-                            // Espacio al final para el FAB
-                            item {
-                                Spacer(modifier = Modifier.height(80.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // FAB flotante para modo embebido
-        if (showFab) {
-            ExtendedFloatingActionButton(
-                onClick = { navController.navigate(Routes.NUEVA_ENTREVISTA_ADMIN) },
-                containerColor = TCSBlue,
-                contentColor = Color.White,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Nueva Entrevista")
-            }
         }
     }
 
     // Diálogo de detalle de solicitud
     if (showDetalleDialog && solicitudSeleccionada != null) {
-        DetalleSolicitudEntrevistaDialog(
+        DetalleSolicitudSkillDialog(
             solicitud = solicitudSeleccionada,
             onDismiss = { viewModel.cerrarDetalleSolicitud() }
         )
@@ -303,18 +157,86 @@ private fun SolicitudAdminContent(
             solicitud = solicitudSeleccionada,
             onDismiss = { viewModel.cerrarCambioEstadoDialog() },
             onConfirmar = { nuevoEstado, observacion ->
-                viewModel.actualizarEstadoSolicitud(
-                    solicitudSeleccionada.id,
-                    nuevoEstado,
-                    observacion
-                )
+                solicitudSeleccionada?.let { solicitud ->
+                    viewModel.actualizarEstadoSolicitud(
+                        solicitud.id,
+                        nuevoEstado,
+                        observacion
+                    )
+                }
             }
         )
     }
 }
 
+@Composable
+private fun SolicitudAdminContent(
+    solicitudes: List<SolicitudReadDto>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    filtroEstado: String,
+    navController: NavController,
+    solicitudSeleccionada: SolicitudReadDto?,
+    showDetalleDialog: Boolean,
+    showCambioEstadoDialog: Boolean,
+    onEstadoChange: (String) -> Unit = {},
+    onMostrarDetalle: (SolicitudReadDto) -> Unit = {},
+    onAbrirCambioEstado: (SolicitudReadDto) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(16.dp)
+    ) {
+        // Verificar si hay error de rol
+        if (errorMessage == "Esta pantalla es solo para administradores") {
+            // ...existing code...
+        } else {
+            // Filtro de estados
+            SolicitudAdminFilterBar(
+                selectedEstado = filtroEstado,
+                onEstadoChange = onEstadoChange
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Contenido principal
+            when {
+                isLoading -> {
+                    // ...existing code...
+                }
+
+                solicitudes.isEmpty() -> {
+                    // ...existing code...
+                }
+
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(solicitudes) { solicitud ->
+                            SolicitudListItem(
+                                solicitud = solicitud,
+                                onClick = { onMostrarDetalle(solicitud) },
+                                onCambiarEstadoClick = { solicitudId ->
+                                    val sol = solicitudes.find { it.id == solicitudId }
+                                    sol?.let { onAbrirCambioEstado(it) }
+                                }
+                            )
+                        }
+
+                        // Espacio al final
+                        item {
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /**
- * Barra de filtros simplificada para admin (solo estados)
+ * Barra de filtros para solicitudes de skills (solo estados relevantes)
  */
 @Composable
 private fun SolicitudAdminFilterBar(
@@ -325,10 +247,9 @@ private fun SolicitudAdminFilterBar(
         "TODOS",
         "PENDIENTE",
         "EN_REVISION",
-        "PROGRAMADA",
+        "OBSERVADO",
         "APROBADA",
-        "RECHAZADA",
-        "ANULADA"
+        "RECHAZADA"
     )
 
     Column(
@@ -371,18 +292,22 @@ private fun SolicitudAdminFilterBar(
 }
 
 /**
- * Diálogo de detalle de solicitud de entrevista
+ * Diálogo de detalle de solicitud de skill con certificación
  */
 @Composable
-private fun DetalleSolicitudEntrevistaDialog(
-    solicitud: SolicitudReadDto,
+private fun DetalleSolicitudSkillDialog(
+    solicitud: SolicitudReadDto?,
     onDismiss: () -> Unit
 ) {
+    if (solicitud == null) return
+
+    val context = LocalContext.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Detalle de Entrevista",
+                text = "Detalle de Solicitud de Skill",
                 fontWeight = FontWeight.Bold
             )
         },
@@ -396,16 +321,78 @@ private fun DetalleSolicitudEntrevistaDialog(
 
                 HorizontalDivider()
 
-                solicitud.datosEntrevistaPropuesta?.let { entrevista ->
+                // Información del cambio de skill
+                solicitud.cambiosSkillsPropuestos?.firstOrNull()?.let { cambio ->
                     Text(
-                        text = "Datos de la Entrevista",
+                        text = "Cambio de Skill",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleSmall
                     )
-                    InfoRow(label = "Motivo", value = entrevista.motivo)
-                    InfoRow(label = "Periodo", value = entrevista.periodo)
-                    entrevista.fechaSugerida?.let {
-                        InfoRow(label = "Fecha sugerida", value = it)
+
+                    InfoRow(label = "Nombre", value = cambio.nombre)
+                    InfoRow(label = "Tipo", value = cambio.tipo)
+
+                    if (cambio.nivelActual != null) {
+                        InfoRow(label = "Nivel actual", value = cambio.nivelActual.toString())
+                        InfoRow(label = "Crítico actual", value = if (cambio.esCriticoActual == true) "Sí" else "No")
+                    } else {
+                        InfoRow(label = "Nivel actual", value = "N/A (Skill nueva)")
+                    }
+
+                    InfoRow(label = "Nivel propuesto", value = cambio.nivelPropuesto.toString())
+                    InfoRow(label = "Crítico propuesto", value = if (cambio.esCriticoPropuesto) "Sí" else "No")
+
+                    cambio.motivo?.let {
+                        InfoRow(label = "Motivo", value = it)
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Información de la certificación
+                solicitud.certificacionPropuesta?.let { cert ->
+                    Text(
+                        text = "Certificación de Respaldo",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmall
+                    )
+
+                    InfoRow(label = "Nombre", value = cert.nombre)
+                    InfoRow(label = "Institución", value = cert.institucion)
+
+                    cert.fechaObtencion?.let {
+                        InfoRow(label = "Fecha obtención", value = it.take(10))
+                    }
+
+                    cert.fechaVencimiento?.let {
+                        InfoRow(label = "Fecha vencimiento", value = it.take(10))
+                    }
+
+                    // Botón para ver PDF
+                    if (!cert.archivoPdfUrl.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        data = Uri.parse(cert.archivoPdfUrl)
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // Error abriendo PDF
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Ver PDF del Certificado")
+                        }
+                    } else {
+                        Text(
+                            text = "Sin PDF disponible",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
                     }
                 }
 
@@ -448,14 +435,16 @@ private fun DetalleSolicitudEntrevistaDialog(
 }
 
 /**
- * Diálogo para cambiar el estado de una solicitud
+ * Diálogo para cambiar el estado de una solicitud de skill
  */
 @Composable
 private fun CambioEstadoDialog(
-    solicitud: SolicitudReadDto,
+    solicitud: SolicitudReadDto?,
     onDismiss: () -> Unit,
     onConfirmar: (String, String?) -> Unit
 ) {
+    if (solicitud == null) return
+
     var nuevoEstado by remember { mutableStateOf(solicitud.estadoSolicitud) }
     var observacion by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
@@ -463,17 +452,16 @@ private fun CambioEstadoDialog(
     val estadosDisponibles = listOf(
         "PENDIENTE",
         "EN_REVISION",
-        "PROGRAMADA",
+        "OBSERVADO",
         "APROBADA",
-        "RECHAZADA",
-        "ANULADA"
+        "RECHAZADA"
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Cambiar Estado",
+                text = "Cambiar Estado de Solicitud",
                 fontWeight = FontWeight.Bold
             )
         },
@@ -483,7 +471,7 @@ private fun CambioEstadoDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Solicitud: ${solicitud.tipoSolicitud}",
+                    text = "Solicitud de Skill: ${solicitud.tipoSolicitud}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF666666)
                 )

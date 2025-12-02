@@ -1,5 +1,9 @@
 package com.example.project_3_tcs_grupo4_dam.presentation.colaborador
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,13 +12,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillReadDto
@@ -33,6 +42,86 @@ fun ColaboradorDetalleScreen(
     val colaborador by viewModel.colaborador.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
+    val certificadoUrlToOpen by viewModel.certificadoUrlToOpen.collectAsState()
+    val certificadoError by viewModel.certificadoError.collectAsState()
+
+    // Estados para download de PDF con FileProvider
+    val isDownloadingPdf by viewModel.isDownloadingPdf.collectAsState()
+    val pdfFileToOpen by viewModel.pdfFileToOpen.collectAsState()
+    val pdfErrorMessage by viewModel.pdfErrorMessage.collectAsState()
+
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Abrir PDF cuando hay una URL disponible (bucket público)
+    LaunchedEffect(certificadoUrlToOpen) {
+        certificadoUrlToOpen?.let { url ->
+            try {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse(url)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+                viewModel.onCertificadoUrlConsumed()
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar("Error al abrir PDF: ${e.message}")
+                viewModel.onCertificadoUrlConsumed()
+            }
+        }
+    }
+
+    // Mostrar error de certificado si existe
+    LaunchedEffect(certificadoError) {
+        certificadoError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearCertificadoError()
+        }
+    }
+
+    // Abrir PDF descargado con FileProvider (bucket privado)
+    LaunchedEffect(pdfFileToOpen) {
+        val file = pdfFileToOpen ?: return@LaunchedEffect
+
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            context.startActivity(intent)
+            viewModel.onPdfOpened()
+
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(
+                context,
+                "No hay aplicación para abrir PDFs",
+                Toast.LENGTH_LONG
+            ).show()
+            viewModel.onPdfOpened()
+        } catch (e: Exception) {
+            Toast.makeText(
+                context,
+                "Error al abrir PDF: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+            viewModel.onPdfOpened()
+        }
+    }
+
+    // Mostrar error de descarga de PDF si existe
+    LaunchedEffect(pdfErrorMessage) {
+        pdfErrorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearPdfError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -44,7 +133,8 @@ fun ColaboradorDetalleScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(
             modifier = Modifier
@@ -87,11 +177,37 @@ fun ColaboradorDetalleScreen(
 
                         // Sección de Certificaciones
                         item {
-                            CertificacionesSection(certificaciones = colaborador!!.certificaciones)
+                            CertificacionesSection(
+                                certificaciones = colaborador!!.certificaciones,
+                                onVerPdfClick = { archivoPdfUrl ->
+                                    // Usar descarga con FileProvider (bucket privado)
+                                    viewModel.onVerCertificadoPdfClick(archivoPdfUrl)
+                                }
+                            )
                         }
                     }
                 }
             }
+        }
+
+        // Dialog de loading mientras se descarga el PDF
+        if (isDownloadingPdf) {
+            AlertDialog(
+                onDismissRequest = { },
+                confirmButton = { },
+                title = { Text("Descargando PDF") },
+                text = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("Por favor espera...")
+                    }
+                }
+            )
         }
     }
 }
@@ -249,7 +365,10 @@ private fun SkillsSection(skills: List<SkillReadDto>) {
 }
 
 @Composable
-private fun CertificacionesSection(certificaciones: List<CertificacionReadDto>) {
+private fun CertificacionesSection(
+    certificaciones: List<CertificacionReadDto>,
+    onVerPdfClick: (String?) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -275,7 +394,10 @@ private fun CertificacionesSection(certificaciones: List<CertificacionReadDto>) 
                 )
             } else {
                 certificaciones.forEach { cert ->
-                    CertificacionItem(cert)
+                    CertificacionItem(
+                        certificacion = cert,
+                        onVerPdfClick = onVerPdfClick
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
@@ -284,7 +406,10 @@ private fun CertificacionesSection(certificaciones: List<CertificacionReadDto>) 
 }
 
 @Composable
-private fun CertificacionItem(certificacion: CertificacionReadDto) {
+private fun CertificacionItem(
+    certificacion: CertificacionReadDto,
+    onVerPdfClick: (String?) -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         tonalElevation = 1.dp,
@@ -343,13 +468,26 @@ private fun CertificacionItem(certificacion: CertificacionReadDto) {
                 )
             }
 
-            certificacion.archivoPdfUrl?.let { url ->
-                Spacer(modifier = Modifier.height(6.dp))
+            // Botón para ver PDF
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (certificacion.archivoPdfUrl.isNullOrBlank()) {
                 Text(
-                    text = "Ver archivo",
+                    text = "Sin archivo PDF subido",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            } else {
+                Button(
+                    onClick = { onVerPdfClick(certificacion.archivoPdfUrl) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Text("Ver PDF")
+                }
             }
         }
     }
