@@ -139,4 +139,11 @@ object RetrofitClient {
     val dashboardApiService: DashboardApiService by lazy {
         retrofit.create(DashboardApiService::class.java)
     }
+
+    /**
+     * API Service de certificados
+     */
+    val certificadosApi: CertificadosApiService by lazy {
+        retrofit.create(CertificadosApiService::class.java)
+    }
 }
