@@ -50,16 +50,15 @@ object Routes {
     const val ACTUALIZAR_SKILL_BASE = "skill_details_screen"
     const val ACTUALIZAR_SKILL = "skill_details_screen" // Alias para AppNavigation
     const val SOLICITUDES_COLABORADOR = "solicitudes_colaborador"
-    // DEPRECATED: const val SOLICITUD_CERTIFICACION_COLABORADOR = "solicitud_certificacion_colaborador" // Ya no se usa - certificados solo con skills
     const val SOLICITUD_SKILLS_COLABORADOR = "solicitud_skills_colaborador"
 
     // --- SOLICITUDES ADMIN (SKILLS) ---
-    const val SOLICITUDES_ADMIN = "solicitudes_admin" // Vista de solicitudes de skills para admin
-    // DEPRECATED: const val NUEVA_ENTREVISTA_ADMIN = "nueva_entrevista_admin" // Ya no se usa
+    const val SOLICITUDES_ADMIN = "solicitudes_admin"
 
     // --- ALERTAS ADMIN ---
     const val ALERTAS_ADMIN = "alertas_admin"
-    const val NOTIFICACIONES = "notificaciones" // Alias compartido o genérico
+    // FIX: Renombrado para claridad
+    const val NOTIFICACIONES_ADMIN = "notificaciones_admin" 
 
     // --- HELPERS DE NAVEGACIÓN ---
     

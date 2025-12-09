@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.data.model.dashboard.BrechaSkillDto
 import com.example.project_3_tcs_grupo4_dam.data.model.dashboard.DashboardData
 import com.example.project_3_tcs_grupo4_dam.data.model.dashboard.SkillDemandadoDto
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,15 +51,15 @@ fun DashboardAdminScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Dashboard - Admin", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White)
-                    }
-                },
+                // Quitamos el botón de volver ya que tendremos BottomBar
+                // O lo dejamos si se prefiere, pero la navegación principal será BottomBar
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF0D47A1)
                 )
             )
+        },
+        bottomBar = {
+            BottomNavBar(navController = navController)
         }
     ) { padding ->
         Box(

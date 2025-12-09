@@ -72,7 +72,8 @@ fun ColaboradorSkillsScreen(
             )
         },
         bottomBar = {
-            ColaboradorBottomNavBar(navController)
+            // FIX: Pasamos alertCount = 0 para corregir el error de compilación
+            ColaboradorBottomNavBar(navController, alertCount = 0)
         },
         containerColor = Color.White
     ) { padding ->

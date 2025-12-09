@@ -3,6 +3,8 @@ package com.example.project_3_tcs_grupo4_dam.data.repository
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
+import com.example.project_3_tcs_grupo4_dam.data.model.CatalogoDtos
 
 interface ColaboradorRepository {
 
@@ -15,4 +17,8 @@ interface ColaboradorRepository {
     suspend fun updateColaborador(id: String, body: ColaboradorUpdateDto): ColaboradorReadDto
 
     suspend fun deleteColaborador(id: String)
+    
+    // Funciones adicionales necesarias por la implementación
+    suspend fun getAllSkills(): List<SkillDto>
+    suspend fun getAllNiveles(): List<CatalogoDtos.NivelSkillDto>
 }

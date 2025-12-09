@@ -69,18 +69,16 @@ fun ColaboradorHomeScreen(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                // ARREGLO: Pasamos el context que ahora es requerido por el ViewModel
                 return NotificacionesViewModel(sessionManager, context) as T
             }
         }
     )
     
-    // ARREGLO: Usamos unreadCount que es el Int para el badge
     val unreadCount by notificacionesViewModel.unreadCount.collectAsState()
     val colaborador by homeViewModel.colaborador.collectAsState()
 
     Scaffold(
-        // ARREGLO: Pasamos el contador de no leídos (Int) al bottom bar
+        // FIX: Pasamos el contador de no leídos (Int) al bottom bar
         bottomBar = { ColaboradorBottomNavBar(navController, unreadCount) },
         containerColor = LightGrayBg
     ) { paddingValues ->
@@ -307,105 +305,8 @@ fun UrgentRequirementsCard() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Tienes 2 skills que requieren actualización",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // Aquí iría el contenido de los requerimientos urgentes
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFF8E1), RoundedCornerShape(8.dp))
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Node.js", fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text("Estado: Pendiente", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                }
-                Surface(
-                    color = Color(0xFFFFECB3),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Pendiente",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFFF57F17),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ColaboradorBottomNavBar(navController: NavController, alertCount: Int = 0) {
-    NavigationBar(
-        containerColor = Color.White,
-        tonalElevation = 8.dp
-    ) {
-        val items = listOf(
-            BottomNavItem("Inicio", Icons.Default.Home, Routes.COLABORADOR_HOME),
-            BottomNavItem("Skills", Icons.Default.TrendingUp, Routes.COLABORADOR_SKILLS),
-            BottomNavItem("Solicitudes", Icons.Default.Assignment, Routes.SOLICITUDES_COLABORADOR),
-            BottomNavItem("Vacantes", Icons.Default.Work, Routes.VACANTES_COLABORADOR),
-            BottomNavItem("Notificaciones", Icons.Outlined.Notifications, Routes.NOTIFICACIONES)
-        )
-        
-        val currentBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = currentBackStackEntry?.destination?.route
-
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { 
-                    if (item.route == Routes.NOTIFICACIONES && alertCount > 0) {
-                        BadgedBox(
-                            badge = { 
-                                Badge(
-                                    containerColor = Color.Red,
-                                    contentColor = Color.White
-                                ) { 
-                                    Text(text = if (alertCount > 99) "99+" else alertCount.toString()) 
-                                } 
-                            }
-                        ) {
-                            Icon(item.icon, contentDescription = item.label)
-                        }
-                    } else {
-                        Icon(item.icon, contentDescription = item.label)
-                    }
-                },
-                label = { Text(item.label) },
-                selected = currentRoute == item.route,
-                onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = TCSBlue,
-                    unselectedIconColor = Color.Gray,
-                    selectedTextColor = TCSBlue,
-                    unselectedTextColor = Color.Gray,
-                    indicatorColor = Color(0xFFE3F2FD)
-                )
-            )
-        }
-    }
-}
-
-data class BottomNavItem(
-    val label: String,
-    val icon: ImageVector,
-    val route: String
-)

@@ -10,26 +10,59 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_3_tcs_grupo4_dam.data.local.SessionManager
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
+import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesViewModel
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    onLogout: () -> Unit = {} // Callback de logout por defecto vacío para compatibilidad
+    onLogout: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Determinar rol y ruta de inicio correcta
+    val rolUsuario = remember { sessionManager.getRol() ?: "ADMIN" }
+    val homeRoute = remember(rolUsuario) {
+        if (rolUsuario.equals("MANAGER", ignoreCase = true)) Routes.MANAGER_HOME else Routes.ADMIN_HOME
+    }
+
+    // Configuración del ViewModel de Notificaciones
+    val notificacionesViewModel: NotificacionesViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return NotificacionesViewModel(sessionManager, context) as T
+            }
+        }
+    )
+
+    val unreadCount by notificacionesViewModel.unreadCount.collectAsState()
+
+    // Cargar notificaciones al entrar (Admin/Manager = true)
+    LaunchedEffect(Unit) {
+        val userId = sessionManager.getColaboradorId()
+        // Tratamos como admin si es ADMIN o MANAGER
+        val esAdmin = rolUsuario.equals("ADMIN", ignoreCase = true) || rolUsuario.equals("MANAGER", ignoreCase = true)
+        notificacionesViewModel.cargarNotificaciones(esAdmin = esAdmin, userId = userId)
+    }
 
     val primaryBlue = Color(0xFF0A63C2)
     val backgroundBlue = Color(0xFF0E4F9C)
@@ -38,7 +71,8 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
-            BottomNavBar(navController = navController)
+            // FIX: Pasar explícitamente la ruta de inicio según el rol para que el botón "Inicio" funcione bien
+            BottomNavBar(navController = navController, homeRoute = homeRoute)
         }
     ) { padding ->
         Column(
@@ -64,10 +98,12 @@ fun HomeScreen(
                     )
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(start = 20.dp, top = 50.dp) // Bajamos el texto para evitar la status bar
                 ) {
+                    // Texto dinámico según rol
+                    val saludo = if (rolUsuario.equals("MANAGER", ignoreCase = true)) "Hola, Manager 👋" else "Hola, Admin 👋"
                     Text(
-                        text = "Hola, Admin 👋",
+                        text = saludo,
                         color = Color.White,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                     )
@@ -83,12 +119,12 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 12.dp, end = 12.dp),
+                        .padding(top = 50.dp, end = 12.dp), // Bajamos los botones para evitar la status bar
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Notificaciones
                     IconButton(
-                        onClick = { navController.navigate(Routes.NOTIFICACIONES) }
+                        onClick = { navController.navigate(Routes.NOTIFICACIONES_ADMIN) } // FIX: Apuntar a la ruta de admin
                     ) {
                         Box {
                             Icon(
@@ -97,12 +133,17 @@ fun HomeScreen(
                                 tint = Color.White,
                                 modifier = Modifier.size(28.dp)
                             )
-                            Badge(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 4.dp, y = (-4).dp)
-                            ) {
-                                Text("4", style = MaterialTheme.typography.labelSmall)
+                            // Badge Dinámico
+                            if (unreadCount > 0) {
+                                Badge(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 4.dp, y = (-4).dp),
+                                    containerColor = Color(0xFFFF5252),
+                                    contentColor = Color.White
+                                ) {
+                                    Text(unreadCount.toString(), style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                         }
                     }

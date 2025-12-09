@@ -31,11 +31,11 @@ class NotificacionesViewModel(
     // ==================== NUEVO: Dashboard Repository ====================
     private val notificacionesRepository = NotificacionesRepository(apiService)
 
-    // Estado con la lista enriquecida (DTO + Visto)
+    // Estado con la lista enriquecida (DTO + Visto) para la pantalla de Colaborador
     private val _alertasUi = MutableStateFlow<List<AlertaUiState>>(emptyList())
     val alertasUi = _alertasUi.asStateFlow()
 
-    // ==================== NUEVO: Dashboard State ====================
+    // ==================== NUEVO: Dashboard State (Solo para Admin) ====================
     private val _alertasDashboard = MutableStateFlow<List<AlertaDashboard>>(emptyList())
     val alertasDashboard = _alertasDashboard.asStateFlow()
 
@@ -46,21 +46,22 @@ class NotificacionesViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    // ==================== NUEVO: Error State ====================
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    // ==================== NUEVO: Success Message State ====================
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage = _successMessage.asStateFlow()
 
     init {
-        cargarAlertas()
+        // Al crear el ViewModel, decidimos qué cargar según el rol
+        val rol = sessionManager.getRol() ?: ""
+        if (rol.equals("COLABORADOR", ignoreCase = true)) {
+            cargarAlertas() // Carga la lista detallada para colaborador
+        } else {
+            // Para Admin/Manager, la carga se dispara desde la UI con `cargarNotificaciones`
+        }
     }
 
-    /**
-     * Función auxiliar para extraer el ID ya sea string o objeto Mongo { $oid: "..." }
-     */
     private fun extraerId(valor: Any?): String? {
         if (valor == null) return null
         return try {
@@ -75,13 +76,12 @@ class NotificacionesViewModel(
         }
     }
 
-    // ==================== NUEVO: Cargar Dashboard de Notificaciones ====================
     /**
-     * Carga las notificaciones del dashboard según el rol del usuario
-     * @param esAdmin Si es true, carga dashboard de admin, si false carga del colaborador
-     * @param userId ID del colaborador (obligatorio si esAdmin = false)
+     * Carga las notificaciones del DASHBOARD DE ADMIN.
      */
     fun cargarNotificaciones(esAdmin: Boolean, userId: String? = null) {
+        if (_isLoading.value) return
+
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -90,10 +90,18 @@ class NotificacionesViewModel(
                 val result = notificacionesRepository.obtenerDashboard(esAdmin, userId)
 
                 result.onSuccess { alertas ->
-                    _alertasDashboard.value = alertas
-                    // Actualizar contador de no leídas (activas)
-                    _unreadCount.value = alertas.count { it.activa }
-                    Log.d("NotificacionesVM", "Dashboard cargado: ${alertas.size} notificaciones, ${_unreadCount.value} no leídas")
+                    val readIds = localManager.getReadIds()
+                    val mergedAlertas = alertas.map { alerta ->
+                        if (readIds.contains(alerta.idReferencia)) {
+                            alerta.copy(activa = false)
+                        } else {
+                            alerta
+                        }
+                    }
+
+                    _alertasDashboard.value = mergedAlertas
+                    _unreadCount.value = mergedAlertas.count { it.activa }
+                    Log.d("NotificacionesVM", "Dashboard cargado: ${mergedAlertas.size} notificaciones, ${_unreadCount.value} no leídas")
                 }.onFailure { error ->
                     _errorMessage.value = error.message ?: "Error desconocido al cargar notificaciones"
                     Log.e("NotificacionesVM", "Error cargando dashboard", error)
@@ -108,13 +116,13 @@ class NotificacionesViewModel(
     }
 
     /**
-     * Marca una notificación del dashboard como leída (actualiza solo estado local)
-     * En un sistema real, esto debería sincronizar con el backend
+     * Marca una notificación del DASHBOARD DE ADMIN como leída.
      */
     fun marcarDashboardComoLeida(idReferencia: String) {
         viewModelScope.launch {
             try {
-                // Actualizar el estado local
+                localManager.markAsRead(idReferencia)
+
                 val updatedList = _alertasDashboard.value.map { alerta ->
                     if (alerta.idReferencia == idReferencia) {
                         alerta.copy(activa = false)
@@ -126,29 +134,27 @@ class NotificacionesViewModel(
                 _alertasDashboard.value = updatedList
                 _unreadCount.value = updatedList.count { it.activa }
 
-                Log.d("NotificacionesVM", "Notificación $idReferencia marcada como leída")
+                Log.d("NotificacionesVM", "Notificación $idReferencia marcada como leída y persistida")
             } catch (e: Exception) {
                 Log.e("NotificacionesVM", "Error marcando notificación como leída", e)
             }
         }
     }
 
+    /**
+     * Carga las ALERTAS DETALLADAS PARA COLABORADOR.
+     */
     fun cargarAlertas() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // 1. Obtener datos sesión
                 val rolUsuario = sessionManager.getRol() ?: "INVITADO"
-                val rawColaboradorId = sessionManager.getColaboradorId()
-                val rawUsuarioId = sessionManager.getUsuarioId()
-                val miColaboradorId = rawColaboradorId?.trim()
-                val miUsuarioId = rawUsuarioId?.trim()
+                val miColaboradorId = sessionManager.getColaboradorId()?.trim()
+                val miUsuarioId = sessionManager.getUsuarioId()?.trim()
 
-                // 2. Obtener TODAS las alertas (Backend)
                 val response = apiService.getAllAlertas()
                 val todasLasAlertas = response.data ?: emptyList()
 
-                // 3. Filtrar alertas relevantes para este usuario (Lógica original)
                 val alertasFiltradas = if (rolUsuario.equals("COLABORADOR", ignoreCase = true)) {
                     todasLasAlertas.filter { alerta ->
                         val alertaColabId = extraerId(alerta.colaboradorId)
@@ -165,33 +171,22 @@ class NotificacionesViewModel(
 
                         esParaMiColaborador || soyDestinatarioDirecto
                     }
-                } else {
-                    todasLasAlertas.filter { alerta ->
-                        alerta.destinatarios?.any { 
-                            it.tipo?.equals(rolUsuario, ignoreCase = true) == true 
-                        } == true
-                    }
+                } else { // Para Admin/Manager, esta función no debería devolver nada
+                    emptyList()
                 }
 
-                // 4. CRUCE DE DATOS: API vs LOCAL
                 val readIds = localManager.getReadIds()
-                
                 val uiList = alertasFiltradas.map { alerta ->
                     val id = extraerId(alerta.id) ?: ""
                     val isRead = readIds.contains(id)
-                    
-                    AlertaUiState(
-                        alerta = alerta,
-                        isVisto = isRead
-                    )
+                    AlertaUiState(alerta = alerta, isVisto = isRead)
                 }
 
-                // 5. Actualizar estados UI
                 _alertasUi.value = uiList
                 _unreadCount.value = uiList.count { !it.isVisto }
 
             } catch (e: Exception) {
-                Log.e("NotificacionesVM", "Error cargando alertas", e)
+                Log.e("NotificacionesVM", "Error cargando alertas de colaborador", e)
                 _alertasUi.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -199,12 +194,12 @@ class NotificacionesViewModel(
         }
     }
 
-    // Acción de usuario: Marcar como visto
+    /**
+     * Marca una ALERTA DE COLABORADOR como leída.
+     */
     fun marcarComoVisto(alertaId: String) {
-        // 1. Persistir localmente
         localManager.markAsRead(alertaId)
 
-        // 2. Actualizar estado en memoria inmediatamente para UI responsiva
         val currentList = _alertasUi.value.map { item ->
             val itemId = extraerId(item.alerta.id)
             if (itemId == alertaId) {
@@ -218,17 +213,6 @@ class NotificacionesViewModel(
         _unreadCount.value = currentList.count { !it.isVisto }
     }
 
-    /**
-     * Limpia el mensaje de error
-     */
-    fun clearErrorMessage() {
-        _errorMessage.value = null
-    }
-
-    /**
-     * Limpia el mensaje de éxito
-     */
-    fun clearSuccessMessage() {
-        _successMessage.value = null
-    }
+    fun clearErrorMessage() { _errorMessage.value = null }
+    fun clearSuccessMessage() { _successMessage.value = null }
 }

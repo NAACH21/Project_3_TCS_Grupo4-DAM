@@ -22,7 +22,6 @@ data class BottomNavItem(
 fun BottomNavBar(
     navController: NavController,
     // Parámetro opcional para definir la ruta home según el rol.
-    // Por defecto intenta inferir o usar ADMIN, pero lo pasaremos explícitamente.
     homeRoute: String = Routes.ADMIN_HOME 
 ) {
     val items = listOf(
@@ -50,12 +49,27 @@ fun BottomNavBar(
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // Al pulsar Home, limpiamos hasta el inicio del grafo
-                            popUpTo(homeRoute) {
-                                saveState = true
+                            
+                            // Lógica especial para el botón "Inicio" para evitar que muestre pantallas guardadas (como notificaciones)
+                            if (item.route == homeRoute) {
+                                // Al ir a Inicio, limpiamos todo hasta el Inicio
+                                popUpTo(homeRoute) {
+                                    // NO guardamos el estado de lo que estamos cerrando (ej. Notificaciones)
+                                    saveState = false 
+                                    // Inclusive = false porque queremos quedarnos en homeRoute, no borrarlo
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                                // NO restauramos estado para asegurar que se muestre el Home limpio
+                                restoreState = false 
+                            } else {
+                                // Comportamiento estándar para las otras pestañas (Tabs)
+                                popUpTo(homeRoute) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 },

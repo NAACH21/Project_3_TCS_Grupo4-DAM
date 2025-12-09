@@ -95,7 +95,8 @@ fun VacantesColaboradorScreen(navController: NavController) {
         },
         bottomBar = {
             // USAMOS EL BOTTOM BAR DE COLABORADOR
-            ColaboradorBottomNavBar(navController = navController)
+            // FIX: Pasamos alertCount = 0 para corregir el error de compilación
+            ColaboradorBottomNavBar(navController = navController, alertCount = 0)
         },
         containerColor = Color(0xFFF5F7FA)
     ) { padding ->
