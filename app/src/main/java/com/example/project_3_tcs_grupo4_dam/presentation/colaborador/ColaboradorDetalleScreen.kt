@@ -16,10 +16,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +30,11 @@ import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.SkillRead
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.CertificacionReadDto
 import java.text.SimpleDateFormat
 import java.util.*
+
+// 🔹 Color Corporativo TCS
+private val PrimaryBlue = Color(0xFF00549F)
+private val TextPrimary = Color(0xFF333333)
+private val TextSecondary = Color(0xFF666666)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,12 +131,24 @@ fun ColaboradorDetalleScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle del Colaborador") },
+                title = { 
+                    Text(
+                        "Detalle del Colaborador",
+                        color = Color.White
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = PrimaryBlue
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -144,7 +161,7 @@ fun ColaboradorDetalleScreen(
         ) {
             when {
                 isLoading -> {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = PrimaryBlue)
                 }
 
                 error != null -> {
@@ -202,7 +219,7 @@ fun ColaboradorDetalleScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp), color = PrimaryBlue)
                         Spacer(modifier = Modifier.width(16.dp))
                         Text("Por favor espera...")
                     }
@@ -216,7 +233,8 @@ fun ColaboradorDetalleScreen(
 private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -232,12 +250,12 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(PrimaryBlue),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = iniciales,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = Color.White,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -249,7 +267,8 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
             Text(
                 text = "${colaborador.nombres} ${colaborador.apellidos}",
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -258,7 +277,7 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
             Text(
                 text = colaborador.rolLaboral,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = PrimaryBlue
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -267,7 +286,7 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
             Text(
                 text = colaborador.area,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = TextSecondary
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -276,27 +295,39 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(colaborador.estado) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (colaborador.estado.uppercase() == "ACTIVO")
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.errorContainer
-                    )
-                )
+                // Chip Estado
+                val isActivo = colaborador.estado.equals("ACTIVO", ignoreCase = true)
+                val bgEstado = if (isActivo) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                val textEstado = if (isActivo) Color(0xFF2E7D32) else Color(0xFFC62828)
+                
+                Surface(
+                    shape = CircleShape,
+                    color = bgEstado,
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                        Text(text = colaborador.estado, color = textEstado, fontWeight = FontWeight.Bold)
+                    }
+                }
 
-                AssistChip(
-                    onClick = {},
-                    label = { Text(if (colaborador.disponibleParaMovilidad) "Disponible para movilidad" else "No disponible para movilidad") },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (colaborador.disponibleParaMovilidad)
-                            MaterialTheme.colorScheme.secondaryContainer
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant
-                    )
-                )
+                // Chip Disponibilidad
+                val isDisponible = colaborador.disponibleParaMovilidad
+                val bgDisp = if (isDisponible) Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
+                val textDisp = if (isDisponible) PrimaryBlue else Color.Gray
+                
+                Surface(
+                    shape = CircleShape,
+                    color = bgDisp,
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                        Text(
+                            text = if (isDisponible) "Disponible" else "No disponible", 
+                            color = textDisp, 
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }
@@ -306,7 +337,8 @@ private fun ColaboradorHeader(colaborador: ColaboradorReadDto) {
 private fun SkillsSection(skills: List<SkillReadDto>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -316,7 +348,8 @@ private fun SkillsSection(skills: List<SkillReadDto>) {
             Text(
                 text = "Skills",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -325,7 +358,7 @@ private fun SkillsSection(skills: List<SkillReadDto>) {
                 Text(
                     text = "Sin skills registrados",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary
                 )
             } else {
                 skills.forEach { skill ->
@@ -340,24 +373,45 @@ private fun SkillsSection(skills: List<SkillReadDto>) {
                             Text(
                                 text = skill.nombre,
                                 style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
                             )
                             Text(
                                 text = skill.tipo,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = TextSecondary
                             )
                         }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AssistChip(onClick = {}, label = { Text("Nivel ${skill.nivel}") })
-                            if (skill.esCritico) {
-                                AssistChip(onClick = {}, label = { Text("Crítico") },
-                                    colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFE3F2FD)
+                            ) {
+                                Text(
+                                    text = "Nivel ${skill.nivel}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    color = PrimaryBlue,
+                                    style = MaterialTheme.typography.labelSmall
                                 )
+                            }
+                            
+                            if (skill.esCritico) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color(0xFFFFEBEE)
+                                ) {
+                                    Text(
+                                        text = "Crítico",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        color = Color(0xFFC62828),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
                             }
                         }
                     }
+                    Divider(color = Color(0xFFF0F0F0))
                 }
             }
         }
@@ -371,7 +425,8 @@ private fun CertificacionesSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
@@ -381,7 +436,8 @@ private fun CertificacionesSection(
             Text(
                 text = "Certificaciones",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -390,7 +446,7 @@ private fun CertificacionesSection(
                 Text(
                     text = "Sin certificaciones registradas",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary
                 )
             } else {
                 certificaciones.forEach { cert ->
@@ -413,7 +469,9 @@ private fun CertificacionItem(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         tonalElevation = 1.dp,
-        shape = MaterialTheme.shapes.small
+        shape = MaterialTheme.shapes.small,
+        color = Color(0xFFFAFAFA),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
         Column(
             modifier = Modifier
@@ -429,25 +487,29 @@ private fun CertificacionItem(
                     Text(
                         text = certificacion.nombre,
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
                     )
                     Text(
                         text = certificacion.institucion,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = TextSecondary
                     )
                 }
 
-                AssistChip(
-                    onClick = {},
-                    label = { Text(certificacion.estado) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (certificacion.estado.lowercase() == "vigente")
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.errorContainer
+                val isVigente = certificacion.estado.equals("vigente", ignoreCase = true)
+                Surface(
+                    shape = CircleShape,
+                    color = if (isVigente) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                ) {
+                    Text(
+                        text = certificacion.estado,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = if (isVigente) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
                     )
-                )
+                }
             }
 
             certificacion.fechaObtencion?.let { fecha ->
@@ -455,7 +517,7 @@ private fun CertificacionItem(
                 Text(
                     text = "Obtenida: ${formatearFecha(fecha)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary
                 )
             }
 
@@ -464,27 +526,28 @@ private fun CertificacionItem(
                 Text(
                     text = "Vence: ${formatearFecha(fecha)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary
                 )
             }
 
             // Botón para ver PDF
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (certificacion.archivoPdfUrl.isNullOrBlank()) {
                 Text(
                     text = "Sin archivo PDF subido",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary,
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
             } else {
-                Button(
+                OutlinedButton(
                     onClick = { onVerPdfClick(certificacion.archivoPdfUrl) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PrimaryBlue
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue)
                 ) {
                     Text("Ver PDF")
                 }
