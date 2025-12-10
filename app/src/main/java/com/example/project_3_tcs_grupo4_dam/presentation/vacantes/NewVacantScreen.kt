@@ -1,6 +1,7 @@
 // NuevaVacanteScreen.kt
 package com.example.project_3_tcs_grupo4_dam.presentation.vacantes
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -40,7 +41,9 @@ fun NewVacantScreen(
     var rol by remember { mutableStateOf("") }
     var fechaInicio by remember { mutableStateOf("") }
     var urgencia by remember { mutableStateOf("Media") }
-    var estado by remember { mutableStateOf("Activa") }
+    
+    // FIX: Estado por defecto "ABIERTA" (Mayúsculas)
+    var estado by remember { mutableStateOf("ABIERTA") }
 
     // Estados para añadir skills
     var skillNombre by remember { mutableStateOf("") }
@@ -68,7 +71,8 @@ fun NewVacantScreen(
         when (val status = saveStatus) {
             is SaveResult.Success -> {
                 // Capturar el ID de la vacante creada
-                vacanteIdCreada = status.vacanteId
+                // FIX: Accedemos al ID a través del objeto vacante
+                vacanteIdCreada = status.vacante.id
 
                 // Mostrar diálogo preguntando si desea notificar
                 showAnuncioDialog = true
@@ -92,18 +96,21 @@ fun NewVacantScreen(
     LaunchedEffect(anuncioStatus) {
         when (val status = anuncioStatus) {
             is AnuncioResult.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Notificación enviada exitosamente",
-                        duration = SnackbarDuration.Short
-                    )
-                }
-                // Cerrar diálogo y volver
+                // FIX: Usar Toast en lugar de Snackbar para que el mensaje persista
+                // al cerrar la pantalla (popBackStack)
+                Toast.makeText(
+                    context, 
+                    "¡Notificación enviada correctamente a los colaboradores!", 
+                    Toast.LENGTH_LONG
+                ).show()
+                
+                // Cerrar diálogo y volver a la lista
                 showAnuncioDialog = false
                 navController.popBackStack()
                 newVacantViewModel.resetAnuncioStatus()
             }
             is AnuncioResult.Error -> {
+                // En caso de error, sí usamos Snackbar porque nos quedamos en la pantalla
                 scope.launch {
                     snackbarHostState.showSnackbar(
                         message = status.message,
@@ -119,7 +126,10 @@ fun NewVacantScreen(
 
     val listaAreas = listOf("Tecnología", "Business Intelligence", "Diseño", "Proyectos")
     val listaUrgencia = listOf("Alta", "Media", "Baja")
-    val listaEstado = listOf("Activa", "En pausa", "Cerrada")
+    
+    // FIX: "ABIERTA" (Mayúsculas) en la lista de opciones
+    val listaEstado = listOf("ABIERTA", "Activa", "En pausa", "Cerrada")
+    
     val listaTipoSkill = listOf("Técnico", "Blanda")
     val listaNivelSkill = listOf("Básico", "Intermedio", "Avanzado")
 
@@ -334,8 +344,18 @@ fun NewVacantScreen(
         if (showAnuncioDialog) {
             AnuncioVacanteDialog(
                 onConfirm = {
-                    // Enviar notificación inmediatamente
-                    newVacantViewModel.notificarAhora(vacanteIdCreada)
+                    // FIX: Validación de estado "ABIERTA" (Mayúsculas)
+                    if (estado == "ABIERTA") {
+                        newVacantViewModel.notificarAhora(vacanteIdCreada)
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Para notificar, la vacante debe estar en estado 'ABIERTA'.",
+                                duration = SnackbarDuration.Long
+                            )
+                        }
+                        showAnuncioDialog = false
+                    }
                 },
                 onDismiss = {
                     // Solo cerrar y volver sin enviar notificación

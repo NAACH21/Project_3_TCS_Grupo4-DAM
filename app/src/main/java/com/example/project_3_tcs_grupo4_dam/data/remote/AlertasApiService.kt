@@ -30,6 +30,6 @@ interface AlertasApiService {
     /**
      * Envía anuncio de vacante disponible a colaboradores elegibles
      */
-    @POST("api/alertas/anunciar-vacante")
+    @POST("api/alertas/dashboard/anunciar-vacante")
     suspend fun anunciarVacante(@Body request: AnuncioVacanteRequest): Response<ApiResponse<Unit>>
 }

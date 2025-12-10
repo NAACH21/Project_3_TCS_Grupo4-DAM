@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
 import com.example.project_3_tcs_grupo4_dam.data.model.Vacante
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 // ======================================================
 // PANTALLA PARA ADMINISTRADOR
@@ -76,7 +77,7 @@ fun VacantScreen(navController: NavController, vacantViewModel: VacantViewModel 
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("newVacancy") },
+                onClick = { navController.navigate(Routes.NEW_VACANT) }, // FIX: Usar la ruta correcta
                 containerColor = Color(0xFF1959B8)
             ) {
                 Icon(
