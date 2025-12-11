@@ -29,7 +29,7 @@ object RetrofitClient {
         authToken = token
     }
     // Base URL del backend .NET
-    private const val BASE_URL = "http://192.168.18.94:5260/"
+    private const val BASE_URL = "http://192.168.1.5:5260/"
 
     /**
      * Función para limpiar el token al cerrar sesión

@@ -7,5 +7,9 @@
     <cache-path
         name="pdf_cache"
         path="." />
-</paths>
 
+    <!-- Permitir abrir PDFs guardados en getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) -->
+    <external-files-path
+        name="documents"
+        path="Documents/" />
+</paths>

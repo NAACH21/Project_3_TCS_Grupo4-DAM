@@ -8,9 +8,11 @@ import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.Colaborad
 import com.example.project_3_tcs_grupo4_dam.data.remote.RetrofitClient
 import com.example.project_3_tcs_grupo4_dam.data.repository.*
 import com.example.project_3_tcs_grupo4_dam.domain.MatchingEngine
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 
 class MatchingViewModel(application: Application) : AndroidViewModel(application) {
@@ -34,12 +36,53 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
 
+    private val _pdfGenerado = MutableStateFlow<File?>(null)
+    val pdfGenerado: StateFlow<File?> = _pdfGenerado
+
+    // =====================================================
+    // GENERAR REPORTE MATCHING
+    // =====================================================
+    fun generarReporte(vacante: VacanteResponse, resultados: List<ResultadoMatchingItem>, umbral: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val context = getApplication<Application>()
+                val file = PdfReportHelper.generarReporteMatching(
+                    context = context,
+                    vacante = vacante,
+                    lista = resultados
+                )
+                _pdfGenerado.value = file
+
+            } catch (e: Exception) {
+                _message.value = "Error generando PDF: ${e.message}"
+            }
+        }
+    }
+
+    // =====================================================
+    // GENERAR BRECHA SKILLS
+    // =====================================================
+    fun generarBrecha(vacante: VacanteResponse, umbral: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val context = getApplication<Application>()
+                val file = PdfReportHelper.generarReporteBrechaSkills(context, vacante, umbral)
+                _pdfGenerado.value = file
+
+            } catch (e: Exception) {
+                _message.value = "Error generando brecha: ${e.message}"
+            }
+        }
+    }
+
+    // =====================================================
+    // CARGAR VACANTES
+    // =====================================================
     fun loadVacantes() = viewModelScope.launch {
         try {
             _loading.value = true
             val all = vacanteRepo.getVacantes()
-            // Mostrar sólo vacantes con estadoVacante == "Activa" (insensible a mayúsculas)
-            // La API ya devuelve VacanteResponse, no es necesario mapear
+
             _vacantes.value = all.filter { it.estadoVacante?.equals("Activa", true) == true }
         } catch (e: Exception) {
             _message.value = "Error cargando vacantes: ${e.message}"
@@ -48,11 +91,13 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // =====================================================
+    // CARGAR COLABORADORES
+    // =====================================================
     fun loadColaboradores() = viewModelScope.launch {
         try {
             _loading.value = true
-            val cols = colaboradorRepo.getAllColaboradores()
-            _colaboradores.value = cols
+            _colaboradores.value = colaboradorRepo.getAllColaboradores()
         } catch (e: Exception) {
             _message.value = "Error cargando colaboradores: ${e.message}"
         } finally {
@@ -60,6 +105,9 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // =====================================================
+    // EJECUTAR MATCHING
+    // =====================================================
     fun ejecutarMatching(
         vacante: VacanteResponse,
         umbral: Int,
@@ -68,21 +116,22 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 _loading.value = true
+                _message.value = null
 
-                // Mapear ColaboradorReadDto -> ColaboradorResponse esperado por MatchingEngine
-                val colaboradoresResp: List<ColaboradorResponse> = _colaboradores.value.map { colaboradorDtoToResponse(it) }
+                // Convertir DTO a ColaboradorResponse para MatchingEngine
+                val colaboradoresResp = _colaboradores.value.map { colaboradorDtoToResponse(it) }
 
-                val resultados = MatchingEngine.runMatching(
-                    colaboradores = colaboradoresResp,
-                    vacante = vacante,
-                    umbralPercent = umbral
-                )
+                val resultadosCalc: List<ResultadoMatchingItem> =
+                    MatchingEngine.runMatching(
+                        colaboradores = colaboradoresResp,
+                        vacante = vacante,
+                        umbralPercent = umbral
+                    )
 
-                _resultados.value = resultados
+                _resultados.value = resultadosCalc
 
-                if (resultados.isEmpty()) {
-                    _message.value = "No se encontraron candidatos con puntaje >= $umbral%"
-                    // No guardar proceso si no hay resultados
+                if (resultadosCalc.isEmpty()) {
+                    _message.value = "No se encontraron candidatos >= $umbral%"
                     return@launch
                 }
 
@@ -91,7 +140,7 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
                         vacanteId = vacante.getIdValue(),
                         umbral = umbral,
                         fechaEjecucion = Date(),
-                        resultados = resultados
+                        resultados = resultadosCalc
                     )
                     try {
                         procesosRepo.createProceso(req)
@@ -100,7 +149,7 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
 
-                _message.value = "Matching ejecutado: ${resultados.size} candidato(s) encontrados"
+                _message.value = "Matching ejecutado: ${resultadosCalc.size} candidatos encontrados"
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -111,29 +160,35 @@ class MatchingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // =====================================================
+    // MAPEO DTO -> RESPONSE
+    // =====================================================
     private fun colaboradorDtoToResponse(dto: ColaboradorReadDto): ColaboradorResponse {
-        val skills = dto.skills.map { s ->
+
+        val skills = dto.skills.map {
             SkillResponse(
-                nombre = s.nombre,
-                tipo = s.tipo,
-                nivel = s.nivel,
-                esCritico = s.esCritico
+                nombre = it.nombre,
+                tipo = it.tipo,
+                nivel = it.nivel,
+                esCritico = it.esCritico
             )
         }
-        val certs = dto.certificaciones.map { c ->
+
+        val certs = dto.certificaciones.map {
             CertificacionResponse(
-                certificacionId = c.certificacionId,
-                nombre = c.nombre,
-                institucion = c.institucion,
+                certificacionId = it.certificacionId,
+                nombre = it.nombre,
+                institucion = it.institucion,
                 fechaObtencion = null,
                 fechaVencimiento = null,
-                archivoPdfUrl = c.archivoPdfUrl,
-                estado = c.estado,
+                archivoPdfUrl = it.archivoPdfUrl,
+                estado = it.estado,
                 fechaRegistro = null,
                 fechaActualizacion = null,
                 proximaEvaluacion = null
             )
         }
+
         return ColaboradorResponse(
             _id = null,
             id = dto.id,
