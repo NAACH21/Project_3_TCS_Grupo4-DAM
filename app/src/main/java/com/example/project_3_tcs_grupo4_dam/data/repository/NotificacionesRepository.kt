@@ -1,5 +1,6 @@
 package com.example.project_3_tcs_grupo4_dam.data.repository
 
+import android.util.Log
 import com.example.project_3_tcs_grupo4_dam.data.model.AlertaDashboard
 import com.example.project_3_tcs_grupo4_dam.data.model.AnuncioVacanteRequest
 import com.example.project_3_tcs_grupo4_dam.data.remote.AlertasApiService
@@ -11,12 +12,6 @@ import kotlinx.coroutines.withContext
  */
 class NotificacionesRepository(private val alertasApiService: AlertasApiService) {
 
-    /**
-     * Obtiene las alertas del dashboard según el tipo de usuario
-     * @param esAdmin Si es true, obtiene dashboard de admin, si es false obtiene del colaborador
-     * @param userId ID del usuario colaborador (obligatorio si esAdmin = false)
-     * @return Result con lista de AlertaDashboard o error
-     */
     suspend fun obtenerDashboard(
         esAdmin: Boolean,
         userId: String?
@@ -53,13 +48,22 @@ class NotificacionesRepository(private val alertasApiService: AlertasApiService)
     }
 
     /**
-     * Envía anuncio de vacante disponible
-     * @param vacanteId ID de la vacante a anunciar
-     * @return Result<Unit> indicando éxito o error
+     * Envía anuncio de vacante disponible.
+     * Ahora incluye limpieza de ID y logging detallado de errores 400.
      */
     suspend fun anunciarVacante(vacanteId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val request = AnuncioVacanteRequest(vacanteId)
+            // 1. Limpieza preventiva del ID (elimina espacios o saltos de línea invisibles)
+            val cleanId = vacanteId.trim()
+            
+            if (cleanId.isBlank()) {
+                return@withContext Result.failure(Exception("El ID de la vacante está vacío"))
+            }
+
+            Log.d("NotificacionesRepo", "Enviando anuncio para vacanteId: '$cleanId'")
+
+            // 2. Crear Request estrictamente con String
+            val request = AnuncioVacanteRequest(cleanId)
             val response = alertasApiService.anunciarVacante(request)
 
             if (response.isSuccessful) {
@@ -72,13 +76,18 @@ class NotificacionesRepository(private val alertasApiService: AlertasApiService)
                     )
                 }
             } else {
+                // 3. CAPTURA DEL ERROR REAL DEL SERVIDOR
+                // Esto es vital para entender por qué da 400 (ej. "vacanteId inválido", "vacante ya anunciada", etc.)
+                val errorBody = response.errorBody()?.string() ?: "Sin detalles"
+                Log.e("NotificacionesRepo", "Error ${response.code()} al anunciar. Body: $errorBody")
+                
                 Result.failure(
-                    Exception("Error HTTP ${response.code()}: ${response.message()}")
+                    Exception("Error ${response.code()}: $errorBody")
                 )
             }
         } catch (e: Exception) {
+            Log.e("NotificacionesRepo", "Excepción al anunciar vacante", e)
             Result.failure(e)
         }
     }
 }
-

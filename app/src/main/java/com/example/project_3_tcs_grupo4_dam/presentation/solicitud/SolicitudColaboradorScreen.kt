@@ -25,6 +25,7 @@ import com.example.project_3_tcs_grupo4_dam.presentation.components.solicitud.*
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
 import com.example.project_3_tcs_grupo4_dam.presentation.notificaciones.NotificacionesViewModel
 import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
+import androidx.lifecycle.ViewModelProvider
 
 private val TCSBlue = Color(0xFF00549F)
 private val LightGrayBg = Color(0xFFF5F7FA)
@@ -39,7 +40,7 @@ fun SolicitudColaboradorScreen(
 
     // ViewModel de solicitudes
     val viewModel: SolicitudColaboradorViewModel = viewModel(
-        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        factory = object : ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 return SolicitudColaboradorViewModel(
                     solicitudesRepository = SolicitudesRepositoryImpl(RetrofitClient.solicitudesApi),
@@ -52,9 +53,9 @@ fun SolicitudColaboradorScreen(
 
     // ViewModel de notificaciones para el badge
     val notificacionesViewModel: NotificacionesViewModel = viewModel(
-        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+        factory = object : ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return NotificacionesViewModel(sessionManager, context) as T   // ✅ ARREGLADO
+                return NotificacionesViewModel(sessionManager, context) as T
             }
         }
     )
@@ -69,7 +70,7 @@ fun SolicitudColaboradorScreen(
     val isDialogOpen by viewModel.isDialogNuevaSolicitudOpen.collectAsState()
     val showDetalleDialog by viewModel.showDetalleDialog.collectAsState()
     val solicitudSeleccionada by viewModel.solicitudSeleccionada.collectAsState()
-    val unreadCount by notificacionesViewModel.unreadCount.collectAsState()   // ✅ CORRECTO
+    val unreadCount by notificacionesViewModel.unreadCount.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -118,6 +119,7 @@ fun SolicitudColaboradorScreen(
             )
         },
         bottomBar = {
+            // FIX: Pasamos el contador de no leídos
             ColaboradorBottomNavBar(
                 navController = navController,
                 alertCount = unreadCount
@@ -286,108 +288,22 @@ private fun DetalleSolicitudDialog(
                 // Información específica según tipo
                 when (solicitud.tipoSolicitudGeneral) {
                     "CERTIFICACION" -> {
-                        solicitud.certificacionPropuesta?.let { cert ->
-                            Text(
-                                text = "Certificación Propuesta",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            InfoRow(label = "Nombre", value = cert.nombre)
-                            InfoRow(label = "Institución", value = cert.institucion)
-                            cert.fechaObtencion?.let { InfoRow(label = "Fecha obtención", value = it) }
-                            cert.fechaVencimiento?.let { InfoRow(label = "Fecha vencimiento", value = it) }
-                        }
+                        solicitud.certificacionPropuesta?.nombre?.let { InfoRow(label = "Certificación", value = it) }
                     }
-
                     "ACTUALIZACION_SKILLS" -> {
-                        solicitud.cambiosSkillsPropuestos?.let { cambios ->
-                            Text(
-                                text = "Cambios Propuestos (${cambios.size})",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            cambios.forEach { cambio ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFF5F7FA)
-                                    )
-                                ) {
-                                    Column(modifier = Modifier.padding(8.dp)) {
-                                        Text(
-                                            text = cambio.nombre,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = "Tipo: ${cambio.tipo}",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            text = "Nivel propuesto: ${cambio.nivelPropuesto}",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            text = "Crítico: ${if (cambio.esCriticoPropuesto) "Sí" else "No"}",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        cambio.motivo?.let {
-                                            Text(
-                                                text = "Motivo: $it",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = Color(0xFF666666)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    "ENTREVISTA_DESEMPENO" -> {
-                        solicitud.datosEntrevistaPropuesta?.let { entrevista ->
-                            Text(
-                                text = "Entrevista de Desempeño",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            InfoRow(label = "Periodo", value = entrevista.periodo)
-                            InfoRow(label = "Motivo", value = entrevista.motivo)
-                            entrevista.fechaSugerida?.let {
-                                InfoRow(label = "Fecha sugerida", value = it)
-                            }
-                        }
+                        val skillInfo = solicitud.cambiosSkillsPropuestos?.firstOrNull()
+                        skillInfo?.nombre?.let { InfoRow(label = "Skill", value = it) }
+                        skillInfo?.nivelPropuesto?.let { InfoRow(label = "Nivel Propuesto", value = it.toString()) }
                     }
                 }
 
                 Divider()
 
-                // Fechas y observaciones
-                InfoRow(label = "Fecha creación", value = solicitud.fechaCreacion.take(10))
-                solicitud.fechaRevision?.let {
-                    InfoRow(label = "Fecha revisión", value = it.take(10))
-                }
-
-                solicitud.observacionAdmin?.let {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFF3E0)
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Observación del Administrador",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
+                // Fechas y comentarios
+                InfoRow(label = "Fecha Solicitud", value = solicitud.fechaCreacion)
+                // Ajuste de nombres de propiedades según DTO
+                solicitud.fechaRevision?.let { InfoRow(label = "Fecha Revisión", value = it) }
+                solicitud.observacionAdmin?.let { InfoRow(label = "Observaciones Admin", value = it) }
             }
         },
         confirmButton = {
@@ -400,29 +316,16 @@ private fun DetalleSolicitudDialog(
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF666666)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF333333)
-        )
+    Row {
+        Text("$label: ", fontWeight = FontWeight.Bold)
+        Text(value)
     }
 }
 
-private fun getTipoLabel(tipo: String): String {
-    return when (tipo) {
+private fun getTipoLabel(tipoSolicitud: String): String {
+    return when (tipoSolicitud) {
         "CERTIFICACION" -> "Certificación"
-        "ACTUALIZACION_SKILLS" -> "Actualización de Skills"
-        "ENTREVISTA_DESEMPENO" -> "Entrevista de Desempeño"
-        else -> tipo
+        "ACTUALIZACION_SKILLS" -> "Actualización de Skill"
+        else -> tipoSolicitud
     }
 }

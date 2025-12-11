@@ -8,7 +8,11 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+
+// Color Corporativo TCS
+private val PrimaryBlue = Color(0xFF00549F)
 
 @Composable
 fun ColaboradoresHeader(
@@ -30,10 +34,14 @@ fun ColaboradoresHeader(
             modifier = Modifier
                 .fillMaxWidth(),
             leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null)
+                Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryBlue)
             },
             placeholder = { Text("Buscar por nombre o skill...") },
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryBlue,
+                cursorColor = PrimaryBlue
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -44,7 +52,10 @@ fun ColaboradoresHeader(
         ) {
             OutlinedButton(
                 onClick = onFiltros,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = PrimaryBlue
+                )
             ) {
                 Icon(Icons.Default.FilterList, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
@@ -53,7 +64,10 @@ fun ColaboradoresHeader(
 
             OutlinedButton(
                 onClick = onCargaMasiva,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = PrimaryBlue
+                )
             ) {
                 Icon(Icons.Default.Upload, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
@@ -65,7 +79,10 @@ fun ColaboradoresHeader(
 
         Button(
             onClick = onNuevoColaborador,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryBlue
+            )
         ) {
             Text("+   Nuevo Colaborador")
         }

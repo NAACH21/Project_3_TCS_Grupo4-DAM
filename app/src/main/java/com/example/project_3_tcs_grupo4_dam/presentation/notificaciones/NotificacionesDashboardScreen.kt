@@ -29,11 +29,14 @@ import com.example.project_3_tcs_grupo4_dam.data.model.AlertaDashboard
 import com.example.project_3_tcs_grupo4_dam.data.model.ColorPrioridad
 import com.example.project_3_tcs_grupo4_dam.data.model.TipoOrigenAlerta
 import com.example.project_3_tcs_grupo4_dam.presentation.home.ColaboradorBottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.components.BottomNavBar
+import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 
 // Colores personalizados
 private val BackgroundColor = Color(0xFFF7F4F2)
 private val TCSBlue = Color(0xFF00549F)
 private val TextGray = Color(0xFF6D6D6D)
+private val ReadGreen = Color(0xFF4CAF50) // Color verde para leídos
 
 /**
  * Screen principal del Dashboard de Notificaciones Unificado
@@ -47,7 +50,13 @@ fun NotificacionesDashboardScreen(navController: NavController) {
 
     // Obtener datos de sesión
     val rolUsuario = sessionManager.getRol() ?: "COLABORADOR"
-    val esAdmin = rolUsuario.equals("ADMIN", ignoreCase = true)
+    
+    // FIX: Considerar tanto ADMIN como MANAGER como roles administrativos
+    val esAdmin = rolUsuario.equals("ADMIN", ignoreCase = true) || rolUsuario.equals("MANAGER", ignoreCase = true)
+    
+    // FIX: Determinar ruta Home correcta según rol
+    val homeRoute = if (rolUsuario.equals("MANAGER", ignoreCase = true)) Routes.MANAGER_HOME else Routes.ADMIN_HOME
+    
     val userId = sessionManager.getColaboradorId()
 
     // Instanciar ViewModel
@@ -77,7 +86,13 @@ fun NotificacionesDashboardScreen(navController: NavController) {
     Scaffold(
         containerColor = BackgroundColor,
         bottomBar = {
-            ColaboradorBottomNavBar(navController, unreadCount)
+            if (esAdmin) {
+                // Mostrar BottomBar de Admin con la ruta Home correcta
+                BottomNavBar(navController = navController, homeRoute = homeRoute)
+            } else {
+                // Mostrar BottomBar de Colaborador con Badge
+                ColaboradorBottomNavBar(navController, unreadCount)
+            }
         },
         topBar = {
             CenterAlignedTopAppBar(
@@ -110,13 +125,13 @@ fun NotificacionesDashboardScreen(navController: NavController) {
                 .padding(paddingValues)
         ) {
             when {
-                isLoading -> {
+                isLoading && alertasDashboard.isEmpty() -> { // Mostrar loader solo si no hay datos previos
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                         color = TCSBlue
                     )
                 }
-                errorMessage != null -> {
+                errorMessage != null && alertasDashboard.isEmpty() -> { // Mostrar error solo si no hay datos
                     ErrorView(
                         message = errorMessage!!,
                         onRetry = {
@@ -125,7 +140,7 @@ fun NotificacionesDashboardScreen(navController: NavController) {
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                alertasDashboard.isEmpty() -> {
+                alertasDashboard.isEmpty() && !isLoading -> {
                     EmptyStateView(modifier = Modifier.align(Alignment.Center))
                 }
                 else -> {
@@ -143,7 +158,7 @@ fun NotificacionesDashboardScreen(navController: NavController) {
                                 alerta = alerta,
                                 onClick = {
                                     selectedAlerta = alerta
-                                    // Marcar como leída cuando se abre el detalle
+                                    // Marcar como leída PERSISTENTEMENTE cuando se abre el detalle
                                     if (alerta.activa) {
                                         viewModel.marcarDashboardComoLeida(alerta.idReferencia)
                                     }
@@ -173,11 +188,16 @@ fun AlertaDashboardCard(
     alerta: AlertaDashboard,
     onClick: () -> Unit
 ) {
-    // Obtener color de fondo según prioridad
-    val backgroundColor = when (alerta.colorPrioridad) {
-        ColorPrioridad.ROJO -> Color(0xFFFFEBEE)
-        ColorPrioridad.AMARILLO -> Color(0xFFFFFDE7)
-        ColorPrioridad.VERDE -> Color(0xFFE8F5E9)
+    // Obtener color de fondo según prioridad (Solo para activas/no leídas)
+    // Si está leída, usamos un fondo blanco o gris claro para diferenciar
+    val backgroundColor = if (alerta.activa) {
+        when (alerta.colorPrioridad) {
+            ColorPrioridad.ROJO -> Color(0xFFFFEBEE)
+            ColorPrioridad.AMARILLO -> Color(0xFFFFFDE7)
+            ColorPrioridad.VERDE -> Color(0xFFE8F5E9)
+        }
+    } else {
+        Color.White // Fondo neutro para leídos
     }
 
     // Obtener icono según tipo
@@ -188,6 +208,9 @@ fun AlertaDashboardCard(
         TipoOrigenAlerta.GENERICA -> Icons.Rounded.Notifications to Color(0xFF757575)
     }
 
+    // Color del icono: si está leído, lo atenuamos un poco
+    val finalIconColor = if (alerta.activa) iconColor else iconColor.copy(alpha = 0.5f)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,7 +219,7 @@ fun AlertaDashboardCard(
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (alerta.activa) 4.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -209,13 +232,13 @@ fun AlertaDashboardCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(iconColor.copy(alpha = 0.1f)),
+                    .background(finalIconColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icono,
                     contentDescription = null,
-                    tint = iconColor,
+                    tint = finalIconColor,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -226,26 +249,28 @@ fun AlertaDashboardCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Título con indicador de no leída
+                // Título con indicador de estado
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = alerta.titulo,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
+                        fontWeight = if (alerta.activa) FontWeight.Bold else FontWeight.Normal, // Negrita solo si no leído
+                        color = if (alerta.activa) Color.Black else TextGray,
                         modifier = Modifier.weight(1f)
                     )
 
-                    if (alerta.activa) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF5252))
-                        )
-                    }
+                    // Indicador de estado (Punto rojo vs Verde)
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (alerta.activa) Color(0xFFFF5252) // Rojo (No leído)
+                                else ReadGreen // Verde (Leído) - SOLICITUD DEL USUARIO
+                            )
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -364,6 +389,23 @@ fun AlertaDetalleDialog(
                     fontSize = 12.sp,
                     color = TextGray
                 )
+                // Indicador explícito de estado en el detalle
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (alerta.activa) Color(0xFFFF5252) else ReadGreen)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (alerta.activa) "No leído" else "Leído",
+                        fontSize = 12.sp,
+                        color = if (alerta.activa) Color(0xFFFF5252) else ReadGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         },
         confirmButton = {

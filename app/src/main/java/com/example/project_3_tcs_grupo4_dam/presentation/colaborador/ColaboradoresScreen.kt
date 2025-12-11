@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -28,6 +29,9 @@ import com.example.project_3_tcs_grupo4_dam.presentation.navigation.Routes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// 🔹 Color Corporativo TCS
+private val PrimaryBlue = Color(0xFF00549F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,13 +68,17 @@ fun ColaboradoresScreen(navController: NavController) {
                         viewModel.eliminarColaborador(colaboradorToDelete!!.id)
                         showDeleteDialog = false
                         colaboradorToDelete = null
-                    }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Eliminar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+                ) {
                     Text("Cancelar")
                 }
             }
@@ -88,7 +96,15 @@ fun ColaboradoresScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Colaboradores") }
+                title = { 
+                    Text(
+                        "Colaboradores",
+                        color = Color.White
+                    ) 
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = PrimaryBlue
+                )
             )
         },
         bottomBar = {
@@ -124,7 +140,7 @@ fun ColaboradoresScreen(navController: NavController) {
             ) {
                 when {
                     isLoading -> {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = PrimaryBlue)
                     }
 
                     error != null -> {
@@ -227,7 +243,11 @@ private fun FiltrosDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedArea) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryBlue,
+                            cursorColor = PrimaryBlue
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = expandedArea,
@@ -268,7 +288,11 @@ private fun FiltrosDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryBlue,
+                            cursorColor = PrimaryBlue
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = expandedTipo,
@@ -309,7 +333,11 @@ private fun FiltrosDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSkill) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryBlue,
+                            cursorColor = PrimaryBlue
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = expandedSkill,
@@ -348,11 +376,16 @@ private fun FiltrosDialog(
                     readOnly = true,
                     trailingIcon = {
                         IconButton(onClick = { showDatePickerInicio = true }) {
-                            Icon(Icons.Default.DateRange, "Seleccionar fecha")
+                            Icon(Icons.Default.DateRange, "Seleccionar fecha", tint = PrimaryBlue)
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("yyyy-MM-dd") }
+                    placeholder = { Text("yyyy-MM-dd") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue,
+                        focusedLabelColor = PrimaryBlue,
+                        cursorColor = PrimaryBlue
+                    )
                 )
 
                 // Fecha Fin
@@ -363,23 +396,34 @@ private fun FiltrosDialog(
                     readOnly = true,
                     trailingIcon = {
                         IconButton(onClick = { showDatePickerFin = true }) {
-                            Icon(Icons.Default.DateRange, "Seleccionar fecha")
+                            Icon(Icons.Default.DateRange, "Seleccionar fecha", tint = PrimaryBlue)
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("yyyy-MM-dd") }
+                    placeholder = { Text("yyyy-MM-dd") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue,
+                        focusedLabelColor = PrimaryBlue,
+                        cursorColor = PrimaryBlue
+                    )
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+            ) {
                 Text("Aplicar")
             }
         },
         dismissButton = {
-            TextButton(onClick = {
-                viewModel.limpiarFiltros()
-            }) {
+            TextButton(
+                onClick = {
+                    viewModel.limpiarFiltros()
+                },
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.Gray)
+            ) {
                 Text("Limpiar filtros")
             }
         }
@@ -391,19 +435,25 @@ private fun FiltrosDialog(
         DatePickerDialog(
             onDismissRequest = { showDatePickerInicio = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val dateString = formatter.format(Date(millis))
-                        viewModel.onFechaInicioSelected(dateString)
-                    }
-                    showDatePickerInicio = false
-                }) {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val dateString = formatter.format(Date(millis))
+                            viewModel.onFechaInicioSelected(dateString)
+                        }
+                        showDatePickerInicio = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+                ) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePickerInicio = false }) {
+                TextButton(
+                    onClick = { showDatePickerInicio = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+                ) {
                     Text("Cancelar")
                 }
             }
@@ -415,7 +465,12 @@ private fun FiltrosDialog(
                         text = "Fecha Inicio",
                         modifier = Modifier.padding(16.dp)
                     )
-                }
+                },
+                colors = DatePickerDefaults.colors(
+                    selectedDayContainerColor = PrimaryBlue,
+                    todayDateBorderColor = PrimaryBlue,
+                    todayContentColor = PrimaryBlue
+                )
             )
         }
     }
@@ -426,19 +481,25 @@ private fun FiltrosDialog(
         DatePickerDialog(
             onDismissRequest = { showDatePickerFin = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val dateString = formatter.format(Date(millis))
-                        viewModel.onFechaFinSelected(dateString)
-                    }
-                    showDatePickerFin = false
-                }) {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val dateString = formatter.format(Date(millis))
+                            viewModel.onFechaFinSelected(dateString)
+                        }
+                        showDatePickerFin = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+                ) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePickerFin = false }) {
+                TextButton(
+                    onClick = { showDatePickerFin = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)
+                ) {
                     Text("Cancelar")
                 }
             }
@@ -450,7 +511,12 @@ private fun FiltrosDialog(
                         text = "Fecha Fin",
                         modifier = Modifier.padding(16.dp)
                     )
-                }
+                },
+                colors = DatePickerDefaults.colors(
+                    selectedDayContainerColor = PrimaryBlue,
+                    todayDateBorderColor = PrimaryBlue,
+                    todayContentColor = PrimaryBlue
+                )
             )
         }
     }

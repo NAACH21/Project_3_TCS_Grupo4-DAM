@@ -15,9 +15,9 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +31,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// 🔹 Color Corporativo TCS
+private val PrimaryBlue = Color(0xFF00549F)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,12 +138,20 @@ fun ColaboradorFormScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(titulo) },
+                title = { 
+                    Text(
+                        titulo, 
+                        color = Color.White
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = PrimaryBlue
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -152,7 +163,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = PrimaryBlue)
             }
         } else {
             Column(
@@ -166,7 +177,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                 // Sección 1: Datos Personales
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
                         modifier = Modifier
@@ -177,7 +189,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                         Text(
                             text = "1. Datos personales",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
                         )
 
                         OutlinedTextField(
@@ -185,7 +198,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                             onValueChange = viewModel::onNombresChange,
                             label = { Text("Nombres *") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryBlue,
+                                focusedLabelColor = PrimaryBlue,
+                                cursorColor = PrimaryBlue
+                            )
                         )
 
                         OutlinedTextField(
@@ -193,7 +211,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                             onValueChange = viewModel::onApellidosChange,
                             label = { Text("Apellidos *") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryBlue,
+                                focusedLabelColor = PrimaryBlue,
+                                cursorColor = PrimaryBlue
+                            )
                         )
 
                         OutlinedTextField(
@@ -201,7 +224,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                             onValueChange = viewModel::onCorreoChange,
                             label = { Text("Correo *") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryBlue,
+                                focusedLabelColor = PrimaryBlue,
+                                cursorColor = PrimaryBlue
+                            )
                         )
 
                         // Dropdown para Área
@@ -219,7 +247,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedArea) },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryBlue,
+                                    focusedLabelColor = PrimaryBlue,
+                                    cursorColor = PrimaryBlue
+                                )
                             )
                             ExposedDropdownMenu(
                                 expanded = expandedArea,
@@ -252,7 +285,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRol) },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryBlue,
+                                    focusedLabelColor = PrimaryBlue,
+                                    cursorColor = PrimaryBlue
+                                )
                             )
                             ExposedDropdownMenu(
                                 expanded = expandedRol,
@@ -277,7 +315,11 @@ fun ColaboradorFormScreen(navController: NavController) {
                             Text(text = "Disponible para movilidad")
                             Switch(
                                 checked = disponible,
-                                onCheckedChange = viewModel::onDisponibleParaMovilidadChange
+                                onCheckedChange = viewModel::onDisponibleParaMovilidadChange,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = PrimaryBlue,
+                                    checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f)
+                                )
                             )
                         }
 
@@ -307,9 +349,10 @@ fun ColaboradorFormScreen(navController: NavController) {
                                         ),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         unfocusedContainerColor = if (estadoColaborador == "ACTIVO")
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                            Color(0xFFE8F5E9)
                                         else
-                                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                                            Color(0xFFFFEBEE),
+                                        focusedBorderColor = PrimaryBlue
                                     )
                                 )
                                 ExposedDropdownMenu(
@@ -339,7 +382,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                 // Sección 2: Skills (editable lista embebida)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
                         modifier = Modifier
@@ -350,7 +394,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                         Text(
                             text = "2. Skills",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
                         )
 
                         // Botón para agregar skills con validación: debe haber al menos 1 cert con PDF
@@ -372,7 +417,10 @@ fun ColaboradorFormScreen(navController: NavController) {
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                enabled = tieneCertConPdf
+                                enabled = tieneCertConPdf,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryBlue
+                                )
                             ) {
                                 Text(text = "+ Agregar skill")
                             }
@@ -419,7 +467,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        containerColor = Color(0xFFF5F5F5)
                                     )
                                 ) {
                                     Column(
@@ -458,7 +506,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             },
                                             label = { Text("Nombre") },
                                             modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
+                                            singleLine = true,
+                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                         )
 
                                         // Tipo (Dropdown desde catálogo)
@@ -483,7 +532,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                                     .menuAnchor(
                                                         MenuAnchorType.PrimaryNotEditable,
                                                         enabled = true
-                                                    )
+                                                    ),
+                                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                             )
                                             ExposedDropdownMenu(
                                                 expanded = expandedTipo,
@@ -529,7 +579,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                                     .menuAnchor(
                                                         MenuAnchorType.PrimaryNotEditable,
                                                         enabled = true
-                                                    )
+                                                    ),
+                                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                             )
                                             ExposedDropdownMenu(
                                                 expanded = expandedNivel,
@@ -567,7 +618,11 @@ fun ColaboradorFormScreen(navController: NavController) {
                                                         index,
                                                         it
                                                     )
-                                                }
+                                                },
+                                                colors = SwitchDefaults.colors(
+                                                    checkedThumbColor = PrimaryBlue,
+                                                    checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f)
+                                                )
                                             )
                                         }
                                     }
@@ -580,7 +635,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                 // Sección 3: Certificaciones
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
                         modifier = Modifier
@@ -591,20 +647,23 @@ fun ColaboradorFormScreen(navController: NavController) {
                         Text(
                             text = "3. Certificaciones",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = { viewModel.addCertificacion() },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                             ) {
                                 Text(text = "+ Agregar certificación")
                             }
 
-                            Button(
+                            OutlinedButton(
                                 onClick = { showAddPdfNameDialog = true },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue)
                             ) {
                                 Text(text = "Agregar certificación (solo nombre PDF)")
                             }
@@ -617,7 +676,10 @@ fun ColaboradorFormScreen(navController: NavController) {
                             )
                         } else {
                             certificaciones.forEachIndexed { index, cert ->
-                                Card(modifier = Modifier.fillMaxWidth()) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                                ) {
                                     Column(
                                         modifier = Modifier.padding(8.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -652,7 +714,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             },
                                             label = { Text("Nombre") },
                                             modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
+                                            singleLine = true,
+                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                         )
 
                                         OutlinedTextField(
@@ -665,7 +728,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             },
                                             label = { Text("Institución") },
                                             modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
+                                            singleLine = true,
+                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                         )
 
                                         // Fecha de obtención con Date Picker
@@ -740,12 +804,13 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             },
                                             modifier = Modifier.fillMaxWidth(),
                                             enabled = (isUploadingCertificaciones.getOrNull(index)
-                                                ?: false).not()
+                                                ?: false).not(),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE3F2FD), contentColor = PrimaryBlue)
                                         ) {
                                             if (isUploadingCertificaciones.getOrNull(index) == true) {
                                                 CircularProgressIndicator(
                                                     modifier = Modifier.size(16.dp),
-                                                    color = MaterialTheme.colorScheme.onPrimary,
+                                                    color = PrimaryBlue,
                                                     strokeWidth = 2.dp
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
@@ -772,7 +837,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                                             color = if (cert.archivoPdfUrl.isNullOrBlank()) {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
-                                                MaterialTheme.colorScheme.primary
+                                                PrimaryBlue
                                             }
                                         )
                                     }
@@ -784,12 +849,13 @@ fun ColaboradorFormScreen(navController: NavController) {
                         Button(
                             onClick = { viewModel.guardarColaborador() },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !isSaving && !isUploadingAnyCert
+                            enabled = !isSaving && !isUploadingAnyCert,
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                         ) {
                             if (isSaving || isUploadingAnyCert) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = Color.White
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
@@ -825,7 +891,8 @@ fun ColaboradorFormScreen(navController: NavController) {
                                     onValueChange = { newPdfName = it },
                                     label = { Text("Nombre del PDF") },
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                                 )
                                 Text(
                                     text = "Ej: certificado_reto.pdf (solo nombre o URL corta)",
@@ -843,12 +910,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 } else {
                                     coroutineScope.launch { snackbarHostState.showSnackbar("Ingresa el nombre del PDF") }
                                 }
-                            }) { Text("Agregar") }
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) { Text("Agregar") }
                         },
                         dismissButton = {
                             TextButton(onClick = {
                                 showAddPdfNameDialog = false
-                            }) { Text("Cancelar") }
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) { Text("Cancelar") }
                         }
                     )
                 }
@@ -874,7 +941,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 }
                                 showDatePickerFechaObtencion = false
                                 selectedCertIndexForDatePicker = null
-                            }) {
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) {
                                 Text("Aceptar")
                             }
                         },
@@ -882,7 +949,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                             TextButton(onClick = {
                                 showDatePickerFechaObtencion = false
                                 selectedCertIndexForDatePicker = null
-                            }) {
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) {
                                 Text("Cancelar")
                             }
                         }
@@ -894,7 +961,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                                     text = "Fecha de obtención",
                                     modifier = Modifier.padding(16.dp)
                                 )
-                            }
+                            },
+                            colors = DatePickerDefaults.colors(
+                                selectedDayContainerColor = PrimaryBlue,
+                                todayDateBorderColor = PrimaryBlue,
+                                todayContentColor = PrimaryBlue
+                            )
                         )
                     }
                 }
@@ -920,7 +992,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                                 }
                                 showDatePickerFechaVencimiento = false
                                 selectedCertIndexForDatePicker = null
-                            }) {
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) {
                                 Text("Aceptar")
                             }
                         },
@@ -928,7 +1000,7 @@ fun ColaboradorFormScreen(navController: NavController) {
                             TextButton(onClick = {
                                 showDatePickerFechaVencimiento = false
                                 selectedCertIndexForDatePicker = null
-                            }) {
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) {
                                 Text("Cancelar")
                             }
                         }
@@ -940,7 +1012,12 @@ fun ColaboradorFormScreen(navController: NavController) {
                                     text = "Fecha de vencimiento",
                                     modifier = Modifier.padding(16.dp)
                                 )
-                            }
+                            },
+                            colors = DatePickerDefaults.colors(
+                                selectedDayContainerColor = PrimaryBlue,
+                                todayDateBorderColor = PrimaryBlue,
+                                todayContentColor = PrimaryBlue
+                            )
                         )
                     }
                 }
@@ -970,7 +1047,8 @@ fun SkillPickerDialog(
             Text(
                 text = "Seleccionar Skill",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = PrimaryBlue
             )
         },
         text = {
@@ -1001,7 +1079,8 @@ fun SkillPickerDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                     )
                     ExposedDropdownMenu(
                         expanded = expandedTipo,
@@ -1026,7 +1105,8 @@ fun SkillPickerDialog(
                     label = { Text("Buscar skill...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("Escribe para filtrar") }
+                    placeholder = { Text("Escribe para filtrar") },
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue)
                 )
 
                 // Lista de sugerencias
@@ -1062,7 +1142,7 @@ fun SkillPickerDialog(
                                     .fillMaxWidth()
                                     .clickable { onSkillClick(item) },
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    containerColor = Color(0xFFF5F5F5)
                                 )
                             ) {
                                 Row(
@@ -1092,7 +1172,7 @@ fun SkillPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = PrimaryBlue)) {
                 Text("Cancelar")
             }
         }

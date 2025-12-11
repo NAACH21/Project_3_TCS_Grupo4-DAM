@@ -109,7 +109,8 @@ fun AppNavGraph(viewModel: AuthViewModel, startDestination: String) {
         }
 
         // --- NOTIFICACIONES DASHBOARD (Usa API: api/alertas/dashboard/admin) ---
-        composable(Routes.NOTIFICACIONES) {
+        // FIX: Actualizado a NOTIFICACIONES_ADMIN
+        composable(Routes.NOTIFICACIONES_ADMIN) {
             NotificacionesDashboardScreen(navController = navController)
         }
 

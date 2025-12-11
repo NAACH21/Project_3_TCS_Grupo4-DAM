@@ -136,7 +136,6 @@ fun AppNavigation(
         composable(Routes.VACANTES_ADMIN) { VacantScreen(navController = navController) }
         composable(Routes.VACANTES_COLABORADOR) { VacantesColaboradorScreen(navController = navController) }
         composable(Routes.NEW_VACANT) { NewVacantScreen(navController = navController, onBack = { navController.popBackStack() }) }
-        composable("newVacancy") { NewVacantScreen(navController = navController, onBack = { navController.popBackStack() }) }
 
         // --- GESTIÓN ADMIN ---
         composable(Routes.COLABORADORES) { ColaboradoresScreen(navController = navController) }
@@ -180,11 +179,19 @@ fun AppNavigation(
         composable(Routes.EVALUATION_HISTORY) { EvaluationHistoryScreen(navController = navController) }
         composable(Routes.BULK_UPLOAD) { BulkUploadScreen(onBackClick = { navController.popBackStack() }) }
         
-        // --- NOTIFICACIONES DASHBOARD (Usa API: api/alertas/dashboard/admin) ---
-        composable(Routes.NOTIFICACIONES) { NotificacionesDashboardScreen(navController = navController) }
-
-        composable(Routes.ALERTAS_ADMIN) { NotificacionesDashboardScreen(navController = navController) }
-        composable(Routes.ALERTAS_COLABORADOR) { NotificacionesDashboardScreen(navController = navController) }
+        // --- NOTIFICACIONES ---
+        // FIX: Renombrado a NOTIFICACIONES_ADMIN para claridad
+        composable(Routes.NOTIFICACIONES_ADMIN) { 
+            NotificacionesDashboardScreen(navController = navController) 
+        }
+        composable(Routes.ALERTAS_ADMIN) { 
+            NotificacionesDashboardScreen(navController = navController) 
+        }
+        // FIX: La ruta de alertas de colaborador ahora usa NotificacionesScreen
+        composable(Routes.ALERTAS_COLABORADOR) { 
+            NotificacionesScreen(navController = navController) 
+        }
+        
         composable(Routes.DASHBOARD_ADMIN) { DashboardAdminScreen(navController = navController) }
 
         composable(Routes.MATCHING) { 

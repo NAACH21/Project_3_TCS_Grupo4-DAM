@@ -72,7 +72,8 @@ fun ActualizarSkillScreen(
         },
         bottomBar = {
             // Mantenemos la barra inferior visible como solicitado
-            ColaboradorBottomNavBar(navController)
+            // FIX: Pasamos alertCount = 0 ya que esta pantalla no tiene el ViewModel de notificaciones
+            ColaboradorBottomNavBar(navController, alertCount = 0)
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {

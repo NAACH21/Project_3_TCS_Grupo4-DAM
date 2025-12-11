@@ -3,6 +3,7 @@ package com.example.project_3_tcs_grupo4_dam.data.remote
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorCreateDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorReadDto
 import com.example.project_3_tcs_grupo4_dam.data.model.ColaboradorDtos.ColaboradorUpdateDto
+import com.example.project_3_tcs_grupo4_dam.data.model.SkillDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -34,5 +35,7 @@ interface ColaboradorApiService {
     @DELETE("api/colaboradores/{id}")
     suspend fun deleteColaborador(@Path("id") id: String): retrofit2.Response<Unit>
 
-
+    // WORKAROUND: Agregamos esto aquí para no modificar RetrofitClient
+    @GET("api/skills")
+    suspend fun getAllSkills(): List<SkillDto>
 }
